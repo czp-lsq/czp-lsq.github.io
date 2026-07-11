@@ -1,0 +1,233 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="app-version" content="5.2.0">
+    <title>店数智 - 店铺数据智能分析平台</title>
+    
+    <link rel="dns-prefetch" href="https://cdn.sheetjs.com" />
+    <link rel="dns-prefetch" href="https://cdnjs.cloudflare.com" />
+    <link rel="dns-prefetch" href="https://unpkg.com" />
+    <link rel="preconnect" href="https://cdn.sheetjs.com" crossorigin />
+    <link rel="preconnect" href="https://cdnjs.cloudflare.com" crossorigin />
+    <link rel="preconnect" href="https://unpkg.com" crossorigin />
+    
+    <script src="assets/vendor/xlsx.full.min.js"></script>
+    <script src="assets/vendor/jszip.min.js"></script>
+    <script src="assets/vendor/react.production.min.js"></script>
+    <script src="assets/vendor/react-dom.production.min.js"></script>
+    <link rel="stylesheet" href="assets/css/themes.css">
+    <link rel="stylesheet" href="assets/css/base.css">
+    <link rel="stylesheet" href="assets/css/layout.css">
+    <link rel="stylesheet" href="assets/css/components.css">
+    <link rel="stylesheet" href="assets/css/pages.css">
+    <link rel="stylesheet" href="assets/css/login.css">
+    <link rel="stylesheet" href="assets/css/responsive.css">
+    <style>
+        .loading-screen {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            background: #F1EDE4;
+            color: #1A2F4A;
+            font-family: 'JetBrains Mono', 'SF Mono', 'Monaco', 'PingFang SC', 'Microsoft YaHei', sans-serif;
+            position: relative;
+            overflow: hidden;
+        }
+        .loading-screen::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-image:
+                linear-gradient(rgba(26, 47, 74, 0.03) 1px, transparent 1px),
+                linear-gradient(90deg, rgba(26, 47, 74, 0.03) 1px, transparent 1px);
+            background-size: 24px 24px;
+            pointer-events: none;
+        }
+        .loading-logo {
+            width: 72px;
+            height: 72px;
+            background: #1A2F4A;
+            border: 3px solid #0F1E30;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-weight: 900;
+            font-size: 28px;
+            margin-bottom: 24px;
+            box-shadow: 4px 4px 0 0 rgba(26, 47, 74, 0.3);
+            position: relative;
+        }
+        .loading-logo::after {
+            content: '';
+            position: absolute;
+            top: -3px;
+            right: -3px;
+            width: 18px;
+            height: 18px;
+            background: #E63946;
+            border: 3px solid #0F1E30;
+            border-radius: 4px;
+        }
+        .loading-spinner {
+            width: 48px;
+            height: 48px;
+            border: 3px solid rgba(26, 47, 74, 0.15);
+            border-top-color: #1A2F4A;
+            border-right-color: #E63946;
+            border-radius: 0;
+            animation: spin 0.8s linear infinite;
+            margin-bottom: 20px;
+            box-shadow: 3px 3px 0 0 rgba(26, 47, 74, 0.1);
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .loading-text {
+            font-size: 18px;
+            font-weight: 800;
+            color: #1A2F4A;
+            letter-spacing: 0.02em;
+        }
+        .loading-progress {
+            margin-top: 16px;
+            font-size: 13px;
+            color: #6B7F99;
+            font-weight: 600;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
+        }
+        .loading-error {
+            background: #FFFFFF;
+            border: 3px solid #E76F51;
+            padding: 24px 28px;
+            border-radius: 10px;
+            max-width: 600px;
+            text-align: center;
+            margin: 20px;
+            box-shadow: 6px 6px 0 0 rgba(231, 111, 81, 0.3);
+            position: relative;
+        }
+        .loading-error h2 {
+            color: #D45A3C;
+            margin-bottom: 12px;
+            font-size: 18px;
+            font-weight: 800;
+        }
+        .loading-error p {
+            color: #3D5A80;
+            margin-bottom: 8px;
+            font-size: 14px;
+        }
+        .loading-error button {
+            margin-top: 16px;
+            padding: 12px 24px;
+            background: #1A2F4A;
+            color: white;
+            border: 2px solid #0F1E30;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: 700;
+            font-size: 14px;
+            font-family: inherit;
+            box-shadow: 3px 3px 0 0 rgba(26, 47, 74, 0.3);
+            transition: all 0.1s ease;
+        }
+        .loading-error button:hover {
+            transform: translate(-1px, -1px);
+            box-shadow: 4px 4px 0 0 rgba(26, 47, 74, 0.35);
+        }
+        .loading-error button:active {
+            transform: translate(1px, 1px);
+            box-shadow: none;
+        }
+    </style>
+</head>
+<body>
+    <div id="root">
+        <div class="loading-screen">
+            <div class="loading-logo">店</div>
+            <div class="loading-spinner"></div>
+            <div class="loading-text">店数智 - 店铺数据智能分析平台</div>
+            <div class="loading-progress" id="loading-progress">初始化...</div>
+        </div>
+    </div>
+    
+    <script>
+        window.addEventListener('error', function(e) {
+            // 忽略外部CDN加载错误（证书问题等）
+            if (e.filename && (e.filename.indexOf('unpkg.com') !== -1 || e.filename.indexOf('cdn.sheetjs.com') !== -1 || e.filename.indexOf('cdnjs.cloudflare.com') !== -1)) {
+                console.warn('Ignored external CDN error:', e.message);
+                return;
+            }
+            // 仅对本地脚本致命错误显示错误页
+            if (e.filename && e.filename.indexOf(window.location.origin) !== -1) {
+                var root = document.getElementById('root');
+                if (root && !window.__appReady) {
+                    root.innerHTML = '<div class="loading-screen"><div class="loading-error"><h2>加载失败</h2><p>错误: ' + e.message + '</p><p>行号: ' + e.lineno + ' (文件: ' + (e.filename || '未知') + ')</p><button onclick="location.reload()">刷新重试</button></div></div>';
+                }
+            }
+            console.error('Global error:', e);
+        });
+
+        window.addEventListener('unhandledrejection', function(e) {
+            var root = document.getElementById('root');
+            if (root && !window.__appReady) {
+                root.innerHTML = '<div class="loading-screen"><div class="loading-error"><h2>加载失败</h2><p>Promise拒绝: ' + e.reason + '</p><button onclick="location.reload()">刷新重试</button></div></div>';
+            }
+            console.error('Unhandled rejection:', e);
+        });
+        
+        function updateProgress(text) {
+            var el = document.getElementById('loading-progress');
+            if (el) el.textContent = text;
+        }
+    </script>
+    
+    <!-- 核心基础设施 -->
+    <script src="assets/js/core/globals.js" onload="updateProgress('加载全局变量...')"></script>
+    <script src="assets/js/core/icons.js" onload="updateProgress('加载图标库...')"></script>
+
+    <!-- 工具函数 -->
+    <script src="assets/js/utils/common.js" onload="updateProgress('加载通用工具...')"></script>
+    <script src="assets/js/utils/excel.js" onload="updateProgress('加载Excel工具...')"></script>
+
+    <!-- 状态管理 -->
+    <script src="assets/js/core/store.js" onload="updateProgress('加载状态管理...')"></script>
+
+    <!-- 通用UI组件 -->
+    <script src="assets/js/components/toast.js" onload="updateProgress('加载通知组件...')"></script>
+    <script src="assets/js/components/modal.js" onload="updateProgress('加载弹窗组件...')"></script>
+    <script src="assets/js/components/button.js" onload="updateProgress('加载按钮组件...')"></script>
+    <script src="assets/js/components/alert.js" onload="updateProgress('加载提示组件...')"></script>
+
+    <!-- 引擎与解析器 -->
+    <script src="assets/js/engine/parser.js" onload="updateProgress('加载解析器...')"></script>
+    <script src="assets/js/engine/engine.js" onload="updateProgress('加载计算引擎...')"></script>
+
+    <!-- 页面组件 -->
+    <script src="assets/js/pages/dashboard.js" onload="updateProgress('加载概览页面...')"></script>
+    <script src="assets/js/pages/template.js" onload="updateProgress('加载模板页面...')"></script>
+    <script src="assets/js/pages/rules.js" onload="updateProgress('加载规则页面...')"></script>
+    <script src="assets/js/pages/externals.js" onload="updateProgress('加载数据表页面...')"></script>
+    <script src="assets/js/pages/batch.js" onload="updateProgress('加载批量页面...')"></script>
+    <script src="assets/js/pages/history.js" onload="updateProgress('加载记录页面...')"></script>
+    <script src="assets/js/pages/data.js" onload="updateProgress('加载配置页面...')"></script>
+    <script src="assets/js/pages/storage.js" onload="updateProgress('加载数据管理页面...')"></script>
+    <script src="assets/js/pages/shops.js" onload="updateProgress('加载店铺页面...')"></script>
+    <script src="assets/js/pages/settings.js" onload="updateProgress('加载设置页面...')"></script>
+    <script src="assets/js/pages/help.js" onload="updateProgress('加载帮助页面...')"></script>
+    <script src="assets/js/pages/login.js?v=2" onload="updateProgress('加载登录页面...')"></script>
+
+    <!-- 主应用入口 -->
+    <script src="assets/js/app.js" onload="updateProgress('启动应用...')"></script>
+</body>
+</html>

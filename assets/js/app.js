@@ -1,0 +1,597 @@
+// app.js - 主应用入口 (App / Root / 路由 / 布局)
+const App = () => {
+  const { addToast } = useToast();
+  const [state, setState] = useState(Store.get());
+  const [isLoggedIn, setIsLoggedIn] = useState(() => {
+    const saved = localStorage.getItem("app_login_user");
+    return !!saved;
+  });
+  const [currentUser, setCurrentUser] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("app_login_user") || "null");
+    } catch (e) {
+      return null;
+    }
+  });
+  const [openTabs, setOpenTabs] = useState([{ id: "dashboard", page: "dashboard" }]);
+  const [currentPage, setCurrentPage] = useState("dashboard");
+  const [currentPlatform, setCurrentPlatform] = useState("pdd");
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [logoUrl, setLogoUrl] = useState(
+    () => localStorage.getItem("app_logo_url") || "",
+  );
+  const [theme, setTheme] = useState(() => {
+    const saved = localStorage.getItem("app_theme");
+    return saved || "light";
+  });
+  const [colorTheme, setColorTheme] = useState(() => {
+    const saved = localStorage.getItem("app_color_theme");
+    return saved || "business";
+  });
+
+  useEffect(() => {
+    const unsub = Store.sub((newState) => {
+      setState({ ...newState });
+    });
+    return unsub;
+  }, []);
+
+  // 订阅存储事件，将存储异常/告警以 Toast 形式通知用户
+  useEffect(() => {
+    const unsub = Store.onStorageEvent((type, detail) => {
+      if (!detail) return;
+      const message = detail.message || "存储异常";
+      if (type === "error") {
+        addToast("error", "存储错误", message, 6000);
+      } else if (type === "warning") {
+        addToast("warning", "存储提示", message, 5000);
+      } else if (type === "restored") {
+        addToast("success", "数据已恢复", "已从备份恢复上次保存的数据", 4000);
+      }
+    });
+    return unsub;
+  }, [addToast]);
+
+  useEffect(() => {
+    document.body.classList.remove("dark", "light");
+    if (theme === "dark") {
+      document.body.classList.add("dark");
+    } else {
+      document.body.classList.add("light");
+    }
+    localStorage.setItem("app_theme", theme);
+  }, [theme]);
+
+  useEffect(() => {
+    document.body.classList.remove("theme-business", "theme-tech", "theme-warm", "theme-elegant");
+    document.body.classList.add(`theme-${colorTheme}`);
+    localStorage.setItem("app_color_theme", colorTheme);
+  }, [colorTheme]);
+
+  useEffect(() => {
+    const savedColorTheme = localStorage.getItem("app_color_theme");
+    if (savedColorTheme) {
+      document.body.classList.add(`theme-${savedColorTheme}`);
+    } else {
+      document.body.classList.add("theme-business");
+    }
+    const savedTheme = localStorage.getItem("app_theme");
+    if (savedTheme === "dark") {
+      document.body.classList.add("dark");
+    }
+  }, []);
+
+  const toggleTheme = () => {
+    setTheme((prev) => (prev === "dark" ? "light" : "dark"));
+  };
+
+  const changeColorTheme = (newTheme) => {
+    setColorTheme(newTheme);
+  };
+  const handleNavigate = (pageId) => {
+    setOpenTabs((prev) => {
+      if (prev.find((t) => t.id === pageId)) return prev;
+      return [...prev, { id: pageId, page: pageId }];
+    });
+    setCurrentPage(pageId);
+  };
+  const closeTab = (tabId, e) => {
+    if (e) e.stopPropagation();
+    setOpenTabs((prev) => {
+      const idx = prev.findIndex((t) => t.id === tabId);
+      if (idx < 0) return prev;
+      const newTabs = prev.filter((t) => t.id !== tabId);
+      if (newTabs.length === 0) return [{ id: "dashboard", page: "dashboard" }];
+      if (tabId === currentPage) {
+        const nextTab = newTabs[Math.min(idx, newTabs.length - 1)];
+        setCurrentPage(nextTab.id);
+      }
+      return newTabs;
+    });
+  };
+  const navGroups = [
+    {
+      id: "main",
+      items: [
+        {
+          id: "dashboard",
+          name: "数据概览",
+          icon: /*#__PURE__*/ React.createElement(Icons.Home, null),
+        },
+        {
+          id: "template",
+          name: "模板中心",
+          icon: /*#__PURE__*/ React.createElement(Icons.FileSpreadsheet, null),
+        },
+        {
+          id: "data",
+          name: "配置中心",
+          icon: /*#__PURE__*/ React.createElement(Icons.Database, null),
+        },
+        {
+          id: "rules",
+          name: "计算规则",
+          icon: /*#__PURE__*/ React.createElement(Icons.Calculator, null),
+          highlight: true,
+        },
+      ],
+    },
+    {
+      id: "core",
+      title: "核心功能",
+      items: [
+        {
+          id: "batch",
+          name: "批量计算",
+          icon: /*#__PURE__*/ React.createElement(Icons.Zap, null),
+          highlight: true,
+        },
+      ],
+    },
+    {
+      id: "manage",
+      title: "系统管理",
+      items: [
+        {
+          id: "shops",
+          name: "店铺管理",
+          icon: /*#__PURE__*/ React.createElement(Icons.Store, null),
+        },
+        {
+          id: "storage",
+          name: "数据管理",
+          icon: /*#__PURE__*/ React.createElement(Icons.HardDrive, null),
+        },
+        {
+          id: "help",
+          name: "使用帮助",
+          icon: /*#__PURE__*/ React.createElement(Icons.HelpCircle, null),
+        },
+      ],
+    },
+  ];
+  const pageTitles = {
+    dashboard: { title: "数据概览", subtitle: "查看系统配置和统计信息" },
+    template: { title: "模板中心", subtitle: "上传和配置利润表模板" },
+    rules: { title: "计算规则", subtitle: "配置字段的计算逻辑" },
+    batch: { title: "批量计算", subtitle: "上传店铺数据并批量计算利润" },
+    data: { title: "配置中心", subtitle: "管理样表数据和全局数据" },
+    storage: { title: "数据管理", subtitle: "导出和导入系统数据" },
+    history: { title: "计算记录", subtitle: "查看历史计算结果" },
+    shops: { title: "店铺管理", subtitle: "管理各平台下的店铺信息" },
+    settings: { title: "系统设置", subtitle: "管理系统配置和个人信息" },
+    help: { title: "使用帮助", subtitle: "系统使用指南和常见问题" },
+  };
+  const renderPage = () => {
+    switch (currentPage) {
+      case "dashboard":
+        return /*#__PURE__*/ React.createElement(DashboardPage, {
+          state: state,
+          onNavigate: handleNavigate,
+        });
+      case "template":
+        return /*#__PURE__*/ React.createElement(TemplatePage, {
+          state: state,
+          currentPlatform: currentPlatform,
+        });
+      case "rules":
+        return /*#__PURE__*/ React.createElement(RulesPage, {
+          state: state,
+          currentPlatform: currentPlatform,
+        });
+      case "batch":
+        return /*#__PURE__*/ React.createElement(BatchPage, {
+          state: state,
+          currentPlatform: currentPlatform,
+        });
+      case "data":
+        return /*#__PURE__*/ React.createElement(DataPage, {
+          state: state,
+          currentPlatform: currentPlatform,
+        });
+      case "storage":
+        return /*#__PURE__*/ React.createElement(StoragePage, {
+          state: state,
+          setState: setState,
+        });
+      case "history":
+        return /*#__PURE__*/ React.createElement(CalcHistoryPage, {
+          state: state,
+          currentPlatform: currentPlatform,
+        });
+      case "shops":
+        return /*#__PURE__*/ React.createElement(ShopsPage, {
+          state: state,
+          currentPlatform: currentPlatform,
+          onNavigate: handleNavigate,
+        });
+      case "settings":
+        return /*#__PURE__*/ React.createElement(SettingsPage, { 
+          state: state, 
+          onNavigate: handleNavigate,
+          currentTheme: theme,
+          colorTheme: colorTheme,
+          onChangeTheme: setTheme,
+          onChangeColorTheme: changeColorTheme,
+          currentUser: currentUser,
+        });
+      case "help":
+        return /*#__PURE__*/ React.createElement(HelpPage, {});
+      default:
+        return /*#__PURE__*/ React.createElement(DashboardPage, {
+          state: state,
+          onNavigate: handleNavigate,
+        });
+    }
+  };
+  const handleLogin = (userInfo) => {
+    setIsLoggedIn(true);
+    setCurrentUser(userInfo);
+    if (userInfo.remember) {
+      localStorage.setItem("app_login_user", JSON.stringify({ username: userInfo.username }));
+    } else {
+      localStorage.removeItem("app_login_user");
+    }
+    ActivityLogger.add("用户登录", "");
+  };
+  const handleLogout = () => {
+    setShowLogoutConfirm(true);
+  };
+  const confirmLogout = () => {
+    setIsLoggedIn(false);
+    setCurrentUser(null);
+    localStorage.removeItem("app_login_user");
+    setCurrentPage("dashboard");
+    setShowLogoutConfirm(false);
+    ActivityLogger.add("退出登录", "");
+  };
+  if (!isLoggedIn) {
+    return /*#__PURE__*/ React.createElement(LoginPage, { onLogin: handleLogin });
+  }
+  return /*#__PURE__*/ React.createElement(
+    "div",
+    { className: "app" },
+    /*#__PURE__*/ React.createElement(
+      "aside",
+      { className: `sidebar ${sidebarCollapsed ? "collapsed" : ""}` },
+      /*#__PURE__*/ React.createElement(
+        "div",
+        { className: "sidebar-logo" },
+        /*#__PURE__*/ React.createElement(
+          "div",
+          {
+            className: "sidebar-logo-icon",
+            onClick: () => document.getElementById("logo-upload-input").click(),
+            title: "\u70B9\u51FB\u4E0A\u4F20\u81EA\u5B9A\u4E49Logo",
+            style: { cursor: "pointer", overflow: "hidden" },
+          },
+          logoUrl
+            ? /*#__PURE__*/ React.createElement("img", {
+                src: logoUrl,
+                alt: "Logo",
+                style: { width: "100%", height: "100%", objectFit: "cover" },
+              })
+            : /*#__PURE__*/ React.createElement(Icons.BarChart3, null),
+        ),
+        /*#__PURE__*/ React.createElement("input", {
+          id: "logo-upload-input",
+          type: "file",
+          accept: "image/*",
+          style: { display: "none" },
+          onChange: (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => {
+              const url = ev.target.result;
+              setLogoUrl(url);
+              localStorage.setItem("app_logo_url", url);
+            };
+            reader.readAsDataURL(file);
+          },
+        }),
+        /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "sidebar-logo-text-wrap" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "sidebar-logo-text" },
+            "\u5E97\u6570\u667A",
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "sidebar-logo-sub" },
+            "ShopData",
+          ),
+        ),
+      ),
+      /*#__PURE__*/ React.createElement(
+        "nav",
+        { className: "sidebar-nav" },
+        navGroups.map((group) =>
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { key: group.id, className: "nav-group" },
+            group.title &&
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "nav-group-title" },
+                group.title,
+              ),
+            group.items.map((item) =>
+              /*#__PURE__*/ React.createElement(
+                "div",
+                {
+                  key: item.id,
+                  className: `nav-item ${currentPage === item.id ? "active" : ""} ${item.highlight ? "nav-highlight" : ""} ${item.indent ? "nav-indent" : ""}`,
+                  onClick: () => handleNavigate(item.id),
+                  "data-tooltip": item.name,
+                },
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  { className: "nav-icon" },
+                  item.icon,
+                ),
+                /*#__PURE__*/ React.createElement("span", { className: "nav-text" }, item.name),
+                item.highlight &&
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "nav-badge" },
+                    "\u6838\u5FC3",
+                  ),
+              ),
+            ),
+          ),
+        ),
+        /*#__PURE__*/ React.createElement(
+          "div",
+          {
+            className: "sidebar-toggle",
+            onClick: () => setSidebarCollapsed(!sidebarCollapsed),
+          },
+          sidebarCollapsed
+          ? /*#__PURE__*/ React.createElement(Icons.ChevronRight, null)
+          : /*#__PURE__*/ React.createElement(Icons.ChevronLeft, null),
+        ),
+      ),
+      /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "sidebar-footer" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            {
+              className: "nav-item",
+              onClick: () => handleNavigate("settings"),
+              "data-tooltip": "\u7CFB\u7EDF\u8BBE\u7F6E",
+            },
+            /*#__PURE__*/ React.createElement(
+              "span",
+              { className: "nav-icon" },
+              /*#__PURE__*/ React.createElement(Icons.Settings, null),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "span",
+              { className: "nav-text" },
+              "\u7CFB\u7EDF\u8BBE\u7F6E",
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            {
+              className: "nav-item",
+              onClick: handleLogout,
+              "data-tooltip": "\u9000\u51FA\u767B\u5F55",
+            },
+            /*#__PURE__*/ React.createElement(
+              "span",
+              { className: "nav-icon" },
+              /*#__PURE__*/ React.createElement(Icons.LogOut, null),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "span",
+              { className: "nav-text" },
+              "\u9000\u51FA\u767B\u5F55",
+            ),
+          ),
+        ),
+    ),
+    /*#__PURE__*/ React.createElement(
+      "main",
+      { className: "main" },
+      /*#__PURE__*/ React.createElement(
+        "header",
+        { className: "main-header" },
+        /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "main-header-left" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "header-platform-switcher" },
+            state.platforms.map((platform) =>
+              /*#__PURE__*/ React.createElement(
+                "div",
+                {
+                  key: platform.id,
+                  className: `header-platform-item ${currentPlatform === platform.id ? "active" : ""}`,
+                  onClick: () => setCurrentPlatform(platform.id),
+                  title: `${platform.name}（${platform.shops.length}个店铺）`,
+                },
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  { className: `platform-icon ${platform.id}` },
+                  platform.id === "pinduoduo" ? "PDD" : platform.id === "taobao" ? "TB" : platform.id === "douyin" ? "DY" : platform.emoji,
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  { className: "platform-name" },
+                  platform.name,
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  { className: "platform-count" },
+                  platform.shops.length,
+                  "\u5E97",
+                ),
+              ),
+            ),
+          ),
+        ),
+        /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "page-tabs" },
+          openTabs.map((tab) => {
+            const navItem = navGroups.flatMap((g) => g.items).find((i) => i.id === tab.id);
+            const defaultIcons = {
+              history: React.createElement(Icons.History, null),
+              storage: React.createElement(Icons.HardDrive, null),
+              settings: React.createElement(Icons.Settings, null),
+              externals: React.createElement(Icons.User, null),
+            };
+            const tabIcon = navItem?.icon || defaultIcons[tab.id] || React.createElement(Icons.FileText, null);
+            return /*#__PURE__*/ React.createElement(
+              "div",
+              {
+                key: tab.id,
+                className: `page-tab ${currentPage === tab.id ? "active" : ""}`,
+                onClick: () => setCurrentPage(tab.id),
+              },
+              /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "page-tab-icon" },
+                tabIcon,
+              ),
+              /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "page-tab-title" },
+                navItem?.name || pageTitles[tab.id]?.title || tab.id,
+              ),
+              openTabs.length > 1 &&
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  {
+                    className: "page-tab-close",
+                    onClick: (e) => closeTab(tab.id, e),
+                  },
+                  /*#__PURE__*/ React.createElement(Icons.X, null),
+                ),
+            );
+          }),
+        ),
+        /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "main-header-actions" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "header-actions-group" },
+            /*#__PURE__*/ React.createElement(
+              "button",
+              {
+                className: "header-icon-btn",
+                onClick: toggleTheme,
+                title: theme === "dark" ? "明亮模式" : "深色模式",
+              },
+              theme === "dark"
+                ? /*#__PURE__*/ React.createElement(Icons.Sun, null)
+                : /*#__PURE__*/ React.createElement(Icons.Moon, null),
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "header-actions-divider" },
+          ),
+          /*#__PURE__*/ React.createElement(
+            Button,
+            {
+              size: "sm",
+              onClick: () => {
+                const data = Store.exportData();
+                const blob = new Blob([data], { type: "application/json" });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement("a");
+                a.href = url;
+                a.download = `profit-config-${new Date().toISOString().slice(0, 10)}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+              },
+            },
+            /*#__PURE__*/ React.createElement(Icons.Download, null),
+            "\u5BFC\u51FA",
+          ),
+          /*#__PURE__*/ React.createElement(
+            Button,
+            {
+              size: "sm",
+              onClick: () => {
+                const input = document.createElement("input");
+                input.type = "file";
+                input.accept = ".json";
+                input.onchange = async (e) => {
+                  const file = e.target.files[0];
+                  if (!file) return;
+                  const text = await file.text();
+                  try {
+                    Store.importData(text);
+                    ActivityLogger.add("导入配置", file.name);
+                  } catch (err) {
+                    alert("导入失败: " + err.message);
+                  }
+                };
+                input.click();
+              },
+            },
+            /*#__PURE__*/ React.createElement(Icons.Upload, null),
+            "\u5BFC\u5165",
+          ),
+        ),
+      ),
+      /*#__PURE__*/ React.createElement(
+        "div",
+        { className: "main-content" },
+        renderPage(),
+      ),
+    ),
+    showLogoutConfirm &&
+      /*#__PURE__*/ React.createElement(ConfirmModal, {
+        title: "确认退出登录",
+        message: "确定要退出登录吗？退出后需要重新登录才能继续使用。",
+        type: "warning",
+        onConfirm: confirmLogout,
+        onCancel: () => setShowLogoutConfirm(false),
+      }),
+  );
+};
+const Root = () =>
+  /*#__PURE__*/ React.createElement(
+    ErrorBoundary,
+    null,
+    /*#__PURE__*/ React.createElement(
+      ToastProvider,
+      null,
+      /*#__PURE__*/ React.createElement(App, null),
+    ),
+  );
+ReactDOM.createRoot(document.getElementById("root")).render(
+  /*#__PURE__*/ React.createElement(Root, null),
+);
+window.__appReady = true;
