@@ -1,5 +1,3 @@
-const { useState, useRef, useEffect } = React;
-
 const SearchableSelect = ({
   value,
   onChange,

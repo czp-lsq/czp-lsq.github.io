@@ -220,16 +220,16 @@ const App = () => {
       const doc = parser.parseFromString(html, "text/html");
       const meta = doc.querySelector('meta[name="app-version"]');
       const remoteVersion = meta ? meta.getAttribute("content") : null;
+      const now = new Date();
+      setUpdateDetectedAt(now);
 
       if (remoteVersion && remoteVersion !== APP_VERSION) {
-        const now = new Date();
         setUpdateInfo({
           version: remoteVersion,
           date: now.toLocaleString(),
           changes: ["检测到新版本，建议刷新页面以获取最新功能。"],
           detectedAt: now,
         });
-        setUpdateDetectedAt(now);
         setShowUpdateModal(true);
         if (showToast) {
           addToastRef.current("info", "发现新版本", `v${remoteVersion} 已发布，请刷新页面`, 5000);
@@ -246,6 +246,22 @@ const App = () => {
     const timer = setInterval(() => checkForUpdate(true), 3 * 60 * 1000);
     return () => clearInterval(timer);
   }, [checkForUpdate]);
+
+  useEffect(() => {
+    try {
+      const seenVersion = localStorage.getItem(VERSION_KEY);
+      if (seenVersion !== APP_VERSION) {
+        localStorage.setItem(VERSION_KEY, APP_VERSION);
+        if (seenVersion) {
+          const logEntry = UPDATE_LOG.find((l) => l.version === APP_VERSION);
+          if (logEntry) {
+            setUpdateInfo(logEntry);
+            setShowUpdateModal(true);
+          }
+        }
+      }
+    } catch (e) {}
+  }, []);
 
   useEffect(() => {
     if (showNotifications) {
@@ -936,6 +952,33 @@ const App = () => {
               { className: "nav-text" },
               "\u9000\u51FA\u767B\u5F55",
             ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            {
+              className: "sidebar-version",
+              style: {
+                padding: "8px 16px",
+                fontSize: "11px",
+                color: "var(--color-text-muted)",
+                borderTop: "1px solid var(--color-border)",
+                marginTop: "8px",
+                cursor: "pointer",
+              },
+              onClick: () => {
+                setUpdateInfo(UPDATE_LOG[0]);
+                setShowUpdateModal(true);
+              },
+              title: "\u70B9\u51FB\u67E5\u770B\u66F4\u65B0\u65E5\u5FD7",
+            },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { style: { fontWeight: 600, marginBottom: 2 } },
+              `v${APP_VERSION}`,
+            ),
+            updateDetectedAt
+              ? `\u6700\u65B0\u68C0\u6D4B: ${updateDetectedAt.toLocaleTimeString()}`
+              : "\u6B63\u5728\u68C0\u6D4B\u66F4\u65B0...",
           ),
         ),
     ),
