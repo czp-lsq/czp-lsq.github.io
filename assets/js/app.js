@@ -155,6 +155,36 @@ const App = () => {
   const [unreadCount, setUnreadCount] = useState(0);
   const [notifEnabled, setNotifEnabled] = useState(true);
   const notifPanelRef = useRef(null);
+  const [showUpdateModal, setShowUpdateModal] = useState(false);
+  const [updateInfo, setUpdateInfo] = useState(null);
+
+  const APP_VERSION = "5.3.0";
+  const VERSION_KEY = "app_version_seen";
+  const UPDATE_LOG = [
+    { version: "5.3.0", date: "2026-07-12", changes: [
+      "新增网站更新弹窗提示功能",
+      "新增计算步骤：保留重复行、保留唯一行、两表对比筛选",
+      "修复过滤步骤对比值不支持选择列的问题",
+      "新增跨设备同步码功能",
+      "优化主题配置UI设计",
+      "完善操作记录分类识别",
+    ]},
+    { version: "5.2.0", date: "2026-07-11", changes: [
+      "修复刷新页面跳回登录页的问题",
+      "修复计算规则只识别500行数据的限制",
+      "新增音效开关设置",
+      "优化系统设置模块布局",
+      "优化计算规则下拉框样式",
+      "完善数据存储机制（快照功能）",
+    ]},
+    { version: "5.1.0", date: "2026-07-10", changes: [
+      "新增自动登录功能",
+      "新增Toast声音通知",
+      "设置页改为侧边栏分类布局",
+      "存储页新增数据统计卡片",
+      "优化组件样式（渐变背景、光效动画）",
+    ]},
+  ];
 
   useEffect(() => {
     setUnreadCount(NotificationCenter.getUnreadCount());
@@ -164,6 +194,16 @@ const App = () => {
       setNotifEnabled(NotificationCenter.getSettings().masterEnabled !== false);
     });
     return unsub;
+  }, []);
+
+  useEffect(() => {
+    try {
+      const seenVersion = localStorage.getItem(VERSION_KEY);
+      if (seenVersion !== APP_VERSION) {
+        setUpdateInfo(UPDATE_LOG[0]);
+        setShowUpdateModal(true);
+      }
+    } catch (e) {}
   }, []);
 
   useEffect(() => {
@@ -1120,6 +1160,50 @@ const App = () => {
         onConfirm: confirmLogout,
         onCancel: () => setShowLogoutConfirm(false),
       }),
+    showUpdateModal && updateInfo && /*#__PURE__*/ React.createElement(
+      "div",
+      { className: "modal-mask", onClick: () => { setShowUpdateModal(false); localStorage.setItem(VERSION_KEY, APP_VERSION); } },
+      /*#__PURE__*/ React.createElement(
+        "div",
+        { className: "modal update-modal", onClick: (e) => e.stopPropagation() },
+        /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "update-modal-header" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "update-modal-icon" },
+            /*#__PURE__*/ React.createElement(Icons.Sparkles, null),
+          ),
+          /*#__PURE__*/ React.createElement("div", { className: "update-modal-version" }, `v${updateInfo.version}`),
+          /*#__PURE__*/ React.createElement("div", { className: "update-modal-date" }, updateInfo.date),
+        ),
+        /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "update-modal-body" },
+          /*#__PURE__*/ React.createElement("div", { className: "update-modal-title" }, "✨ 更新内容"),
+          /*#__PURE__*/ React.createElement(
+            "ul",
+            { className: "update-modal-list" },
+            updateInfo.changes.map((change, idx) => /*#__PURE__*/ React.createElement("li", { key: idx }, change)),
+          ),
+        ),
+        /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "update-modal-footer" },
+          /*#__PURE__*/ React.createElement(
+            "button",
+            {
+              className: "btn btn-primary",
+              onClick: () => {
+                setShowUpdateModal(false);
+                localStorage.setItem(VERSION_KEY, APP_VERSION);
+              },
+            },
+            "知道了",
+          ),
+        ),
+      ),
+    ),
   );
 };
 const Root = () =>
