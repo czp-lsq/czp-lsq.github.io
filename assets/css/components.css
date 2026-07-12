@@ -1481,7 +1481,13 @@ body.dark .table-highlight-row {
   font-size: 14px;
   font-weight: 600;
   color: var(--color-text-secondary);
-  margin-bottom: 12px;
+  margin-bottom: 4px;
+}
+
+.update-modal-subtitle {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 16px;
 }
 
 .update-modal-list {

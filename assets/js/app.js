@@ -158,16 +158,16 @@ const App = () => {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updateInfo, setUpdateInfo] = useState(null);
 
-  const APP_VERSION = "5.3.0";
+  const APP_VERSION = "5.4.0";
   const VERSION_KEY = "app_version_seen";
   const UPDATE_LOG = [
-    { version: "5.3.0", date: "2026-07-12", changes: [
-      "新增网站更新弹窗提示功能",
-      "新增计算步骤：保留重复行、保留唯一行、两表对比筛选",
-      "修复过滤步骤对比值不支持选择列的问题",
-      "新增跨设备同步码功能",
-      "优化主题配置UI设计",
-      "完善操作记录分类识别",
+    { version: "5.4.0", date: "2026-07-12", changes: [
+      "修复刷新后回到登录页面的问题",
+      "完善自动登录功能，无需每次输入账户密码",
+      "修复计算规则步骤收起展开按钮无效",
+      "修复过滤步骤选择列重复显示问题",
+      "对比值改为下拉选择当前列的具体值",
+      "更新弹窗新增刷新按钮",
     ]},
     { version: "5.2.0", date: "2026-07-11", changes: [
       "修复刷新页面跳回登录页的问题",
@@ -651,14 +651,10 @@ const App = () => {
     };
     setIsLoggedIn(true);
     setCurrentUser(userData);
-    if (userInfo.remember) {
-      localStorage.setItem("app_login_user", JSON.stringify({ 
-        username: userData.username, 
-        encryptedPassword: encryptPassword(userInfo.password) 
-      }));
-    } else {
-      localStorage.removeItem("app_login_user");
-    }
+    localStorage.setItem("app_login_user", JSON.stringify({ 
+      username: userData.username, 
+      encryptedPassword: encryptPassword(userInfo.password) 
+    }));
     const updatedAccounts = accounts.map((a) =>
       a.id === matchedAccount.id
         ? { ...a, lastLogin: new Date().toISOString() }
@@ -1180,7 +1176,8 @@ const App = () => {
         /*#__PURE__*/ React.createElement(
           "div",
           { className: "update-modal-body" },
-          /*#__PURE__*/ React.createElement("div", { className: "update-modal-title" }, "✨ 更新内容"),
+          /*#__PURE__*/ React.createElement("div", { className: "update-modal-title" }, "✨ 网站已更新"),
+          /*#__PURE__*/ React.createElement("div", { className: "update-modal-subtitle" }, "建议刷新页面以获取最佳体验"),
           /*#__PURE__*/ React.createElement(
             "ul",
             { className: "update-modal-list" },
@@ -1193,13 +1190,25 @@ const App = () => {
           /*#__PURE__*/ React.createElement(
             "button",
             {
-              className: "btn btn-primary",
+              className: "btn btn-secondary",
               onClick: () => {
                 setShowUpdateModal(false);
                 localStorage.setItem(VERSION_KEY, APP_VERSION);
               },
             },
-            "知道了",
+            "稍后再说",
+          ),
+          /*#__PURE__*/ React.createElement(
+            "button",
+            {
+              className: "btn btn-primary",
+              onClick: () => {
+                localStorage.setItem(VERSION_KEY, APP_VERSION);
+                window.location.reload();
+              },
+            },
+            /*#__PURE__*/ React.createElement(Icons.RefreshCw, null),
+            " 立即刷新",
           ),
         ),
       ),

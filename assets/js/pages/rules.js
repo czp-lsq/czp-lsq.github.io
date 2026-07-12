@@ -1772,41 +1772,6 @@ const RulesPage = ({ state, currentPlatform }) => {
           { className: "step-config" },
           /*#__PURE__*/ React.createElement(
             "div",
-            { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u8FC7\u6EE4\u5217",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.column,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "column", e.target.value),
-              },
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "" },
-                "\u8BF7\u9009\u62E9\u5217",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "val" },
-                "\u5F53\u524D\u503C (val)",
-              ),
-              sourceTableHeaders.map((h) =>
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { key: h, value: h },
-                  h,
-                ),
-              ),
-            ),
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
             { className: "grid-2" },
             /*#__PURE__*/ React.createElement(
               "div",
@@ -1993,20 +1958,25 @@ const RulesPage = ({ state, currentPlatform }) => {
                     { className: "form-label" },
                     "\u5BF9\u6BD4\u503C",
                   ),
-                  /*#__PURE__*/ React.createElement("input", {
-                    type: "text",
-                    className: "input",
-                    value: step.config.value,
-                    onChange: (e) =>
-                      updateStepConfig(step.id, "value", e.target.value),
-                    placeholder: "\u8F93\u5165\u5BF9\u6BD4\u503C\u6216\u4ECE\u4E0B\u62C9\u9009\u62E9",
-                    list: `filter-values-${step.id}`,
-                  }),
-                  getColumnValues(step.config.column).length > 0 && /*#__PURE__*/ React.createElement(
-                    "datalist",
-                    { id: `filter-values-${step.id}` },
+                  /*#__PURE__*/ React.createElement(
+                    "select",
+                    {
+                      className: "select",
+                      value: step.config.value || "",
+                      onChange: (e) =>
+                        updateStepConfig(step.id, "value", e.target.value),
+                    },
+                    /*#__PURE__*/ React.createElement(
+                      "option",
+                      { value: "" },
+                      "\u8BF7\u9009\u62E9\u503C",
+                    ),
                     getColumnValues(step.config.column).map((v) =>
-                      /*#__PURE__*/ React.createElement("option", { key: v, value: v }, v),
+                      /*#__PURE__*/ React.createElement(
+                        "option",
+                        { key: v, value: v },
+                        v,
+                      ),
                     ),
                   ),
                 ),
@@ -5430,6 +5400,10 @@ const RulesPage = ({ state, currentPlatform }) => {
                                   className:
                                     "step-action-btn step-action-toggle",
                                   title: isExpanded ? "收起" : "展开",
+                                  onClick: () =>
+                                    setExpandedStep(
+                                      isExpanded ? null : step.id,
+                                    ),
                                 },
                                 /*#__PURE__*/ React.createElement(
                                   "div",
