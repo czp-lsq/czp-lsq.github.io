@@ -1,12 +1,212 @@
 // toast - Toast通知系统组件与Hook
+const NotificationCenter = {
+  _listeners: [],
+  _notifications: [],
+  _settings: null,
+  getSettings() {
+    if (!this._settings) {
+      try {
+        const saved = localStorage.getItem("app_settings");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          this._settings = parsed.notificationSettings || {
+            masterEnabled: true,
+            calculationComplete: true,
+            importComplete: true,
+            exportComplete: true,
+            versionUpdate: true,
+            storageWarning: true,
+          };
+        } else {
+          this._settings = {
+            masterEnabled: true,
+            calculationComplete: true,
+            importComplete: true,
+            exportComplete: true,
+            versionUpdate: true,
+            storageWarning: true,
+          };
+        }
+      } catch (e) {
+        this._settings = {
+          masterEnabled: true,
+          calculationComplete: true,
+          importComplete: true,
+          exportComplete: true,
+          versionUpdate: true,
+          storageWarning: true,
+        };
+      }
+    }
+    return this._settings;
+  },
+  refreshSettings() {
+    this._settings = null;
+    return this.getSettings();
+  },
+  isEnabled(notificationType) {
+    const settings = this.getSettings();
+    if (settings[notificationType] === undefined) return true;
+    return settings[notificationType] !== false;
+  },
+  addNotification(notification) {
+    const notif = {
+      id: Utils.uniqueId(),
+      time: new Date().toISOString(),
+      read: false,
+      ...notification,
+    };
+    this._notifications.unshift(notif);
+    if (this._notifications.length > 100) {
+      this._notifications = this._notifications.slice(0, 100);
+    }
+    try {
+      localStorage.setItem("app_notifications", JSON.stringify(this._notifications));
+    } catch (e) {}
+    this._listeners.forEach((fn) => fn(this._notifications));
+  },
+  getNotifications() {
+    if (this._notifications.length === 0) {
+      try {
+        const saved = localStorage.getItem("app_notifications");
+        if (saved) {
+          this._notifications = JSON.parse(saved);
+        }
+      } catch (e) {}
+    }
+    return this._notifications;
+  },
+  getUnreadCount() {
+    return this.getNotifications().filter((n) => !n.read).length;
+  },
+  markAsRead(id) {
+    this._notifications = this._notifications.map((n) =>
+      n.id === id ? { ...n, read: true } : n,
+    );
+    try {
+      localStorage.setItem("app_notifications", JSON.stringify(this._notifications));
+    } catch (e) {}
+    this._listeners.forEach((fn) => fn(this._notifications));
+  },
+  markAllAsRead() {
+    this._notifications = this._notifications.map((n) => ({ ...n, read: true }));
+    try {
+      localStorage.setItem("app_notifications", JSON.stringify(this._notifications));
+    } catch (e) {}
+    this._listeners.forEach((fn) => fn(this._notifications));
+  },
+  clearAll() {
+    this._notifications = [];
+    try {
+      localStorage.removeItem("app_notifications");
+    } catch (e) {}
+    this._listeners.forEach((fn) => fn(this._notifications));
+  },
+  subscribe(fn) {
+    this._listeners.push(fn);
+    return () => {
+      this._listeners = this._listeners.filter((l) => l !== fn);
+    };
+  },
+};
+
+// 全局应用设置管理器 - 让系统设置真正控制网页行为
+const AppSettings = {
+  _cache: null,
+  _listeners: [],
+
+  _defaults: {
+    autoSave: true,
+    confirmDelete: true,
+    language: "zh",
+    autoUpdateCheck: true,
+    sidebarDefaultCollapsed: false,
+    defaultPlatform: "pdd",
+    pageSize: 20,
+    compactMode: false,
+    animationEnabled: true,
+  },
+
+  get() {
+    if (!this._cache) {
+      try {
+        const saved = localStorage.getItem("app_settings");
+        if (saved) {
+          const parsed = JSON.parse(saved);
+          this._cache = { ...this._defaults, ...(parsed.appSettings || {}) };
+        } else {
+          this._cache = { ...this._defaults };
+        }
+      } catch (e) {
+        this._cache = { ...this._defaults };
+      }
+    }
+    return this._cache;
+  },
+
+  getSetting(key) {
+    return this.get()[key];
+  },
+
+  shouldConfirmDelete() {
+    return this.get().confirmDelete !== false;
+  },
+
+  isAutoSaveEnabled() {
+    return this.get().autoSave !== false;
+  },
+
+  isAnimationEnabled() {
+    return this.get().animationEnabled !== false;
+  },
+
+  getPageSize() {
+    return this.get().pageSize || 20;
+  },
+
+  getDefaultPlatform() {
+    return this.get().defaultPlatform || "pdd";
+  },
+
+  refresh() {
+    this._cache = null;
+    const settings = this.get();
+    this._listeners.forEach((fn) => fn(settings));
+    return settings;
+  },
+
+  subscribe(fn) {
+    this._listeners.push(fn);
+    return () => {
+      this._listeners = this._listeners.filter((l) => l !== fn);
+    };
+  },
+};
+
 const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
-  const addToast = useCallback((type, title, message, duration = 3000) => {
+  const addToast = useCallback((type, title, message, duration = 3000, options = {}) => {
+    const { notificationType, saveToHistory = true, forceShow = false } = options;
+    const settings = NotificationCenter.getSettings();
+    if (settings.masterEnabled === false && !forceShow && type !== "error") {
+      return;
+    }
+    if (notificationType && !NotificationCenter.isEnabled(notificationType)) {
+      return;
+    }
     const id = Utils.uniqueId();
     setToasts(prev => [...prev, { id, type, title, message }]);
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, duration);
+    if (saveToHistory && notificationType && NotificationCenter.isEnabled(notificationType)) {
+      NotificationCenter.addNotification({
+        type,
+        title,
+        message,
+        category: notificationType,
+      });
+    }
   }, []);
 
   const getIcon = (type) => {
@@ -35,8 +235,8 @@ const ToastProvider = ({ children }) => {
 
 const useToast = () => {
   const ctx = useContext(ToastContext);
-  if (!ctx) return { addToast: () => {} };
-  return ctx;
+  if (!ctx) return { addToast: () => {}, NotificationCenter };
+  return { ...ctx, NotificationCenter };
 };
 
 // 模态框

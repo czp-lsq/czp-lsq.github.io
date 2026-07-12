@@ -96,164 +96,165 @@ const CalcHistoryPage = ({ state, currentPlatform }) => {
       /*#__PURE__*/ React.createElement(
         "div",
         { className: "card-header" },
-      /*#__PURE__*/ React.createElement(
-        "div",
-        null,
         /*#__PURE__*/ React.createElement(
           "div",
-          { className: "card-title" },
-          /*#__PURE__*/ React.createElement(Icons.History, null),
-          "\u8BA1\u7B97\u8BB0\u5F55",
-        ),
-        /*#__PURE__*/ React.createElement(
-          "div",
-          { className: "card-desc" },
-          "\u67E5\u770B\u5386\u53F2\u8BA1\u7B97\u4EFB\u52A1\u548C\u7ED3\u679C",
-        ),
-      ),
-      /*#__PURE__*/ React.createElement(
-        "div",
-        { style: { display: "flex", gap: 10 } },
-        calcHistory.length > 0 &&
-          /*#__PURE__*/ React.createElement(
-            Button,
-            { onClick: exportAllHistory },
-            /*#__PURE__*/ React.createElement(Icons.Download, null),
-            "\u5BFC\u51FA\u5168\u90E8\u8BB0\u5F55",
-          ),
-      ),
-    ),
-    /*#__PURE__*/ React.createElement(
-      "div",
-      { className: "data-table-container" },
-      /*#__PURE__*/ React.createElement(
-        "table",
-        { className: "table" },
-        /*#__PURE__*/ React.createElement(
-          "thead",
           null,
           /*#__PURE__*/ React.createElement(
-            "tr",
-            null,
-            /*#__PURE__*/ React.createElement("th", null, "\u65F6\u95F4"),
-            /*#__PURE__*/ React.createElement("th", null, "\u5E73\u53F0"),
-            /*#__PURE__*/ React.createElement("th", null, "\u5E97\u94FA\u6570"),
-            /*#__PURE__*/ React.createElement("th", null, "\u6210\u529F\u6570"),
-            /*#__PURE__*/ React.createElement("th", null, "\u72B6\u6001"),
+            "div",
+            { className: "card-title" },
+            /*#__PURE__*/ React.createElement(Icons.History, null),
+            "\u8BA1\u7B97\u8BB0\u5F55",
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "card-desc" },
+            "\u67E5\u770B\u5386\u53F2\u8BA1\u7B97\u4EFB\u52A1\u548C\u7ED3\u679C",
+          ),
+        ),
+        /*#__PURE__*/ React.createElement(
+          "div",
+          { style: { display: "flex", gap: 10 } },
+          calcHistory.length > 0 &&
             /*#__PURE__*/ React.createElement(
-              "th",
-              { style: { width: 180 } },
-              "\u64CD\u4F5C",
+              Button,
+              { onClick: exportAllHistory },
+              /*#__PURE__*/ React.createElement(Icons.Download, null),
+              "\u5BFC\u51FA\u5168\u90E8\u8BB0\u5F55",
+            ),
+        ),
+      ),
+      /*#__PURE__*/ React.createElement(
+        "div",
+        { className: "data-table-container" },
+        /*#__PURE__*/ React.createElement(
+          "table",
+          { className: "table" },
+          /*#__PURE__*/ React.createElement(
+            "thead",
+            null,
+            /*#__PURE__*/ React.createElement(
+              "tr",
+              null,
+              /*#__PURE__*/ React.createElement("th", null, "\u65F6\u95F4"),
+              /*#__PURE__*/ React.createElement("th", null, "\u5E73\u53F0"),
+              /*#__PURE__*/ React.createElement("th", null, "\u5E97\u94FA\u6570"),
+              /*#__PURE__*/ React.createElement("th", null, "\u6210\u529F\u6570"),
+              /*#__PURE__*/ React.createElement("th", null, "\u72B6\u6001"),
+              /*#__PURE__*/ React.createElement(
+                "th",
+                { style: { width: 180 } },
+                "\u64CD\u4F5C",
+              ),
             ),
           ),
-        ),
-        /*#__PURE__*/ React.createElement(
-          "tbody",
-          null,
-          calcHistory.length === 0
-            ? /*#__PURE__*/ React.createElement(
-                "tr",
-                null,
-                /*#__PURE__*/ React.createElement(
-                  "td",
-                  { colSpan: 6 },
-                  /*#__PURE__*/ React.createElement(
-                    "div",
-                    { className: "empty", style: { padding: "40px 20px" } },
-                    /*#__PURE__*/ React.createElement(
-                      "div",
-                      { className: "empty-icon" },
-                      "\uD83D\uDCCB",
-                    ),
-                    /*#__PURE__*/ React.createElement(
-                      "div",
-                      { className: "empty-text" },
-                      "\u6682\u65E0\u8BA1\u7B97\u8BB0\u5F55",
-                    ),
-                    /*#__PURE__*/ React.createElement(
-                      "div",
-                      { className: "empty-desc" },
-                      "\u5B8C\u6210\u6279\u91CF\u8BA1\u7B97\u540E\u4F1A\u5728\u8FD9\u91CC\u663E\u793A\u8BB0\u5F55",
-                    ),
-                  ),
-                ),
-              )
-            : calcHistory.map((item) =>
-                /*#__PURE__*/ React.createElement(
+          /*#__PURE__*/ React.createElement(
+            "tbody",
+            null,
+            calcHistory.length === 0
+              ? /*#__PURE__*/ React.createElement(
                   "tr",
-                  { key: item.id },
+                  null,
                   /*#__PURE__*/ React.createElement(
                     "td",
-                    null,
-                    formatTime(item.time),
-                  ),
-                  /*#__PURE__*/ React.createElement("td", null, item.platform),
-                  /*#__PURE__*/ React.createElement("td", null, item.shopCount),
-                  /*#__PURE__*/ React.createElement(
-                    "td",
-                    null,
-                    item.successCount,
-                  ),
-                  /*#__PURE__*/ React.createElement(
-                    "td",
-                    null,
-                    /*#__PURE__*/ React.createElement(
-                      Tag,
-                      {
-                        type:
-                          item.status === "success"
-                            ? "success"
-                            : item.status === "processing"
-                              ? "warning"
-                              : "danger",
-                      },
-                      item.status === "success"
-                        ? "成功"
-                        : item.status === "processing"
-                          ? "处理中"
-                          : "部分成功",
-                    ),
-                  ),
-                  /*#__PURE__*/ React.createElement(
-                    "td",
-                    null,
+                    { colSpan: 6 },
                     /*#__PURE__*/ React.createElement(
                       "div",
-                      { className: "action-btn-group" },
+                      { className: "empty", style: { padding: "40px 20px" } },
                       /*#__PURE__*/ React.createElement(
-                        "button",
-                        {
-                          className: "action-btn action-view",
-                          onClick: () => downloadHistoryEntry(item),
-                          title: "\u4E0B\u8F7D\u5229\u6DA6\u8868",
-                        },
-                        /*#__PURE__*/ React.createElement(Icons.Download, null),
-                        " \u4E0B\u8F7D",
+                        "div",
+                        { className: "empty-icon" },
+                        "\uD83D\uDCCB",
                       ),
                       /*#__PURE__*/ React.createElement(
-                        "button",
+                        "div",
+                        { className: "empty-text" },
+                        "\u6682\u65E0\u8BA1\u7B97\u8BB0\u5F55",
+                      ),
+                      /*#__PURE__*/ React.createElement(
+                        "div",
+                        { className: "empty-desc" },
+                        "\u5B8C\u6210\u6279\u91CF\u8BA1\u7B97\u540E\u4F1A\u5728\u8FD9\u91CC\u663E\u793A\u8BB0\u5F55",
+                      ),
+                    ),
+                  ),
+                )
+              : calcHistory.map((item) =>
+                  /*#__PURE__*/ React.createElement(
+                    "tr",
+                    { key: item.id },
+                    /*#__PURE__*/ React.createElement(
+                      "td",
+                      null,
+                      formatTime(item.time),
+                    ),
+                    /*#__PURE__*/ React.createElement("td", null, item.platform),
+                    /*#__PURE__*/ React.createElement("td", null, item.shopCount),
+                    /*#__PURE__*/ React.createElement(
+                      "td",
+                      null,
+                      item.successCount,
+                    ),
+                    /*#__PURE__*/ React.createElement(
+                      "td",
+                      null,
+                      /*#__PURE__*/ React.createElement(
+                        Tag,
                         {
-                          className: "action-btn action-delete",
-                          onClick: () => deleteHistoryEntry(item.id),
-                          title: "\u5220\u9664\u8BB0\u5F55",
+                          type:
+                            item.status === "success"
+                              ? "success"
+                              : item.status === "processing"
+                                ? "warning"
+                                : "danger",
                         },
-                        /*#__PURE__*/ React.createElement(Icons.Trash, null),
-                        " \u5220\u9664",
+                        item.status === "success"
+                          ? "成功"
+                          : item.status === "processing"
+                            ? "处理中"
+                            : "部分成功",
+                      ),
+                    ),
+                    /*#__PURE__*/ React.createElement(
+                      "td",
+                      null,
+                      /*#__PURE__*/ React.createElement(
+                        "div",
+                        { className: "action-btn-group" },
+                        /*#__PURE__*/ React.createElement(
+                          "button",
+                          {
+                            className: "action-btn action-view",
+                            onClick: () => downloadHistoryEntry(item),
+                            title: "\u4E0B\u8F7D\u5229\u6DA6\u8868",
+                          },
+                          /*#__PURE__*/ React.createElement(Icons.Download, null),
+                          " \u4E0B\u8F7D",
+                        ),
+                        /*#__PURE__*/ React.createElement(
+                          "button",
+                          {
+                            className: "action-btn action-delete",
+                            onClick: () => deleteHistoryEntry(item.id),
+                            title: "\u5220\u9664\u8BB0\u5F55",
+                          },
+                          /*#__PURE__*/ React.createElement(Icons.Trash, null),
+                          " \u5220\u9664",
+                        ),
                       ),
                     ),
                   ),
                 ),
-              ),
+          ),
         ),
       ),
+      confirmDialog &&
+        /*#__PURE__*/ React.createElement(ConfirmModal, {
+          title: confirmDialog.title,
+          message: confirmDialog.message,
+          type: confirmDialog.type,
+          onConfirm: confirmDialog.onConfirm,
+          onCancel: confirmDialog.onCancel,
+        }),
     ),
-    confirmDialog &&
-      /*#__PURE__*/ React.createElement(ConfirmModal, {
-        title: confirmDialog.title,
-        message: confirmDialog.message,
-        type: confirmDialog.type,
-        onConfirm: confirmDialog.onConfirm,
-        onCancel: confirmDialog.onCancel,
-      }),
   );
 };

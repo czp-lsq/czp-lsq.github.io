@@ -15,9 +15,54 @@ const App = () => {
   });
   const [openTabs, setOpenTabs] = useState([{ id: "dashboard", page: "dashboard" }]);
   const [currentPage, setCurrentPage] = useState("dashboard");
-  const [currentPlatform, setCurrentPlatform] = useState("pdd");
-  const [sidebarCollapsed, setSidebarCollapsed] = useState(false);
+  const [currentPlatform, setCurrentPlatform] = useState(() => {
+    if (typeof AppSettings !== "undefined") {
+      return AppSettings.getDefaultPlatform();
+    }
+    return "pdd";
+  });
+  const [sidebarCollapsed, setSidebarCollapsed] = useState(() => {
+    if (typeof AppSettings !== "undefined") {
+      return AppSettings.getSetting("sidebarDefaultCollapsed") === true;
+    }
+    return false;
+  });
+  const [expandedGroups, setExpandedGroups] = useState(() => {
+    const saved = localStorage.getItem("app_sidebar_expanded");
+    if (saved) {
+      try {
+        return JSON.parse(saved);
+      } catch (e) {}
+    }
+    return { config: true, calc: true, system: true };
+  });
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [unreadCount, setUnreadCount] = useState(0);
+  const [notifEnabled, setNotifEnabled] = useState(true);
+  const notifPanelRef = useRef(null);
+
+  useEffect(() => {
+    setUnreadCount(NotificationCenter.getUnreadCount());
+    setNotifEnabled(NotificationCenter.getSettings().masterEnabled !== false);
+    const unsub = NotificationCenter.subscribe(() => {
+      setUnreadCount(NotificationCenter.getUnreadCount());
+      setNotifEnabled(NotificationCenter.getSettings().masterEnabled !== false);
+    });
+    return unsub;
+  }, []);
+
+  useEffect(() => {
+    if (showNotifications) {
+      const handler = (e) => {
+        if (notifPanelRef.current && !notifPanelRef.current.contains(e.target)) {
+          setShowNotifications(false);
+        }
+      };
+      document.addEventListener("mousedown", handler);
+      return () => document.removeEventListener("mousedown", handler);
+    }
+  }, [showNotifications]);
   const [logoUrl, setLogoUrl] = useState(
     () => localStorage.getItem("app_logo_url") || "",
   );
@@ -64,6 +109,17 @@ const App = () => {
   }, [theme]);
 
   useEffect(() => {
+    localStorage.setItem("app_sidebar_expanded", JSON.stringify(expandedGroups));
+  }, [expandedGroups]);
+
+  const toggleGroup = (groupId) => {
+    setExpandedGroups((prev) => ({
+      ...prev,
+      [groupId]: !prev[groupId],
+    }));
+  };
+
+  useEffect(() => {
     document.body.classList.remove("theme-business", "theme-tech", "theme-warm", "theme-elegant");
     document.body.classList.add(`theme-${colorTheme}`);
     localStorage.setItem("app_color_theme", colorTheme);
@@ -80,6 +136,26 @@ const App = () => {
     if (savedTheme === "dark") {
       document.body.classList.add("dark");
     }
+    // 应用界面偏好设置
+    if (typeof AppSettings !== "undefined") {
+      if (AppSettings.getSetting("compactMode")) {
+        document.body.classList.add("compact-mode");
+      }
+      if (!AppSettings.isAnimationEnabled()) {
+        document.body.classList.add("no-animation");
+      }
+    }
+  }, []);
+
+  // 订阅应用设置变化，实时应用界面偏好
+  useEffect(() => {
+    if (typeof AppSettings === "undefined") return;
+    const applySettings = (settings) => {
+      document.body.classList.toggle("compact-mode", !!settings.compactMode);
+      document.body.classList.toggle("no-animation", !settings.animationEnabled);
+    };
+    applySettings(AppSettings.get());
+    return AppSettings.subscribe(applySettings);
   }, []);
 
   const toggleTheme = () => {
@@ -89,12 +165,95 @@ const App = () => {
   const changeColorTheme = (newTheme) => {
     setColorTheme(newTheme);
   };
+  const navGroups = [
+    {
+      id: "home",
+      type: "single",
+      items: [
+        {
+          id: "dashboard",
+          name: "数据概览",
+          icon: /*#__PURE__*/ React.createElement(Icons.Home, null),
+        },
+      ],
+    },
+    {
+      id: "config",
+      type: "group",
+      title: "配置管理",
+      icon: /*#__PURE__*/ React.createElement(Icons.Settings, null),
+      items: [
+        {
+          id: "template",
+          name: "模板中心",
+          icon: /*#__PURE__*/ React.createElement(Icons.FileSpreadsheet, null),
+        },
+        {
+          id: "data",
+          name: "配置中心",
+          icon: /*#__PURE__*/ React.createElement(Icons.Database, null),
+        },
+        {
+          id: "shops",
+          name: "店铺管理",
+          icon: /*#__PURE__*/ React.createElement(Icons.Store, null),
+        },
+      ],
+    },
+    {
+      id: "calc",
+      type: "group",
+      title: "计算中心",
+      icon: /*#__PURE__*/ React.createElement(Icons.Calculator, null),
+      items: [
+        {
+          id: "rules",
+          name: "计算规则",
+          icon: /*#__PURE__*/ React.createElement(Icons.FileText, null),
+          highlight: true,
+        },
+        {
+          id: "batch",
+          name: "批量计算",
+          icon: /*#__PURE__*/ React.createElement(Icons.Zap, null),
+          highlight: true,
+        },
+        {
+          id: "history",
+          name: "计算记录",
+          icon: /*#__PURE__*/ React.createElement(Icons.History, null),
+        },
+      ],
+    },
+    {
+      id: "system",
+      type: "group",
+      title: "系统管理",
+      icon: /*#__PURE__*/ React.createElement(Icons.Layers, null),
+      items: [
+        {
+          id: "storage",
+          name: "数据管理",
+          icon: /*#__PURE__*/ React.createElement(Icons.HardDrive, null),
+        },
+        {
+          id: "help",
+          name: "使用帮助",
+          icon: /*#__PURE__*/ React.createElement(Icons.HelpCircle, null),
+        },
+      ],
+    },
+  ];
   const handleNavigate = (pageId) => {
     setOpenTabs((prev) => {
       if (prev.find((t) => t.id === pageId)) return prev;
       return [...prev, { id: pageId, page: pageId }];
     });
     setCurrentPage(pageId);
+    const group = navGroups.find((g) => g.items.some((i) => i.id === pageId));
+    if (group && group.type === "group" && expandedGroups[group.id] === false) {
+      toggleGroup(group.id);
+    }
   };
   const closeTab = (tabId, e) => {
     if (e) e.stopPropagation();
@@ -110,67 +269,6 @@ const App = () => {
       return newTabs;
     });
   };
-  const navGroups = [
-    {
-      id: "main",
-      items: [
-        {
-          id: "dashboard",
-          name: "数据概览",
-          icon: /*#__PURE__*/ React.createElement(Icons.Home, null),
-        },
-        {
-          id: "template",
-          name: "模板中心",
-          icon: /*#__PURE__*/ React.createElement(Icons.FileSpreadsheet, null),
-        },
-        {
-          id: "data",
-          name: "配置中心",
-          icon: /*#__PURE__*/ React.createElement(Icons.Database, null),
-        },
-        {
-          id: "rules",
-          name: "计算规则",
-          icon: /*#__PURE__*/ React.createElement(Icons.Calculator, null),
-          highlight: true,
-        },
-      ],
-    },
-    {
-      id: "core",
-      title: "核心功能",
-      items: [
-        {
-          id: "batch",
-          name: "批量计算",
-          icon: /*#__PURE__*/ React.createElement(Icons.Zap, null),
-          highlight: true,
-        },
-      ],
-    },
-    {
-      id: "manage",
-      title: "系统管理",
-      items: [
-        {
-          id: "shops",
-          name: "店铺管理",
-          icon: /*#__PURE__*/ React.createElement(Icons.Store, null),
-        },
-        {
-          id: "storage",
-          name: "数据管理",
-          icon: /*#__PURE__*/ React.createElement(Icons.HardDrive, null),
-        },
-        {
-          id: "help",
-          name: "使用帮助",
-          icon: /*#__PURE__*/ React.createElement(Icons.HelpCircle, null),
-        },
-      ],
-    },
-  ];
   const pageTitles = {
     dashboard: { title: "数据概览", subtitle: "查看系统配置和统计信息" },
     template: { title: "模板中心", subtitle: "上传和配置利润表模板" },
@@ -246,14 +344,62 @@ const App = () => {
     }
   };
   const handleLogin = (userInfo) => {
+    let accounts = [];
+    try {
+      const saved = localStorage.getItem("app_accounts");
+      if (saved) {
+        accounts = JSON.parse(saved);
+      }
+    } catch (e) {}
+    if (accounts.length === 0) {
+      accounts = [{
+        id: "admin_001",
+        username: "admin",
+        password: "admin123",
+        name: "管理员",
+        role: "admin",
+        status: "active",
+      }];
+    }
+    const matchedAccount = accounts.find(
+      (a) =>
+        a.username === userInfo.username.trim() &&
+        a.status === "active",
+    );
+    if (!matchedAccount) {
+      if (typeof userInfo.onError === "function") {
+        userInfo.onError("用户名或密码错误，或账户已被禁用");
+      }
+      return;
+    }
+    if (matchedAccount.password && userInfo.password && matchedAccount.password !== userInfo.password) {
+      if (typeof userInfo.onError === "function") {
+        userInfo.onError("用户名或密码错误");
+      }
+      return;
+    }
+    const userData = {
+      id: matchedAccount.id,
+      username: matchedAccount.username,
+      name: matchedAccount.name || matchedAccount.username,
+      role: matchedAccount.role || "user",
+      email: matchedAccount.email,
+      remember: userInfo.remember,
+    };
     setIsLoggedIn(true);
-    setCurrentUser(userInfo);
+    setCurrentUser(userData);
     if (userInfo.remember) {
-      localStorage.setItem("app_login_user", JSON.stringify({ username: userInfo.username }));
+      localStorage.setItem("app_login_user", JSON.stringify({ username: userData.username }));
     } else {
       localStorage.removeItem("app_login_user");
     }
-    ActivityLogger.add("用户登录", "");
+    const updatedAccounts = accounts.map((a) =>
+      a.id === matchedAccount.id
+        ? { ...a, lastLogin: new Date().toISOString() }
+        : a,
+    );
+    localStorage.setItem("app_accounts", JSON.stringify(updatedAccounts));
+    ActivityLogger.add("用户登录", userData.username);
   };
   const handleLogout = () => {
     setShowLogoutConfirm(true);
@@ -329,22 +475,17 @@ const App = () => {
       /*#__PURE__*/ React.createElement(
         "nav",
         { className: "sidebar-nav" },
-        navGroups.map((group) =>
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { key: group.id, className: "nav-group" },
-            group.title &&
-              /*#__PURE__*/ React.createElement(
-                "div",
-                { className: "nav-group-title" },
-                group.title,
-              ),
-            group.items.map((item) =>
+        navGroups.map((group) => {
+          if (group.type === "single") {
+            const item = group.items[0];
+            return /*#__PURE__*/ React.createElement(
+              "div",
+              { key: group.id, className: "nav-group" },
               /*#__PURE__*/ React.createElement(
                 "div",
                 {
                   key: item.id,
-                  className: `nav-item ${currentPage === item.id ? "active" : ""} ${item.highlight ? "nav-highlight" : ""} ${item.indent ? "nav-indent" : ""}`,
+                  className: `nav-item ${currentPage === item.id ? "active" : ""} ${item.highlight ? "nav-highlight" : ""}`,
                   onClick: () => handleNavigate(item.id),
                   "data-tooltip": item.name,
                 },
@@ -361,9 +502,61 @@ const App = () => {
                     "\u6838\u5FC3",
                   ),
               ),
+            );
+          }
+          const isExpanded = expandedGroups[group.id] !== false;
+          const hasActiveItem = group.items.some((item) => currentPage === item.id);
+          return /*#__PURE__*/ React.createElement(
+            "div",
+            { key: group.id, className: "nav-group nav-group-collapsible" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              {
+                className: `nav-group-header ${hasActiveItem ? "has-active" : ""}`,
+                onClick: () => toggleGroup(group.id),
+                "data-tooltip": group.title,
+              },
+              /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "nav-icon" },
+                group.icon,
+              ),
+              /*#__PURE__*/ React.createElement("span", { className: "nav-text nav-group-title-text" }, group.title),
+              /*#__PURE__*/ React.createElement(
+                "span",
+                { className: `nav-group-arrow ${isExpanded ? "expanded" : ""}` },
+                /*#__PURE__*/ React.createElement(Icons.ChevronDown, null),
+              ),
             ),
-          ),
-        ),
+            isExpanded && /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "nav-sub-items" },
+              group.items.map((item) =>
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  {
+                    key: item.id,
+                    className: `nav-item nav-sub-item ${currentPage === item.id ? "active" : ""} ${item.highlight ? "nav-highlight" : ""}`,
+                    onClick: () => handleNavigate(item.id),
+                    "data-tooltip": item.name,
+                  },
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "nav-icon nav-sub-icon" },
+                    item.icon,
+                  ),
+                  /*#__PURE__*/ React.createElement("span", { className: "nav-text" }, item.name),
+                  item.highlight &&
+                    /*#__PURE__*/ React.createElement(
+                      "span",
+                      { className: "nav-badge nav-sub-badge" },
+                      "\u6838\u5FC3",
+                    ),
+                ),
+              ),
+            ),
+          );
+        }),
         /*#__PURE__*/ React.createElement(
           "div",
           {
@@ -504,6 +697,128 @@ const App = () => {
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "header-actions-group" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "notification-wrapper", ref: notifPanelRef },
+              notifEnabled && /*#__PURE__*/ React.createElement(
+                "button",
+                {
+                  className: "header-icon-btn notification-btn",
+                  onClick: () => setShowNotifications(!showNotifications),
+                  title: "\u901A\u77E5\u4E2D\u5FC3",
+                },
+                /*#__PURE__*/ React.createElement(Icons.Bell, null),
+                unreadCount > 0 && /*#__PURE__*/ React.createElement(
+                  "span",
+                  { className: "notification-badge" },
+                  unreadCount > 99 ? "99+" : unreadCount,
+                ),
+              ),
+              notifEnabled && showNotifications && /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "notification-panel" },
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "notification-panel-header" },
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "notification-panel-title" },
+                    "\u901A\u77E5\u4E2D\u5FC3",
+                    unreadCount > 0 && /*#__PURE__*/ React.createElement(
+                      "span",
+                      { className: "notification-unread-count" },
+                      unreadCount,
+                      "\u6761\u672A\u8BFB",
+                    ),
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "notification-panel-actions" },
+                    unreadCount > 0 && /*#__PURE__*/ React.createElement(
+                      "button",
+                      {
+                        className: "notification-action-btn",
+                        onClick: () => NotificationCenter.markAllAsRead(),
+                      },
+                      "\u5168\u90E8\u5DF2\u8BFB",
+                    ),
+                    NotificationCenter.getNotifications().length > 0 && /*#__PURE__*/ React.createElement(
+                      "button",
+                      {
+                        className: "notification-action-btn",
+                        onClick: () => NotificationCenter.clearAll(),
+                      },
+                      "\u6E05\u7A7A",
+                    ),
+                  ),
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "notification-list" },
+                  NotificationCenter.getNotifications().length === 0
+                    ? /*#__PURE__*/ React.createElement(
+                        "div",
+                        { className: "notification-empty" },
+                        /*#__PURE__*/ React.createElement(
+                          "div",
+                          { className: "notification-empty-icon" },
+                          /*#__PURE__*/ React.createElement(Icons.Inbox, null),
+                        ),
+                        /*#__PURE__*/ React.createElement(
+                          "div",
+                          { className: "notification-empty-text" },
+                          "\u6682\u65E0\u901A\u77E5",
+                        ),
+                      )
+                    : NotificationCenter.getNotifications().slice(0, 20).map((notif) =>
+                        /*#__PURE__*/ React.createElement(
+                          "div",
+                          {
+                            key: notif.id,
+                            className: `notification-item ${notif.read ? "read" : "unread"}`,
+                            onClick: () => NotificationCenter.markAsRead(notif.id),
+                          },
+                          /*#__PURE__*/ React.createElement(
+                            "div",
+                            { className: `notification-item-icon ${notif.type}` },
+                            notif.type === "success" && /*#__PURE__*/ React.createElement(Icons.CheckCircle, null),
+                            notif.type === "error" && /*#__PURE__*/ React.createElement(Icons.XCircle, null),
+                            notif.type === "warning" && /*#__PURE__*/ React.createElement(Icons.AlertTriangle, null),
+                            notif.type === "info" && /*#__PURE__*/ React.createElement(Icons.Info, null),
+                          ),
+                          /*#__PURE__*/ React.createElement(
+                            "div",
+                            { className: "notification-item-content" },
+                            /*#__PURE__*/ React.createElement(
+                              "div",
+                              { className: "notification-item-title" },
+                              notif.title,
+                            ),
+                            /*#__PURE__*/ React.createElement(
+                              "div",
+                              { className: "notification-item-message" },
+                              notif.message,
+                            ),
+                            /*#__PURE__*/ React.createElement(
+                              "div",
+                              { className: "notification-item-time" },
+                              new Date(notif.time).toLocaleString("zh-CN", {
+                                month: "2-digit",
+                                day: "2-digit",
+                                hour: "2-digit",
+                                minute: "2-digit",
+                              }),
+                            ),
+                          ),
+                          !notif.read && /*#__PURE__*/ React.createElement(
+                            "div",
+                            { className: "notification-unread-dot" },
+                          ),
+                        ),
+                      ),
+                ),
+              ),
+            ),
             /*#__PURE__*/ React.createElement(
               "button",
               {

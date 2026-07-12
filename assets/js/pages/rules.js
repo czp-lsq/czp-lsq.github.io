@@ -1,12 +1,61 @@
 // RulesPage - 计算规则页面组件
 const RulesPage = ({ state, currentPlatform }) => {
   const { addToast } = useToast();
-  const [activeField, setActiveField] = useState(null);
-  const [expandedStep, setExpandedStep] = useState(null);
+  const [activeField, setActiveField] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`rules_page_active_field_${currentPlatform}`);
+      if (saved) {
+        const parsed = JSON.parse(saved);
+        const template = state.templates[currentPlatform];
+        const fields = template?.parseResult?.fields || [];
+        if (fields.find((f) => f.id === parsed.id)) return parsed;
+      }
+    } catch (e) {}
+    return null;
+  });
+  const [expandedStep, setExpandedStep] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`rules_page_expanded_step_${currentPlatform}`);
+      return saved ? JSON.parse(saved) : null;
+    } catch (e) { return null; }
+  });
+
+  useEffect(() => {
+    if (activeField) {
+      localStorage.setItem(`rules_page_active_field_${currentPlatform}`, JSON.stringify(activeField));
+    } else {
+      localStorage.removeItem(`rules_page_active_field_${currentPlatform}`);
+    }
+  }, [activeField, currentPlatform]);
+
+  useEffect(() => {
+    if (expandedStep !== null && expandedStep !== undefined) {
+      localStorage.setItem(`rules_page_expanded_step_${currentPlatform}`, JSON.stringify(expandedStep));
+    } else {
+      localStorage.removeItem(`rules_page_expanded_step_${currentPlatform}`);
+    }
+  }, [expandedStep, currentPlatform]);
+
   const [previewResult, setPreviewResult] = useState(null);
   const [presetCategory, setPresetCategory] = useState("all");
-  const [fieldSearch, setFieldSearch] = useState("");
-  const [fieldFilter, setFieldFilter] = useState("all"); // all | done | pending | warning
+  const [fieldSearch, setFieldSearch] = useState(() => {
+    try {
+      return localStorage.getItem(`rules_page_field_search_${currentPlatform}`) || "";
+    } catch (e) { return ""; }
+  });
+  const [fieldFilter, setFieldFilter] = useState(() => {
+    try {
+      return localStorage.getItem(`rules_page_field_filter_${currentPlatform}`) || "all";
+    } catch (e) { return "all"; }
+  });
+
+  useEffect(() => {
+    localStorage.setItem(`rules_page_field_search_${currentPlatform}`, fieldSearch);
+  }, [fieldSearch, currentPlatform]);
+
+  useEffect(() => {
+    localStorage.setItem(`rules_page_field_filter_${currentPlatform}`, fieldFilter);
+  }, [fieldFilter, currentPlatform]);
   const [showCopyModal, setShowCopyModal] = useState(false);
   const [copySourceFieldId, setCopySourceFieldId] = useState("");
   const [showPresets, setShowPresets] = useState(false);
@@ -1891,6 +1940,29 @@ const RulesPage = ({ state, currentPlatform }) => {
           ),
         );
       case "formula":
+        const getAvailableFields = () => {
+          const avail = [];
+          avail.push({ key: "val", name: "上一步结果", type: "result" });
+          if (stepResults && stepResults.length > 0) {
+            const lastResult = stepResults[stepResults.length - 1];
+            if (lastResult.preview && lastResult.preview.length > 0) {
+              const sampleRow = lastResult.preview[0];
+              Object.keys(sampleRow).forEach((k) => {
+                if (k !== "val" && k !== "_groupCount") {
+                  avail.push({ key: k, name: k, type: "field" });
+                }
+              });
+            }
+          }
+          Object.keys(savedRules).forEach((fieldId) => {
+            const field = fields.find((f) => f.id === fieldId);
+            if (field && field.id !== activeField?.id && savedRules[fieldId]?.steps?.length > 0) {
+              avail.push({ key: field.name, name: field.name + " (已计算字段)", type: "computed" });
+            }
+          });
+          return avail;
+        };
+        const availFields = getAvailableFields();
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
@@ -1905,15 +1977,43 @@ const RulesPage = ({ state, currentPlatform }) => {
             /*#__PURE__*/ React.createElement(
               "div",
               { className: "formula-editor" },
-              /*#__PURE__*/ React.createElement("input", {
-                type: "text",
-                className: "input",
+              /*#__PURE__*/ React.createElement("textarea", {
+                className: "input formula-textarea",
                 value: step.config.expr,
                 onChange: (e) =>
                   updateStepConfig(step.id, "expr", e.target.value),
-                placeholder: "{val} * 0.7 + 100",
-                style: { fontFamily: "var(--font-mono)" },
+                placeholder: "{val} * 0.7 + {销售额} * 0.3",
+                style: { fontFamily: "var(--font-mono)", minHeight: "80px" },
               }),
+            ),
+          ),
+          availFields.length > 1 && /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-label" },
+              "\u53EF\u7528\u5B57\u6BB5",
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "formula-field-list" },
+              availFields.map((f, i) =>
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  {
+                    key: i,
+                    className: `formula-field-chip ${f.type}`,
+                    onClick: () => {
+                      const insert = f.type === "result" ? `{${f.key}}` : `{${f.name}}`;
+                      const newExpr = (step.config.expr || "") + insert;
+                      updateStepConfig(step.id, "expr", newExpr);
+                    },
+                    title: "\u70B9\u51FB\u63D2\u5165\u516C\u5F0F",
+                  },
+                  f.name,
+                ),
+              ),
             ),
           ),
           /*#__PURE__*/ React.createElement(
@@ -1922,7 +2022,7 @@ const RulesPage = ({ state, currentPlatform }) => {
             /*#__PURE__*/ React.createElement(
               "div",
               { style: { marginBottom: 8, fontWeight: 600 } },
-              "\u8BED\u6CD5\u63D0\u793A\uFF1A",
+              "\u5E38\u7528\u51FD\u6570\uFF08\u70B9\u51FB\u63D2\u5165\uFF09\uFF1A",
             ),
             CalcEngine.getFormulaHints().map((hint, i) =>
               /*#__PURE__*/ React.createElement(
@@ -1931,7 +2031,7 @@ const RulesPage = ({ state, currentPlatform }) => {
                   key: i,
                   className: "formula-hint-item",
                   onClick: () => {
-                    const newExpr = step.config.expr + hint.key;
+                    const newExpr = (step.config.expr || "") + hint.key;
                     updateStepConfig(step.id, "expr", newExpr);
                   },
                 },
@@ -1949,8 +2049,10 @@ const RulesPage = ({ state, currentPlatform }) => {
             { className: "step-desc" },
             /*#__PURE__*/ React.createElement(Icons.Info, null),
             " \u4F7F\u7528 ",
-            "{val}",
-            " \u5F15\u7528\u4E0A\u4E00\u6B65\u7ED3\u679C\uFF0C\u652F\u6301\u6807\u51C6JavaScript\u6570\u5B66\u8FD0\u7B97",
+            /*#__PURE__*/ React.createElement("code", null, "{字段名}"),
+            " \u5F15\u7528\u5B57\u6BB5\u503C\uFF0C",
+            /*#__PURE__*/ React.createElement("code", null, "{val}"),
+            " \u4EE3\u8868\u4E0A\u4E00\u6B65\u7ED3\u679C\uFF0C\u652F\u6301\u6240\u6709JavaScript\u6570\u5B66\u51FD\u6570",
           ),
         );
       case "virtual":
@@ -2251,7 +2353,9 @@ const RulesPage = ({ state, currentPlatform }) => {
             " \u521B\u5EFA\u865A\u62DF\u5B57\u6BB5\uFF0C\u5BF9\u6570\u636E\u8FDB\u884C\u8F6C\u6362\u5904\u7406",
           ),
         );
-      case "join":
+      case "join": {
+        const joinTable = sampleTables.find((t) => t.id === step.config.table);
+        const joinHeaders = joinTable?.headers || [];
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
@@ -2268,8 +2372,11 @@ const RulesPage = ({ state, currentPlatform }) => {
               {
                 className: "select",
                 value: step.config.table,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "table", e.target.value),
+                onChange: (e) => {
+                  updateStepConfig(step.id, "table", e.target.value);
+                  updateStepConfig(step.id, "fk", "");
+                  updateStepConfig(step.id, "col", "");
+                },
               },
               /*#__PURE__*/ React.createElement(
                 "option",
@@ -2296,14 +2403,19 @@ const RulesPage = ({ state, currentPlatform }) => {
                 { className: "form-label" },
                 "\u4E3B\u8868\u5173\u8054\u952E",
               ),
-              /*#__PURE__*/ React.createElement("input", {
-                type: "text",
-                className: "input",
-                value: step.config.key,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "key", e.target.value),
-                placeholder: "\u4E3B\u8868\u5B57\u6BB5\u540D",
-              }),
+              /*#__PURE__*/ React.createElement(
+                "select",
+                {
+                  className: "select",
+                  value: step.config.key,
+                  onChange: (e) =>
+                    updateStepConfig(step.id, "key", e.target.value),
+                },
+                /*#__PURE__*/ React.createElement("option", { value: "" }, "\u8BF7\u9009\u62E9\u5B57\u6BB5"),
+                sourceTableHeaders.map((h) =>
+                  /*#__PURE__*/ React.createElement("option", { key: h, value: h }, h),
+                ),
+              ),
             ),
             /*#__PURE__*/ React.createElement(
               "div",
@@ -2313,14 +2425,20 @@ const RulesPage = ({ state, currentPlatform }) => {
                 { className: "form-label" },
                 "\u5173\u8054\u8868\u5916\u952E",
               ),
-              /*#__PURE__*/ React.createElement("input", {
-                type: "text",
-                className: "input",
-                value: step.config.fk,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "fk", e.target.value),
-                placeholder: "\u5173\u8054\u8868\u5B57\u6BB5\u540D",
-              }),
+              /*#__PURE__*/ React.createElement(
+                "select",
+                {
+                  className: "select",
+                  value: step.config.fk,
+                  onChange: (e) =>
+                    updateStepConfig(step.id, "fk", e.target.value),
+                  disabled: !step.config.table,
+                },
+                /*#__PURE__*/ React.createElement("option", { value: "" }, step.config.table ? "\u8BF7\u9009\u62E9\u5B57\u6BB5" : "\u5148\u9009\u62E9\u5173\u8054\u8868"),
+                joinHeaders.map((h) =>
+                  /*#__PURE__*/ React.createElement("option", { key: h, value: h }, h),
+                ),
+              ),
             ),
           ),
           /*#__PURE__*/ React.createElement(
@@ -2331,21 +2449,28 @@ const RulesPage = ({ state, currentPlatform }) => {
               { className: "form-label" },
               "\u53D6\u5173\u8054\u8868\u5217",
             ),
-            /*#__PURE__*/ React.createElement("input", {
-              type: "text",
-              className: "input",
-              value: step.config.col,
-              onChange: (e) => updateStepConfig(step.id, "col", e.target.value),
-              placeholder: "\u8981\u63D0\u53D6\u7684\u5B57\u6BB5\u540D",
-            }),
+            /*#__PURE__*/ React.createElement(
+              "select",
+                {
+                  className: "select",
+                  value: step.config.col,
+                  onChange: (e) => updateStepConfig(step.id, "col", e.target.value),
+                  disabled: !step.config.table,
+                },
+                /*#__PURE__*/ React.createElement("option", { value: "" }, step.config.table ? "\u8BF7\u9009\u62E9\u5B57\u6BB5" : "\u5148\u9009\u62E9\u5173\u8054\u8868"),
+                joinHeaders.map((h) =>
+                  /*#__PURE__*/ React.createElement("option", { key: h, value: h }, h),
+                ),
+            ),
           ),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "step-desc" },
             /*#__PURE__*/ React.createElement(Icons.Info, null),
-            " \u6839\u636E\u5173\u8054\u952E\u4ECE\u53E6\u4E00\u4E2A\u8868\u4E2D\u83B7\u53D6\u6570\u636E\u3002\u4E5F\u53EF\u5728\u5916\u90E8\u6570\u636E\u8868\u4E2D\u9009\u62E9\u300C\u8DE8\u8868\u5173\u8054\u300D\u5E76\u6307\u5B9A externalId",
+            " \u6839\u636E\u4E3B\u8868\u5173\u8054\u952E\u4ECE\u5173\u8054\u8868\u4E2D\u5339\u914D\u6570\u636E\uFF0C\u5C06\u5173\u8054\u8868\u4E2D\u6307\u5B9A\u5217\u7684\u503C\u586B\u5145\u5230\u5F53\u524D\u5B57\u6BB5\u3002\u9002\u7528\u4E8E\u901A\u8FC7\u5546\u54C1ID\u5173\u8054\u6210\u672C\u8868\u3001\u901A\u8FC7\u5E97\u94FA\u540D\u5173\u8054\u5B9A\u4EF7\u8868\u7B49\u573A\u666F\u3002",
           ),
         );
+      }
       case "distinct":
         return /*#__PURE__*/ React.createElement(
           "div",
@@ -2803,11 +2928,109 @@ const RulesPage = ({ state, currentPlatform }) => {
           ),
           /*#__PURE__*/ React.createElement(
             "div",
+            { className: "grid-2" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u5339\u914D\u6A21\u5F0F",
+              ),
+              /*#__PURE__*/ React.createElement(
+                "select",
+                {
+                  className: "select",
+                  value: step.config.mode || "exact",
+                  onChange: (e) =>
+                    updateStepConfig(step.id, "mode", e.target.value),
+                },
+                /*#__PURE__*/ React.createElement(
+                  "option",
+                  { value: "exact" },
+                  "\u7CBE\u786E\u5339\u914D",
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "option",
+                  { value: "contains" },
+                  "\u5305\u542B\u5339\u914D",
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "option",
+                  { value: "regex" },
+                  "\u6B63\u5219\u5339\u914D",
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "option",
+                  { value: "startsWith" },
+                  "\u5F00\u5934\u5339\u914D",
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "option",
+                  { value: "endsWith" },
+                  "\u7ED3\u5C3E\u5339\u914D",
+                ),
+              ),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u672A\u5339\u914D\u65F6",
+              ),
+              /*#__PURE__*/ React.createElement(
+                "select",
+                {
+                  className: "select",
+                  value: step.config.onMiss || "keep",
+                  onChange: (e) =>
+                    updateStepConfig(step.id, "onMiss", e.target.value),
+                },
+                /*#__PURE__*/ React.createElement(
+                  "option",
+                  { value: "keep" },
+                  "\u4FDD\u7559\u539F\u503C",
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "option",
+                  { value: "default" },
+                  "\u4F7F\u7528\u9ED8\u8BA4\u503C",
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "option",
+                  { value: "empty" },
+                  "\u7F6E\u7A7A",
+                ),
+              ),
+            ),
+          ),
+          step.config.onMiss === "default" &&
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u9ED8\u8BA4\u503C",
+              ),
+              /*#__PURE__*/ React.createElement("input", {
+                type: "text",
+                className: "input",
+                value: step.config.defaultValue || "",
+                onChange: (e) =>
+                  updateStepConfig(step.id, "defaultValue", e.target.value),
+                placeholder: "\u672A\u5339\u914D\u65F6\u8FD4\u56DE\u7684\u9ED8\u8BA4\u503C",
+              }),
+            ),
+          /*#__PURE__*/ React.createElement(
+            "div",
             { className: "form-item" },
             /*#__PURE__*/ React.createElement(
               "label",
               { className: "form-label" },
-              "\u6620\u5C04\u8868",
+              "\u6620\u5C04\u89C4\u5219",
             ),
             /*#__PURE__*/ React.createElement(
               "div",
@@ -2828,7 +3051,7 @@ const RulesPage = ({ state, currentPlatform }) => {
                       newPairs[idx] = { ...pair, from: e.target.value };
                       updateStepConfig(step.id, "pairs", newPairs);
                     },
-                    placeholder: "\u539F\u503C",
+                    placeholder: "\u539F\u503C/\u6A21\u5F0F",
                     style: { flex: 1 },
                   }),
                   /*#__PURE__*/ React.createElement(
@@ -2867,6 +3090,7 @@ const RulesPage = ({ state, currentPlatform }) => {
                 Button,
                 {
                   size: "sm",
+                  variant: "outline",
                   onClick: () => {
                     const newPairs = [
                       ...(step.config.pairs || []),
@@ -2876,7 +3100,7 @@ const RulesPage = ({ state, currentPlatform }) => {
                   },
                 },
                 /*#__PURE__*/ React.createElement(Icons.Plus, null),
-                " \u6DFB\u52A0\u6620\u5C04",
+                " \u6DFB\u52A0\u6620\u5C04\u89C4\u5219",
               ),
             ),
           ),
@@ -2884,7 +3108,7 @@ const RulesPage = ({ state, currentPlatform }) => {
             "div",
             { className: "step-desc" },
             /*#__PURE__*/ React.createElement(Icons.Info, null),
-            " \u67E5\u627E\u6307\u5B9A\u5217\u7684\u503C\u5E76\u66FF\u6362\u4E3A\u6620\u5C04\u8868\u4E2D\u7684\u5BF9\u5E94\u503C",
+            " \u6839\u636E\u6620\u5C04\u8868\u67E5\u627E\u5E76\u66FF\u6362\u503C\u3002\u652F\u6301\u7CBE\u786E\u5339\u914D\u3001\u5305\u542B\u5339\u914D\u3001\u6B63\u5219\u5339\u914D\u7B49\u591A\u79CD\u6A21\u5F0F\u3002\u53EF\u7528\u4E8E\u5C06\u6587\u672C\u63CF\u8FF0\uFF08\u5982\u300C\u767D+\u9ED1+\u7070\u300D\u300C6\u6761\u88C5\u300D\uFF09\u8F6C\u6362\u4E3A\u6570\u503C\u3002",
           ),
         );
       case "constant":
@@ -4854,28 +5078,89 @@ const RulesPage = ({ state, currentPlatform }) => {
               /*#__PURE__*/ React.createElement(
                 "div",
                 {
-                  className: "empty",
+                  className: "rules-guide",
                   style: {
                     flex: 1,
-                    display: "flex",
-                    flexDirection: "column",
-                    justifyContent: "center",
+                    overflow: "auto",
+                    padding: "24px",
                   },
                 },
                 /*#__PURE__*/ React.createElement(
                   "div",
-                  { className: "empty-icon" },
-                  "\uD83D\uDC46",
+                  { className: "rules-guide-hero" },
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "empty-icon", style: { fontSize: 48, marginBottom: 12 } },
+                    "\uD83D\uDC46",
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "empty-text", style: { fontSize: 16, fontWeight: 600, marginBottom: 4 } },
+                    "\u8BF7\u9009\u62E9\u5DE6\u4FA7\u5B57\u6BB5\u5F00\u59CB\u914D\u7F6E",
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "empty-desc" },
+                    "\u9009\u62E9\u5B57\u6BB5\u540E\u53EF\u914D\u7F6E\u5BF9\u5E94\u7684\u8BA1\u7B97\u89C4\u5219\uFF0C\u4E0B\u65B9\u662F\u5E38\u89C1\u914D\u7F6E\u573A\u666F\u793A\u4F8B",
+                  ),
                 ),
                 /*#__PURE__*/ React.createElement(
                   "div",
-                  { className: "empty-text" },
-                  "\u8BF7\u9009\u62E9\u5DE6\u4FA7\u5B57\u6BB5",
+                  { className: "rules-guide-section" },
+                  /*#__PURE__*/ React.createElement("h3", { className: "rules-guide-title" }, "\uD83D\uDCE5 \u573A\u666F\u4E00\uFF1A\u81EA\u52A8\u586B\u5145\u65E5\u671F\u548C\u5E97\u94FA\u540D"),
+                  /*#__PURE__*/ React.createElement("p", { className: "rules-guide-desc" }, "\u5BF9\u4E8E\u6A21\u677F\u4E2D\u7684\u5360\u4F4D\u7B26\uFF08\u5982 xxxx\u3001xx\u5E74xx\u6708\uFF09\uFF0C\u7CFB\u7EDF\u4F1A\u81EA\u52A8\u8BC6\u522B\u7C7B\u578B\u5E76\u586B\u5145\u3002"),
+                  /*#__PURE__*/ React.createElement("div", { className: "rules-guide-steps" },
+                    React.createElement("div", { className: "rules-guide-step" }, "1. \u9009\u62E9\u5B57\u6BB5 \u2192 \u6DFB\u52A0\u300C\u586B\u5145\u5360\u4F4D\u7B26\u300D\u6B65\u9AA4"),
+                    React.createElement("div", { className: "rules-guide-step" }, "2. \u586B\u5145\u65B9\u5F0F\u9009\u62E9\u300C\u81EA\u52A8\u300D\uFF0C\u7CFB\u7EDF\u6839\u636E\u5B57\u6BB5\u7C7B\u578B\u81EA\u52A8\u586B\u5145"),
+                    React.createElement("div", { className: "rules-guide-step" }, "3. \u4E5F\u53EF\u9009\u62E9\u300C\u6307\u5B9A\u503C\u300D\u624B\u52A8\u8F93\u5165\u56FA\u5B9A\u5185\u5BB9"),
+                  ),
                 ),
                 /*#__PURE__*/ React.createElement(
                   "div",
-                  { className: "empty-desc" },
-                  "\u9009\u62E9\u5B57\u6BB5\u540E\u914D\u7F6E\u5BF9\u5E94\u7684\u8BA1\u7B97\u89C4\u5219",
+                  { className: "rules-guide-section" },
+                  /*#__PURE__*/ React.createElement("h3", { className: "rules-guide-title" }, "\uD83D\uDD17 \u573A\u666F\u4E8C\uFF1A\u901A\u8FC7\u5546\u54C1ID\u5173\u8054\u53E6\u4E00\u5F20\u8868\u83B7\u53D6\u6570\u636E"),
+                  /*#__PURE__*/ React.createElement("p", { className: "rules-guide-desc" }, "\u5982\u679C\u5229\u6DA6\u8868\u9700\u8981\u5F15\u7528\u5546\u54C1\u6210\u672C\u8868\u4E2D\u7684\u6570\u636E\uFF0C\u53EF\u4F7F\u7528\u300C\u8DE8\u8868\u5173\u8054\u300D\u6B65\u9AA4\u3002"),
+                  /*#__PURE__*/ React.createElement("div", { className: "rules-guide-steps" },
+                    React.createElement("div", { className: "rules-guide-step" }, "1. \u6DFB\u52A0\u300C\u6570\u636E\u6E90\u300D\u6B65\u9AA4\uFF0C\u9009\u62E9\u4E3B\u6570\u636E\u8868"),
+                    React.createElement("div", { className: "rules-guide-step" }, "2. \u6DFB\u52A0\u300C\u8DE8\u8868\u5173\u8054\u300D\u6B65\u9AA4\uFF0C\u9009\u62E9\u5173\u8054\u6570\u636E\u8868"),
+                    React.createElement("div", { className: "rules-guide-step" }, "3. \u4E3B\u8868\u5173\u8054\u952E\u9009\u62E9\u5546\u54C1ID\u5217\uFF0C\u5173\u8054\u8868\u5916\u952E\u9009\u62E9\u5546\u54C1ID\u5217"),
+                    React.createElement("div", { className: "rules-guide-step" }, "4. \u53D6\u5173\u8054\u8868\u5217\u9009\u62E9\u9700\u8981\u83B7\u53D6\u7684\u5217\uFF08\u5982\u6210\u672C\u4EF7\uFF09"),
+                  ),
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "rules-guide-section" },
+                  /*#__PURE__*/ React.createElement("h3", { className: "rules-guide-title" }, "\uD83D\uDD0D \u573A\u666F\u4E09\uFF1A\u5C06\u6587\u672C\u63CF\u8FF0\u8F6C\u4E3A\u6570\u503C"),
+                  /*#__PURE__*/ React.createElement("p", { className: "rules-guide-desc" }, "\u5982\u300C\u5546\u54C1\u89C4\u683C\u300D\u5217\u6709\u300C\u767D+\u9ED1+\u7070\u300D\u300C6\u6761\u88C5\u300D\u7B49\u63CF\u8FF0\uFF0C\u53EF\u7528\u300C\u67E5\u627E\u66FF\u6362\u300D\u8F6C\u4E3A\u6570\u503C\u3002"),
+                  /*#__PURE__*/ React.createElement("div", { className: "rules-guide-steps" },
+                    React.createElement("div", { className: "rules-guide-step" }, "1. \u6DFB\u52A0\u300C\u67E5\u627E\u66FF\u6362\u300D\u6B65\u9AA4"),
+                    React.createElement("div", { className: "rules-guide-step" }, "2. \u5339\u914D\u6A21\u5F0F\u9009\u62E9\u300C\u5305\u542B\u5339\u914D\u300D"),
+                    React.createElement("div", { className: "rules-guide-step" }, "3. \u6DFB\u52A0\u6620\u5C04\u89C4\u5219\uFF1A\u300C6\u6761\u88C5\u300D\u2192\u300C6\u300D\u3001\u300C3\u6761\u88C5\u300D\u2192\u300C3\u300D"),
+                    React.createElement("div", { className: "rules-guide-step" }, "4. \u672A\u5339\u914D\u65F6\u53EF\u8BBE\u7F6E\u9ED8\u8BA4\u503C\uFF08\u5982 1\uFF09"),
+                  ),
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "rules-guide-section" },
+                  /*#__PURE__*/ React.createElement("h3", { className: "rules-guide-title" }, "\uD83E\uDDEA \u573A\u666F\u56DB\uFF1A\u4F7F\u7528\u516C\u5F0F\u8FDB\u884C\u590D\u6742\u8BA1\u7B97"),
+                  /*#__PURE__*/ React.createElement("p", { className: "rules-guide-desc" }, "\u53EF\u4EE5\u5F15\u7528\u5DF2\u8BA1\u7B97\u5B57\u6BB5\u3001\u6570\u636E\u6E90\u5B57\u6BB5\u8FDB\u884C\u516C\u5F0F\u8BA1\u7B97\u3002"),
+                  /*#__PURE__*/ React.createElement("div", { className: "rules-guide-steps" },
+                    React.createElement("div", { className: "rules-guide-step" }, "1. \u5148\u914D\u7F6E\u597D\u9700\u8981\u5F15\u7528\u7684\u5B57\u6BB5\uFF08\u5982\u300C\u9500\u552E\u989D\u300D\u3001\u300C\u6210\u672C\u300D\uFF09"),
+                    React.createElement("div", { className: "rules-guide-step" }, "2. \u6DFB\u52A0\u300C\u516C\u5F0F\u8BA1\u7B97\u300D\u6B65\u9AA4"),
+                    React.createElement("div", { className: "rules-guide-step" }, "3. \u70B9\u51FB\u53EF\u7528\u5B57\u6BB5\u5217\u8868\u63D2\u5165\u53D8\u91CF\uFF0C\u5982 {销售额} * 0.7 - {成本}"),
+                    React.createElement("div", { className: "rules-guide-step" }, "4. \u652F\u6301 Math.max\u3001Math.round\u3001Math.abs \u7B49\u51FD\u6570"),
+                  ),
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "rules-guide-section" },
+                  /*#__PURE__*/ React.createElement("h3", { className: "rules-guide-title" }, "\uD83D\uDCA1 \u573A\u666F\u4E94\uFF1A\u7ED9\u8868\u65B0\u589E\u4E00\u4E2A\u8BA1\u7B97\u5217"),
+                  /*#__PURE__*/ React.createElement("p", { className: "rules-guide-desc" }, "\u6570\u636E\u6765\u6E90\u4E8E\u672C\u8868\u5173\u8054\u5176\u4ED6\u8868\u540E\u8FDB\u884C\u8BA1\u7B97\uFF0C\u53EF\u7EC4\u5408\u591A\u4E2A\u6B65\u9AA4\u3002"),
+                  /*#__PURE__*/ React.createElement("div", { className: "rules-guide-steps" },
+                    React.createElement("div", { className: "rules-guide-step" }, "1. \u6DFB\u52A0\u300C\u6570\u636E\u6E90\u300D\u2192 \u300C\u8DE8\u8868\u5173\u8054\u300D\u83B7\u53D6\u5173\u8054\u6570\u636E"),
+                    React.createElement("div", { className: "rules-guide-step" }, "2. \u6DFB\u52A0\u300C\u516C\u5F0F\u8BA1\u7B97\u300D\u6216\u300C\u6570\u5B66\u8FD0\u7B97\u300D\u8FDB\u884C\u8BA1\u7B97"),
+                    React.createElement("div", { className: "rules-guide-step" }, "3. \u53EF\u7EE7\u7EED\u6DFB\u52A0\u300C\u56DB\u820D\u4E94\u5165\u300D\u3001\u300C\u6392\u540D\u300D\u7B49\u540E\u7EED\u5904\u7406"),
+                  ),
                 ),
               ),
           ),

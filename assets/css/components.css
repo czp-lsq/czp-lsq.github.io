@@ -28,7 +28,7 @@
 }
 
 .card:hover {
-  box-shadow: var(--shadow-card-hover);
+  box-shadow: var(--shadow-card-hover), var(--theme-glow);
   transform: translateY(-2px);
 }
 
@@ -94,7 +94,7 @@
   left: -100%;
   width: 100%;
   height: 100%;
-  background: linear-gradient(90deg, transparent, var(--color-bg-overlay-shimmer, rgba(255,255,255,0.2)), transparent);
+  background: linear-gradient(90deg, transparent, var(--color-shimmer, rgba(255,255,255,0.15)), transparent);
   animation: loadingShimmer 1.5s infinite;
 }
 
@@ -179,6 +179,8 @@
 
 .btn-success:hover {
   background: var(--color-success-light);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-warning {
@@ -188,6 +190,8 @@
 
 .btn-warning:hover {
   background: var(--color-warning-light);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-danger {
@@ -197,6 +201,8 @@
 
 .btn-danger:hover {
   background: var(--color-danger-light);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-ghost {
@@ -1493,6 +1499,39 @@ body.dark .table-highlight-row {
   border-color: var(--color-accent-light);
 }
 
+.tag {
+  transition: var(--transition-fast);
+}
+
+.tag:hover {
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-xs);
+}
+
+.tag-primary:hover {
+  background: var(--color-primary-100);
+}
+
+.tag-success:hover {
+  background: var(--color-success-bg);
+}
+
+.tag-warning:hover {
+  background: var(--color-warning-bg);
+}
+
+.tag-danger:hover {
+  background: var(--color-danger-bg);
+}
+
+.tag-info:hover {
+  background: var(--color-info-bg);
+}
+
+.tag-accent:hover {
+  background: var(--color-accent-100);
+}
+
 /* ========================================
    Progress 进度条
    ======================================== */
@@ -1523,8 +1562,14 @@ body.dark .table-highlight-row {
   width: 80px;
   height: 80px;
   margin: 0 auto 16px;
-  opacity: 0.5;
+  opacity: 0.6;
   color: var(--color-text-muted);
+  font-size: 48px;
+  line-height: 80px;
+  text-align: center;
+  display: flex;
+  align-items: center;
+  justify-content: center;
 }
 
 .empty-text {

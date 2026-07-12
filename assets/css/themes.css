@@ -149,6 +149,9 @@ body.theme-business {
   --color-bg-overlay: rgba(0, 0, 0, 0.5);
   --color-bg-overlay-dark: rgba(0, 0, 0, 0.7);
 
+  /* Shimmer - 扫光效果 */
+  --color-shimmer: rgba(255, 255, 255, 0.15);
+
   /* Theme Characteristics - 主题特征 */
   --theme-card-style: border;
   --theme-glow: none;

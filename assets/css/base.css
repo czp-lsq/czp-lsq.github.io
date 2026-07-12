@@ -117,6 +117,32 @@ body.theme-elegant {
 }
 body.dark {
   color-scheme: dark;
+  --color-shimmer: rgba(255, 255, 255, 0.1);
+}
+
+/* 紧凑模式 - 减少间距和留白 */
+body.compact-mode .main-content {
+  padding: 16px;
+}
+body.compact-mode .page-header {
+  margin-bottom: 16px;
+}
+body.compact-mode .card {
+  padding: 16px;
+}
+body.compact-mode .settings-section {
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+/* 禁用动画模式 */
+body.no-animation *,
+body.no-animation *::before,
+body.no-animation *::after {
+  animation-duration: 0.01ms !important;
+  animation-iteration-count: 1 !important;
+  transition-duration: 0.01ms !important;
+  scroll-behavior: auto !important;
 }
 
 /* 主题切换时的平滑过渡（仅对关键元素生效，避免性能问题） */

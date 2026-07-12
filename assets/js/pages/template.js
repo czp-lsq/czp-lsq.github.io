@@ -4,7 +4,19 @@ const TemplatePage = ({ state, currentPlatform }) => {
   const [templateFile, setTemplateFile] = useState(null);
   const [templateData, setTemplateData] = useState(null);
   const [parseResult, setParseResult] = useState(null);
-  const [selectedField, setSelectedField] = useState(null);
+  const [selectedField, setSelectedField] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`template_page_selected_field_${currentPlatform}`);
+      return saved || null;
+    } catch (e) { return null; }
+  });
+  useEffect(() => {
+    if (selectedField) {
+      localStorage.setItem(`template_page_selected_field_${currentPlatform}`, selectedField);
+    } else {
+      localStorage.removeItem(`template_page_selected_field_${currentPlatform}`);
+    }
+  }, [selectedField, currentPlatform]);
   const [debugMode, setDebugMode] = useState(false);
   const [isParsing, setIsParsing] = useState(false);
   const [previewExpanded, setPreviewExpanded] = useState(true);

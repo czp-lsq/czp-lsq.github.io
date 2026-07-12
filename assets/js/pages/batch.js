@@ -279,6 +279,8 @@ const BatchPage = ({ state, currentPlatform }) => {
       "success",
       "计算完成",
       `成功计算 ${success}/${calcResults.length} 个文件，共 ${shopCount} 个店铺`,
+      5000,
+      { notificationType: "calculationComplete" },
     );
     Store.set((s) => ({
       ...s,
@@ -401,7 +403,10 @@ const BatchPage = ({ state, currentPlatform }) => {
   const matchedShopCount = Object.keys(fileGroups).filter(
     (k) => k !== "_error" && k !== "_unmatched",
   ).length;
-  const [batchTab, setBatchTab] = useState("calc");
+  const [batchTab, setBatchTab] = useState(() => localStorage.getItem("batch_page_active_tab") || "calc");
+  useEffect(() => {
+    localStorage.setItem("batch_page_active_tab", batchTab);
+  }, [batchTab]);
   return /*#__PURE__*/ React.createElement(
     "div",
     { className: "batch-page fade-in" },

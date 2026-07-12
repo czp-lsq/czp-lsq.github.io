@@ -14,8 +14,14 @@ const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeThe
     confirmDelete: true,
     language: "zh",
     autoUpdateCheck: true,
+    sidebarDefaultCollapsed: false,
+    defaultPlatform: "pdd",
+    pageSize: 20,
+    compactMode: false,
+    animationEnabled: true,
   });
   const [notificationSettings, setNotificationSettings] = useState({
+    masterEnabled: true,
     calculationComplete: true,
     importComplete: true,
     exportComplete: true,
@@ -83,13 +89,25 @@ const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeThe
     if (appSettings.autoSave) {
       const settings = { appSettings, notificationSettings };
       localStorage.setItem("app_settings", JSON.stringify(settings));
+      if (typeof NotificationCenter !== "undefined") {
+        NotificationCenter.refreshSettings();
+      }
+      if (typeof AppSettings !== "undefined") {
+        AppSettings.refresh();
+      }
     }
   }, [appSettings, notificationSettings]);
 
   const saveSettings = () => {
     const settings = { appSettings, notificationSettings };
     localStorage.setItem("app_settings", JSON.stringify(settings));
-    addToast("success", "保存成功", "系统设置已更新");
+    if (typeof NotificationCenter !== "undefined") {
+      NotificationCenter.refreshSettings();
+    }
+    if (typeof AppSettings !== "undefined") {
+      AppSettings.refresh();
+    }
+    addToast("success", "保存成功", "系统设置已更新并立即生效", 3000, { notificationType: "versionUpdate" });
   };
 
   const saveProfile = () => {
@@ -106,12 +124,17 @@ const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeThe
         localStorage.removeItem("app_settings");
         setAppSettings({
           autoSave: true,
-          showTutorial: true,
           confirmDelete: true,
           language: "zh",
           autoUpdateCheck: true,
+          sidebarDefaultCollapsed: false,
+          defaultPlatform: "pdd",
+          pageSize: 20,
+          compactMode: false,
+          animationEnabled: true,
         });
         setNotificationSettings({
+          masterEnabled: true,
           calculationComplete: true,
           importComplete: true,
           exportComplete: true,
@@ -120,6 +143,9 @@ const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeThe
         });
         onChangeColorTheme("business");
         onChangeTheme("light");
+        if (typeof AppSettings !== "undefined") {
+          AppSettings.refresh();
+        }
         addToast("success", "重置成功", "设置已恢复默认值");
         setConfirmDialog(null);
       },
@@ -264,9 +290,9 @@ const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeThe
     addToast("success", "操作成功", `账户已${account.status === "active" ? "禁用" : "启用"}`);
   };
 
-  const Toggle = ({ checked, onChange, label, desc }) => React.createElement(
+  const Toggle = ({ checked, onChange, label, desc, disabled }) => React.createElement(
     "div",
-    { className: "form-row settings-toggle-row" },
+    { className: `form-row settings-toggle-row ${disabled ? "settings-toggle-disabled" : ""}` },
     React.createElement("div", { className: "settings-toggle-label" },
       React.createElement("label", { className: "form-row-label" }, label),
       desc && React.createElement("div", { className: "settings-toggle-desc" }, desc),
@@ -275,7 +301,8 @@ const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeThe
       React.createElement("input", {
         type: "checkbox",
         checked: checked,
-        onChange: (e) => onChange(e.target.checked),
+        onChange: (e) => !disabled && onChange(e.target.checked),
+        disabled: disabled,
       }),
       React.createElement("span", { className: "settings-slider" }),
     ),
@@ -351,12 +378,12 @@ const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeThe
           },
           React.createElement("div", {
             className: "theme-preview",
-            style: { background: "linear-gradient(135deg, #F8F9FA 0%, #FFFFFF 100%)", borderBottom: "1px solid var(--color-border-light)" },
+            style: { background: "linear-gradient(135deg, var(--color-bg-primary) 0%, var(--color-bg-secondary) 100%)", borderBottom: "1px solid var(--color-border-light)" },
           },
             React.createElement("div", { className: "theme-preview-row" },
-              React.createElement("div", { className: "theme-dot", style: { background: "#1A1A2E" } }),
-              React.createElement("div", { className: "theme-dot", style: { background: "#E2E8F0" } }),
-              React.createElement("div", { className: "theme-dot", style: { background: "#A0AEC0" } }),
+              React.createElement("div", { className: "theme-dot", style: { background: "var(--color-text-primary)" } }),
+              React.createElement("div", { className: "theme-dot", style: { background: "var(--color-border)" } }),
+              React.createElement("div", { className: "theme-dot", style: { background: "var(--color-text-muted)" } }),
             ),
           ),
           React.createElement("div", { className: "theme-name" },
@@ -373,12 +400,12 @@ const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeThe
           },
           React.createElement("div", {
             className: "theme-preview",
-            style: { background: "linear-gradient(135deg, #0F172A 0%, #1E293B 100%)", borderBottom: "1px solid rgba(255,255,255,0.1)" },
+            style: { background: "linear-gradient(135deg, var(--color-bg-primary) 0%, var(--color-bg-secondary) 100%)", borderBottom: "1px solid var(--color-border-light)" },
           },
             React.createElement("div", { className: "theme-preview-row" },
-              React.createElement("div", { className: "theme-dot", style: { background: "#F1F5F9" } }),
-              React.createElement("div", { className: "theme-dot", style: { background: "#334155" } }),
-              React.createElement("div", { className: "theme-dot", style: { background: "#64748B" } }),
+              React.createElement("div", { className: "theme-dot", style: { background: "var(--color-text-primary)" } }),
+              React.createElement("div", { className: "theme-dot", style: { background: "var(--color-border)" } }),
+              React.createElement("div", { className: "theme-dot", style: { background: "var(--color-text-muted)" } }),
             ),
           ),
           React.createElement("div", { className: "theme-name" },
@@ -438,7 +465,7 @@ const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeThe
     { className: "settings-content" },
     React.createElement("div", { className: "settings-section" },
       React.createElement("div", { className: "settings-section-title" }, "应用设置"),
-      React.createElement("div", { className: "settings-section-desc" }, "配置应用的行为偏好"),
+      React.createElement("div", { className: "settings-section-desc" }, "配置应用的行为偏好，所有设置保存后立即生效"),
     ),
     React.createElement("div", { className: "settings-section" },
       React.createElement("div", { className: "settings-section-title", style: { fontSize: "14px", marginBottom: "16px" } }, "基础设置"),
@@ -446,23 +473,72 @@ const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeThe
         checked: appSettings.autoSave,
         onChange: (v) => setAppSettings({ ...appSettings, autoSave: v }),
         label: "自动保存",
-        desc: "更改自动保存到本地存储",
+        desc: "更改自动保存到本地存储（关闭后需手动点击保存按钮）",
       }),
       Toggle({
         checked: appSettings.confirmDelete,
         onChange: (v) => setAppSettings({ ...appSettings, confirmDelete: v }),
         label: "删除确认",
-        desc: "删除数据前显示确认对话框",
+        desc: "删除数据前显示确认对话框，防止误删",
       }),
-    ),
-    React.createElement("div", { className: "settings-section" },
-      React.createElement("div", { className: "settings-section-title", style: { fontSize: "14px", marginBottom: "16px" } }, "内容偏好"),
       Toggle({
         checked: appSettings.autoUpdateCheck,
         onChange: (v) => setAppSettings({ ...appSettings, autoUpdateCheck: v }),
         label: "自动检查更新",
-        desc: "定期检查系统更新",
+        desc: "启动时自动检查系统更新",
       }),
+    ),
+    React.createElement("div", { className: "settings-section" },
+      React.createElement("div", { className: "settings-section-title", style: { fontSize: "14px", marginBottom: "16px" } }, "界面偏好"),
+      Toggle({
+        checked: appSettings.sidebarDefaultCollapsed,
+        onChange: (v) => setAppSettings({ ...appSettings, sidebarDefaultCollapsed: v }),
+        label: "默认收起侧边栏",
+        desc: "打开系统时侧边栏默认收起，仅显示图标",
+      }),
+      Toggle({
+        checked: appSettings.compactMode,
+        onChange: (v) => setAppSettings({ ...appSettings, compactMode: v }),
+        label: "紧凑模式",
+        desc: "减少间距和留白，在屏幕上显示更多内容",
+      }),
+      Toggle({
+        checked: appSettings.animationEnabled,
+        onChange: (v) => setAppSettings({ ...appSettings, animationEnabled: v }),
+        label: "启用动画",
+        desc: "页面切换和元素交互的过渡动画",
+      }),
+      React.createElement("div", { className: "form-row" },
+        React.createElement("label", { className: "form-row-label" }, "默认平台"),
+        React.createElement("div", { style: { maxWidth: "240px" } },
+          FormSelect({
+            label: "",
+            value: appSettings.defaultPlatform,
+            onChange: (v) => setAppSettings({ ...appSettings, defaultPlatform: v }),
+            options: [
+              { value: "pdd", label: "拼多多" },
+              { value: "taobao", label: "淘宝" },
+              { value: "douyin", label: "抖音" },
+            ],
+          }),
+        ),
+      ),
+      React.createElement("div", { className: "form-row" },
+        React.createElement("label", { className: "form-row-label" }, "每页显示条数"),
+        React.createElement("div", { style: { maxWidth: "240px" } },
+          FormSelect({
+            label: "",
+            value: String(appSettings.pageSize),
+            onChange: (v) => setAppSettings({ ...appSettings, pageSize: parseInt(v) }),
+            options: [
+              { value: "10", label: "10 条/页" },
+              { value: "20", label: "20 条/页" },
+              { value: "50", label: "50 条/页" },
+              { value: "100", label: "100 条/页" },
+            ],
+          }),
+        ),
+      ),
       React.createElement("div", { className: "form-row" },
         React.createElement("label", { className: "form-row-label" }, "语言"),
         React.createElement("div", { style: { maxWidth: "240px" } },
@@ -495,42 +571,56 @@ const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeThe
     { className: "settings-content" },
     React.createElement("div", { className: "settings-section" },
       React.createElement("div", { className: "settings-section-title" }, "通知设置"),
-      React.createElement("div", { className: "settings-section-desc" }, "自定义您的通知偏好"),
+      React.createElement("div", { className: "settings-section-desc" }, "自定义您的通知偏好，关闭后将不再显示对应通知"),
     ),
     React.createElement("div", { className: "settings-section" },
+      React.createElement("div", { className: "settings-section-title", style: { fontSize: "14px", marginBottom: "16px" } }, "总开关"),
+      Toggle({
+        checked: notificationSettings.masterEnabled,
+        onChange: (v) => setNotificationSettings({ ...notificationSettings, masterEnabled: v }),
+        label: "启用通知",
+        desc: "关闭后将屏蔽所有非错误的提示通知（错误通知仍会显示）",
+      }),
+    ),
+    React.createElement("div", { className: `settings-section ${notificationSettings.masterEnabled === false ? "settings-disabled" : ""}` },
       React.createElement("div", { className: "settings-section-title", style: { fontSize: "14px", marginBottom: "16px" } }, "操作通知"),
       Toggle({
         checked: notificationSettings.calculationComplete,
         onChange: (v) => setNotificationSettings({ ...notificationSettings, calculationComplete: v }),
         label: "计算完成",
         desc: "批量计算完成后显示通知",
+        disabled: notificationSettings.masterEnabled === false,
       }),
       Toggle({
         checked: notificationSettings.importComplete,
         onChange: (v) => setNotificationSettings({ ...notificationSettings, importComplete: v }),
         label: "导入完成",
         desc: "数据导入完成后显示通知",
+        disabled: notificationSettings.masterEnabled === false,
       }),
       Toggle({
         checked: notificationSettings.exportComplete,
         onChange: (v) => setNotificationSettings({ ...notificationSettings, exportComplete: v }),
         label: "导出完成",
         desc: "数据导出完成后显示通知",
+        disabled: notificationSettings.masterEnabled === false,
       }),
     ),
-    React.createElement("div", { className: "settings-section" },
+    React.createElement("div", { className: `settings-section ${notificationSettings.masterEnabled === false ? "settings-disabled" : ""}` },
       React.createElement("div", { className: "settings-section-title", style: { fontSize: "14px", marginBottom: "16px" } }, "系统通知"),
       Toggle({
         checked: notificationSettings.versionUpdate,
         onChange: (v) => setNotificationSettings({ ...notificationSettings, versionUpdate: v }),
         label: "版本更新",
         desc: "发现新版本时显示通知",
+        disabled: notificationSettings.masterEnabled === false,
       }),
       Toggle({
         checked: notificationSettings.storageWarning,
         onChange: (v) => setNotificationSettings({ ...notificationSettings, storageWarning: v }),
         label: "存储警告",
         desc: "本地存储不足时显示警告",
+        disabled: notificationSettings.masterEnabled === false,
       }),
     ),
     React.createElement("div", { className: "settings-section", style: { textAlign: "right" } },

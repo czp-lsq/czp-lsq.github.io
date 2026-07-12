@@ -3,9 +3,18 @@ const DataPage = ({ state, currentPlatform }) => {
   const { addToast } = useToast();
   const [activeTab, setActiveTab] = useState(() => {
     const saved = localStorage.getItem("data_page_active_tab");
-    return saved || "samples";
+    const validTabs = ["samples", "externals"];
+    return validTabs.includes(saved) ? saved : "samples";
   });
-  const [selectedItems, setSelectedItems] = useState(new Set());
+  const [selectedItems, setSelectedItems] = useState(() => {
+    try {
+      const saved = localStorage.getItem(`data_page_selected_items_${currentPlatform}`);
+      return saved ? new Set(JSON.parse(saved)) : new Set();
+    } catch (e) { return new Set(); }
+  });
+  useEffect(() => {
+    localStorage.setItem(`data_page_selected_items_${currentPlatform}`, JSON.stringify(Array.from(selectedItems)));
+  }, [selectedItems, currentPlatform]);
   const [uploadProgress, setUploadProgress] = useState(0);
   const [isUploading, setIsUploading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState(null);
@@ -594,9 +603,11 @@ const DataPage = ({ state, currentPlatform }) => {
                               {
                                 className: "action-btn action-view",
                                 onClick: () => {
-                                  const firstSheet = Object.keys(
-                                    sample.sheets,
-                                  )[0];
+                                  if (!sample.sheets || Object.keys(sample.sheets).length === 0) {
+                                    addToast("warning", "无法预览", "该文件没有可预览的工作表");
+                                    return;
+                                  }
+                                  const firstSheet = Object.keys(sample.sheets)[0];
                                   setPreviewSample(sample);
                                   setPreviewSheet(firstSheet);
                                   setPreviewColumns(
@@ -708,164 +719,15 @@ const DataPage = ({ state, currentPlatform }) => {
               ),
             ),
         ),
-      activeTab === "batch" &&
-        /*#__PURE__*/ React.createElement(BatchCalcPage, {
-          state: state,
-          currentPlatform: currentPlatform,
-        }),
-      activeTab === "history" &&
+      activeTab === "externals" &&
         /*#__PURE__*/ React.createElement(
           "div",
-          { className: "card" },
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "card-header" },
-            /*#__PURE__*/ React.createElement(
-              "div",
-              null,
-              /*#__PURE__*/ React.createElement(
-                "div",
-                { className: "card-title" },
-                /*#__PURE__*/ React.createElement(Icons.History, null),
-                "\u8BA1\u7B97\u8BB0\u5F55",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "div",
-                { className: "card-desc" },
-                "\u67E5\u770B\u5386\u53F2\u8BA1\u7B97\u4EFB\u52A1\u548C\u7ED3\u679C",
-              ),
-            ),
-            /*#__PURE__*/ React.createElement(
-              Button,
-              null,
-              /*#__PURE__*/ React.createElement(Icons.Download, null),
-              "\u5BFC\u51FA\u8BB0\u5F55",
-            ),
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "data-table-container" },
-            /*#__PURE__*/ React.createElement(
-              "table",
-              { className: "table" },
-              /*#__PURE__*/ React.createElement(
-                "thead",
-                null,
-                /*#__PURE__*/ React.createElement(
-                  "tr",
-                  null,
-                  /*#__PURE__*/ React.createElement("th", null, "\u65F6\u95F4"),
-                  /*#__PURE__*/ React.createElement("th", null, "\u5E73\u53F0"),
-                  /*#__PURE__*/ React.createElement(
-                    "th",
-                    null,
-                    "\u5E97\u94FA\u6570",
-                  ),
-                  /*#__PURE__*/ React.createElement("th", null, "\u72B6\u6001"),
-                  /*#__PURE__*/ React.createElement(
-                    "th",
-                    { style: { width: 120 } },
-                    "\u64CD\u4F5C",
-                  ),
-                ),
-              ),
-              /*#__PURE__*/ React.createElement(
-                "tbody",
-                null,
-                calcHistory.length === 0
-                  ? /*#__PURE__*/ React.createElement(
-                      "tr",
-                      null,
-                      /*#__PURE__*/ React.createElement(
-                        "td",
-                        { colSpan: 5 },
-                        /*#__PURE__*/ React.createElement(
-                          "div",
-                          {
-                            className: "empty",
-                            style: { padding: "40px 20px" },
-                          },
-                          /*#__PURE__*/ React.createElement(
-                            "div",
-                            { className: "empty-icon" },
-                            "\uD83D\uDCCB",
-                          ),
-                          /*#__PURE__*/ React.createElement(
-                            "div",
-                            { className: "empty-text" },
-                            "\u6682\u65E0\u8BA1\u7B97\u8BB0\u5F55",
-                          ),
-                          /*#__PURE__*/ React.createElement(
-                            "div",
-                            { className: "empty-desc" },
-                            "\u5B8C\u6210\u6279\u91CF\u8BA1\u7B97\u540E\u4F1A\u5728\u8FD9\u91CC\u663E\u793A\u8BB0\u5F55",
-                          ),
-                        ),
-                      ),
-                    )
-                  : calcHistory.map((item, idx) =>
-                      /*#__PURE__*/ React.createElement(
-                        "tr",
-                        { key: idx },
-                        /*#__PURE__*/ React.createElement(
-                          "td",
-                          null,
-                          formatTime(item.time),
-                        ),
-                        /*#__PURE__*/ React.createElement(
-                          "td",
-                          null,
-                          item.platform,
-                        ),
-                        /*#__PURE__*/ React.createElement(
-                          "td",
-                          null,
-                          item.shopCount,
-                        ),
-                        /*#__PURE__*/ React.createElement(
-                          "td",
-                          null,
-                          /*#__PURE__*/ React.createElement(
-                            Tag,
-                            {
-                              type:
-                                item.status === "success"
-                                  ? "success"
-                                  : item.status === "processing"
-                                    ? "warning"
-                                    : "danger",
-                            },
-                            item.status === "success"
-                              ? "成功"
-                              : item.status === "processing"
-                                ? "处理中"
-                                : "失败",
-                          ),
-                        ),
-                        /*#__PURE__*/ React.createElement(
-                          "td",
-                          null,
-                          /*#__PURE__*/ React.createElement(
-                            "button",
-                            { className: "btn-link" },
-                            /*#__PURE__*/ React.createElement(
-                              Icons.Download,
-                              null,
-                            ),
-                            " \u4E0B\u8F7D",
-                          ),
-                        ),
-                      ),
-                    ),
-              ),
-            ),
-          ),
+          { className: "card-body" },
+          /*#__PURE__*/ React.createElement(ExternalsPage, {
+            state: state,
+            currentPlatform: currentPlatform,
+          }),
         ),
-      activeTab === "externals" &&
-        /*#__PURE__*/ React.createElement(ExternalsPage, {
-          state: state,
-          currentPlatform: currentPlatform,
-        }),
 
     ),
     confirmDialog &&

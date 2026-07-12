@@ -44,8 +44,15 @@ const LoginPage = ({ onLogin }) => {
     setLoading(true);
     setTimeout(() => {
       setLoading(false);
-      onLogin({ username: username.trim(), remember });
-    }, 800);
+      onLogin({
+        username: username.trim(),
+        password: password,
+        remember,
+        onError: (msg) => {
+          setError(msg);
+        },
+      });
+    }, 500);
   };
 
   return /*#__PURE__*/ React.createElement(

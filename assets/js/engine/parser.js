@@ -114,7 +114,7 @@
       const cleanBeforeText = beforeText.replace(/[：:，,。、；;！!？?\s]+$/, "");
       let semanticLabel = "";
       let semanticType = "unknown";
-      const dateUnits = ["年", "月", "日", "号", "季度", "周"];
+      const dateUnits = ["年", "月", "日", "号", "季度", "周", "星期"];
       const shopUnits = [
         "店铺",
         "店",
@@ -141,6 +141,8 @@
             if (unit === "年") semanticType = "year";
             else if (unit === "月") semanticType = "month";
             else if (unit === "日" || unit === "号") semanticType = "day";
+            else if (unit === "季度") semanticType = "quarter";
+            else if (unit === "周" || unit === "星期") semanticType = "week";
             break;
           }
         }
@@ -156,6 +158,8 @@
             if (unit === "年") semanticType = "year";
             else if (unit === "月") semanticType = "month";
             else if (unit === "日" || unit === "号") semanticType = "day";
+            else if (unit === "季度") semanticType = "quarter";
+            else if (unit === "周" || unit === "星期") semanticType = "week";
             break;
           }
         }
@@ -673,13 +677,33 @@
               "[" + xc + "]{1,6}\\s*年\\s*[" + xc + "]{1,4}\\s*月?",
             );
             const datePattern3 = new RegExp("[" + xc + "]{1,6}\\s*年");
+            const datePattern4 = new RegExp("[" + xc + "]{1,4}\\s*月");
+            const datePattern5 = new RegExp("[" + xc + "]{1,4}\\s*日");
+            const datePattern6 = new RegExp("[" + xc + "]{1,4}\\s*季度");
+            const datePattern7 = new RegExp("第[" + xc + "]{1,4}\\s*季度");
+            const datePattern8 = new RegExp("[" + xc + "]{1,4}\\s*周");
+            const datePattern9 = new RegExp(
+              "(日期|时间|年月|月份|年度|季度|周次|数据周期|报表周期|数据日期|报表日期|统计周期|统计日期|制表日期|填表日期|周期|期间|期)\\s*[：:]\\s*[" +
+                xc +
+                "]",
+            );
             const isDatePattern =
               datePattern1.test(cell) ||
               datePattern2.test(cell) ||
-              datePattern3.test(cell);
+              datePattern3.test(cell) ||
+              datePattern4.test(cell) ||
+              datePattern5.test(cell) ||
+              datePattern6.test(cell) ||
+              datePattern7.test(cell) ||
+              datePattern8.test(cell) ||
+              datePattern9.test(cell);
             if (isDatePattern) {
               let semanticType = "date";
-              if (datePattern3.test(cell) && !datePattern2.test(cell)) {
+              if (datePattern6.test(cell) || datePattern7.test(cell)) {
+                semanticType = "quarter";
+              } else if (datePattern8.test(cell) && !datePattern3.test(cell)) {
+                semanticType = "week";
+              } else if (datePattern3.test(cell) && !datePattern2.test(cell)) {
                 semanticType = "year";
               } else if (/月/.test(cell) && !/年/.test(cell)) {
                 semanticType = "month";

@@ -2,6 +2,11 @@
 const Modal = ({ title, children, onClose, footer, width, large, type = "default" }) => {
   const portalContainerRef = useRef(null);
   const [containerReady, setContainerReady] = useState(false);
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
 
   useEffect(() => {
     if (!portalContainerRef.current) {
@@ -9,12 +14,14 @@ const Modal = ({ title, children, onClose, footer, width, large, type = "default
       document.body.appendChild(portalContainerRef.current);
     }
     setContainerReady(true);
+    document.body.style.overflow = "hidden";
 
-    const handleKey = (e) => { if (e.key === "Escape" && onClose) onClose(); };
+    const handleKey = (e) => { if (e.key === "Escape" && onCloseRef.current) onCloseRef.current(); };
     window.addEventListener("keydown", handleKey);
 
     return () => {
       window.removeEventListener("keydown", handleKey);
+      document.body.style.overflow = "";
       try {
         if (portalContainerRef.current && document.body.contains(portalContainerRef.current)) {
           document.body.removeChild(portalContainerRef.current);
@@ -23,7 +30,7 @@ const Modal = ({ title, children, onClose, footer, width, large, type = "default
       portalContainerRef.current = null;
       setContainerReady(false);
     };
-  }, [onClose]);
+  }, []);
 
   if (!containerReady || !portalContainerRef.current) return null;
 
@@ -31,7 +38,7 @@ const Modal = ({ title, children, onClose, footer, width, large, type = "default
     React.createElement("div", {
       className: "modal-mask",
       onClick: (e) => {
-        if (e.target === e.currentTarget && onClose) onClose();
+        if (e.target === e.currentTarget && onCloseRef.current) onCloseRef.current();
       }
     },
       React.createElement("div", {
@@ -43,7 +50,7 @@ const Modal = ({ title, children, onClose, footer, width, large, type = "default
           React.createElement("div", { className: "modal-title" }, title),
           React.createElement("button", {
             className: "modal-close",
-            onClick: () => onClose && onClose()
+            onClick: () => onCloseRef.current && onCloseRef.current()
           },
             React.createElement(Icons.X, null)
           )

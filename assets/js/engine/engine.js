@@ -179,6 +179,21 @@ const CalcEngine = {
                 case "mm-dd":
                   fillValue = `${m}月${d}日`;
                   break;
+                case "quarter":
+                  fillValue = `第${Math.ceil(Number(m) / 3)}季度`;
+                  break;
+                case "yyyy-quarter":
+                  fillValue = `${y}年第${Math.ceil(Number(m) / 3)}季度`;
+                  break;
+                case "week": {
+                  const dateObj = new Date(Number(y), Number(m) - 1, Number(d));
+                  const start = new Date(dateObj.getFullYear(), 0, 1);
+                  const diff = dateObj - start;
+                  const oneWeek = 1000 * 60 * 60 * 24 * 7;
+                  const weekNum = Math.ceil(diff / oneWeek);
+                  fillValue = `第${weekNum}周`;
+                  break;
+                }
                 default:
                   fillValue = `${y}年${m}月`;
               }
@@ -196,6 +211,13 @@ const CalcEngine = {
               const d = dataDate.day
                 ? String(dataDate.day).padStart(2, "0")
                 : "01";
+              const getQuarter = (month) => Math.ceil(month / 3);
+              const getWeekOfYear = (date) => {
+                const start = new Date(date.getFullYear(), 0, 1);
+                const diff = date - start;
+                const oneWeek = 1000 * 60 * 60 * 24 * 7;
+                return Math.ceil(diff / oneWeek);
+              };
               switch (context.fieldSemanticType) {
                 case "shop":
                   fillValue = String(cfg.value || context.shopName || "");
@@ -211,6 +233,13 @@ const CalcEngine = {
                   break;
                 case "date":
                   fillValue = `${y}年${m}月`;
+                  break;
+                case "quarter":
+                  fillValue = `第${getQuarter(dataDate.month)}季度`;
+                  break;
+                case "week":
+                  const dateObj = new Date(y, dataDate.month - 1, dataDate.day || 1);
+                  fillValue = `第${getWeekOfYear(dateObj)}周`;
                   break;
                 default:
                   fillValue = String(cfg.value ?? "");
@@ -758,18 +787,63 @@ const CalcEngine = {
             break;
           }
           case "lookup": {
-            const lookupMap = {};
-            (step.config.pairs || []).forEach((p) => {
-              lookupMap[p.from] = p.to;
-            });
+            const pairs = step.config.pairs || [];
             const key = step.config.column || "val";
-            data = data.map((row) => ({
-              ...row,
-              [key]:
-                lookupMap[row[key]] !== undefined
-                  ? lookupMap[row[key]]
-                  : row[key],
-            }));
+            const mode = step.config.mode || "exact";
+            const onMiss = step.config.onMiss || "keep";
+            const defaultValue = step.config.defaultValue !== undefined ? step.config.defaultValue : "";
+
+            const findMatch = (val) => {
+              const strVal = val != null ? String(val) : "";
+              for (const pair of pairs) {
+                const from = pair.from != null ? String(pair.from) : "";
+                if (!from) continue;
+                switch (mode) {
+                  case "exact":
+                    if (strVal === from) return pair.to;
+                    break;
+                  case "contains":
+                    if (strVal.includes(from)) return pair.to;
+                    break;
+                  case "startsWith":
+                    if (strVal.startsWith(from)) return pair.to;
+                    break;
+                  case "endsWith":
+                    if (strVal.endsWith(from)) return pair.to;
+                    break;
+                  case "regex":
+                    try {
+                      const regex = new RegExp(from);
+                      if (regex.test(strVal)) return pair.to;
+                    } catch (e) {}
+                    break;
+                }
+              }
+              return null;
+            };
+
+            data = data.map((row) => {
+              const match = findMatch(row[key]);
+              let newValue;
+              if (match !== null) {
+                newValue = match;
+              } else {
+                switch (onMiss) {
+                  case "keep":
+                    newValue = row[key];
+                    break;
+                  case "default":
+                    newValue = defaultValue;
+                    break;
+                  case "empty":
+                    newValue = "";
+                    break;
+                  default:
+                    newValue = row[key];
+                }
+              }
+              return { ...row, [key]: newValue };
+            });
             break;
           }
           case "condition": {
@@ -1297,11 +1371,12 @@ const CalcEngine = {
   },
   getFormulaHints() {
     return [
-      { key: "val", desc: "上一步的计算结果" },
-      { key: "+", desc: "加法运算" },
-      { key: "-", desc: "减法运算" },
-      { key: "*", desc: "乘法运算" },
-      { key: "/", desc: "除法运算" },
+      { key: "{val}", desc: "上一步的计算结果" },
+      { key: " + ", desc: "加法运算" },
+      { key: " - ", desc: "减法运算" },
+      { key: " * ", desc: "乘法运算" },
+      { key: " / ", desc: "除法运算" },
+      { key: " % ", desc: "取余运算" },
       { key: "Math.abs()", desc: "绝对值" },
       { key: "Math.round()", desc: "四舍五入" },
       { key: "Math.floor()", desc: "向下取整" },
@@ -1310,7 +1385,12 @@ const CalcEngine = {
       { key: "Math.min()", desc: "最小值" },
       { key: "Math.pow()", desc: "幂运算" },
       { key: "Math.sqrt()", desc: "平方根" },
+      { key: "Math.log()", desc: "自然对数" },
+      { key: "Math.exp()", desc: "e的指数" },
+      { key: "Math.sin()", desc: "正弦函数" },
+      { key: "Math.cos()", desc: "余弦函数" },
       { key: "toFixed(2)", desc: "保留2位小数" },
+      { key: " ? : ", desc: "三元条件判断（条件 ? 真值 : 假值）" },
     ];
   },
 }; // ========== Common Components ==========

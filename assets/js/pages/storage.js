@@ -1,38 +1,75 @@
 const StoragePage = ({ state, setState }) => {
   const { addToast } = useToast();
+  const [activeTab, setActiveTab] = useState("overview");
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
   const [selectedType, setSelectedType] = useState("all");
+  const [importMode, setImportMode] = useState("merge");
+  const [confirmDialog, setConfirmDialog] = useState(null);
+  const [activityLogs, setActivityLogs] = useState([]);
   const fileInputRef = useRef(null);
 
   const exportTypes = [
-    { id: "all", name: "全部数据", desc: "导出所有配置和数据" },
-    { id: "templates", name: "模板配置", desc: "导出所有平台的模板配置" },
-    { id: "rules", name: "计算规则", desc: "导出所有字段的计算规则" },
-    { id: "shops", name: "店铺数据", desc: "导出所有平台的店铺信息" },
-    { id: "samples", name: "样表数据", desc: "导出已上传的样表数据" },
-    { id: "externals", name: "全局数据", desc: "导出全局数据配置" },
-    { id: "platforms", name: "平台配置", desc: "导出平台设置" },
+    { id: "all", name: "全部数据", desc: "导出所有配置和数据，适合完整备份", icon: Icons.Layers },
+    { id: "templates", name: "模板配置", desc: "导出所有平台的模板配置", icon: Icons.FileSpreadsheet },
+    { id: "rules", name: "计算规则", desc: "导出所有字段的计算规则", icon: Icons.Calculator },
+    { id: "shops", name: "店铺数据", desc: "导出所有平台的店铺信息", icon: Icons.Store },
+    { id: "samples", name: "样表数据", desc: "导出已上传的样表数据", icon: Icons.Database },
+    { id: "externals", name: "全局数据", desc: "导出全局数据配置", icon: Icons.Server },
+    { id: "platforms", name: "平台配置", desc: "导出平台设置", icon: Icons.Settings },
+  ];
+
+  const tabs = [
+    { id: "overview", name: "数据概览", icon: Icons.BarChart3 },
+    { id: "export", name: "数据导出", icon: Icons.Download },
+    { id: "import", name: "数据导入", icon: Icons.Upload },
+    { id: "sync", name: "跨设备同步", icon: Icons.RefreshCw },
+    { id: "cleanup", name: "数据清理", icon: Icons.Trash2 },
   ];
 
   const getExportData = (type) => {
     switch (type) {
-      case "templates":
-        return { templates: state.templates };
-      case "rules":
-        return { rules: state.rules };
-      case "shops":
-        return { shops: state.shops };
-      case "samples":
-        return { samples: state.samples };
-      case "externals":
-        return { externals: state.externals };
-      case "platforms":
-        return { platforms: state.platforms };
-      default:
-        return state;
+      case "templates": return { templates: state.templates };
+      case "rules": return { rules: state.rules };
+      case "shops": return { shops: state.shops };
+      case "samples": return { samples: state.samples };
+      case "externals": return { externals: state.externals };
+      case "platforms": return { platforms: state.platforms };
+      default: return state;
     }
   };
+
+  const getTypeCount = (type) => {
+    switch (type) {
+      case "templates": return Object.keys(state.templates || {}).length;
+      case "rules": return Object.keys(state.rules || {}).reduce((sum, p) => sum + Object.keys(state.rules[p] || {}).length, 0);
+      case "shops": return Object.keys(state.shops || {}).reduce((sum, p) => sum + (state.shops[p]?.length || 0), 0);
+      case "samples": return Object.values(state.samples || {}).reduce((sum, arr) => sum + arr.length, 0);
+      case "externals": return Object.keys(state.externals || {}).length;
+      case "platforms": return state.platforms?.length || 0;
+      default: return 0;
+    }
+  };
+
+  const storageInfo = Store.getStorageInfo();
+  const usedKB = Math.round(storageInfo.usedBytes / 1024);
+  const quotaKB = Math.round(storageInfo.estimatedQuota / 1024);
+  const usagePercent = Math.round(storageInfo.usage * 100);
+
+  const dataStats = [
+    { label: "平台数量", value: state.platforms?.length || 0, color: "primary", icon: Icons.Layers },
+    { label: "模板数量", value: Object.keys(state.templates || {}).length, color: "success", icon: Icons.FileSpreadsheet },
+    { label: "规则数量", value: Object.keys(state.rules || {}).reduce((s, p) => s + Object.keys(state.rules[p] || {}).length, 0), color: "warning", icon: Icons.Calculator },
+    { label: "店铺数量", value: Object.keys(state.shops || {}).reduce((s, p) => s + (state.shops[p]?.length || 0), 0), color: "info", icon: Icons.Store },
+    { label: "样表数量", value: Object.values(state.samples || {}).reduce((s, arr) => s + arr.length, 0), color: "danger", icon: Icons.Database },
+    { label: "全局数据", value: Object.keys(state.externals || {}).length, color: "default", icon: Icons.Server },
+  ];
+
+  useEffect(() => {
+    try {
+      setActivityLogs(ActivityLogger.get().slice(0, 10));
+    } catch (e) {}
+  }, []);
 
   const handleExport = () => {
     setExporting(true);
@@ -49,8 +86,9 @@ const StoragePage = ({ state, setState }) => {
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
-        addToast("success", "导出成功", `数据已保存为JSON文件`);
+        addToast("success", "导出成功", `数据已保存为JSON文件`, 3000, { notificationType: "exportComplete" });
         ActivityLogger.add("数据导出", selectedType);
+        setActivityLogs(ActivityLogger.get().slice(0, 10));
       } catch (error) {
         addToast("error", "导出失败", error.message);
       }
@@ -69,58 +107,250 @@ const StoragePage = ({ state, setState }) => {
         if (!importedData || typeof importedData !== "object") {
           throw new Error("无效的JSON数据");
         }
-        setState((prev) => {
-          const merged = { ...prev, ...importedData };
-          return merged;
+        const modeText = importMode === "merge" ? "合并（保留现有数据，覆盖同名字段）" : "替换（清空现有数据后导入）";
+        setConfirmDialog({
+          title: "确认导入",
+          message: `文件：${file.name}\n导入模式：${modeText}\n\n确定要继续吗？`,
+          type: "warning",
+          onConfirm: () => {
+            setState((prev) => {
+              if (importMode === "replace") {
+                return { ...prev, ...importedData };
+              }
+              // 合并模式：深度合并
+              const merged = { ...prev };
+              if (importedData.templates) merged.templates = { ...(prev.templates || {}), ...importedData.templates };
+              if (importedData.rules) merged.rules = { ...(prev.rules || {}), ...importedData.rules };
+              if (importedData.shops) merged.shops = { ...(prev.shops || {}), ...importedData.shops };
+              if (importedData.samples) merged.samples = { ...(prev.samples || {}), ...importedData.samples };
+              if (importedData.externals) merged.externals = { ...(prev.externals || {}), ...importedData.externals };
+              if (importedData.platforms) merged.platforms = importedData.platforms;
+              return merged;
+            });
+            addToast("success", "导入成功", `数据已${importMode === "merge" ? "合并" : "替换"}到系统中`, 3000, { notificationType: "importComplete" });
+            ActivityLogger.add("数据导入", `${file.name} (${importMode})`);
+            setActivityLogs(ActivityLogger.get().slice(0, 10));
+            setConfirmDialog(null);
+          },
+          onCancel: () => setConfirmDialog(null),
         });
-        addToast("success", "导入成功", "数据已加载到系统中");
-        ActivityLogger.add("数据导入", file.name);
       } catch (error) {
         addToast("error", "导入失败", error.message);
       }
       setImporting(false);
+      e.target.value = "";
     };
     reader.readAsText(file);
   };
 
-  const dataStats = [
-    { label: "平台数量", value: state.platforms?.length || 0, color: "primary" },
-    { label: "模板数量", value: Object.keys(state.templates || {}).length, color: "success" },
-    { label: "规则数量", value: Object.keys(state.rules || {}).length, color: "warning" },
-    { label: "店铺数量", value: Object.keys(state.shops || {}).length, color: "info" },
-    { label: "样表数量", value: Object.values(state.samples || {}).reduce((sum, arr) => sum + arr.length, 0), color: "danger" },
-    { label: "全局数据", value: Object.keys(state.externals || {}).length, color: "default" },
-  ];
+  const doClear = (type) => {
+    const typeNames = {
+      samples: "样表数据",
+      externals: "全局数据",
+      templates: "模板配置",
+      rules: "计算规则",
+    };
+    const doClearAction = () => {
+      if (type === "samples") Store.set((s) => ({ ...s, samples: {} }));
+      else if (type === "externals") Store.set((s) => ({ ...s, externals: {} }));
+      else if (type === "templates") Store.set((s) => ({ ...s, templates: {} }));
+      else if (type === "rules") Store.set((s) => ({ ...s, rules: {} }));
+      addToast("success", "清理成功", `已清空${typeNames[type] || type}`);
+      ActivityLogger.add("数据清理", typeNames[type] || type);
+      setActivityLogs(ActivityLogger.get().slice(0, 10));
+      setConfirmDialog(null);
+    };
+    // 检查系统设置中的删除确认开关
+    if (typeof AppSettings !== "undefined" && !AppSettings.shouldConfirmDelete()) {
+      doClearAction();
+      return;
+    }
+    setConfirmDialog({
+      title: `确认清空${typeNames[type] || type}`,
+      message: `确定要清空所有${typeNames[type] || type}吗？此操作不可撤销，建议先导出备份。`,
+      type: "danger",
+      onConfirm: doClearAction,
+      onCancel: () => setConfirmDialog(null),
+    });
+  };
 
-  return React.createElement("div", { className: "storage-page" },
-    React.createElement("div", { className: "page-header" },
-      React.createElement("div", { className: "page-title" },
-        React.createElement("h1", null, "数据管理"),
-        React.createElement("p", null, "导出和导入系统配置数据，支持JSON格式备份"),
+  const clearAllData = () => {
+    const doClearAll = () => {
+      Store.clear();
+      localStorage.clear();
+      location.reload();
+    };
+    if (typeof AppSettings !== "undefined" && !AppSettings.shouldConfirmDelete()) {
+      doClearAll();
+      return;
+    }
+    setConfirmDialog({
+      title: "确认清空所有数据",
+      message: "⚠️ 警告：此操作将清空所有数据（模板、规则、样表、全局数据等），并恢复到默认状态。此操作不可撤销！\n\n请确保已导出重要数据后再执行此操作。",
+      type: "danger",
+      onConfirm: doClearAll,
+      onCancel: () => setConfirmDialog(null),
+    });
+  };
+
+  const renderOverview = () => React.createElement("div", { className: "storage-overview" },
+    React.createElement("div", { className: "storage-storage-card card" },
+      React.createElement("div", { className: "card-header" },
+        React.createElement("div", null,
+          React.createElement("h3", null, "存储使用情况"),
+          React.createElement("p", { className: "card-desc" }, "浏览器本地存储空间使用概览"),
+        ),
+      ),
+      React.createElement("div", { className: "card-body" },
+        React.createElement("div", { className: "storage-usage-visual" },
+          React.createElement("div", { className: "storage-usage-circle" },
+            React.createElement("svg", { viewBox: "0 0 120 120", className: "storage-circle-svg" },
+              React.createElement("circle", {
+                cx: "60", cy: "60", r: "50",
+                fill: "none",
+                stroke: "var(--color-bg-tertiary)",
+                strokeWidth: "10",
+              }),
+              React.createElement("circle", {
+                cx: "60", cy: "60", r: "50",
+                fill: "none",
+                stroke: storageInfo.isCritical ? "var(--color-danger)" : storageInfo.isWarning ? "var(--color-warning)" : "var(--color-primary)",
+                strokeWidth: "10",
+                strokeLinecap: "round",
+                strokeDasharray: `${usagePercent * 3.14} 314`,
+                transform: "rotate(-90 60 60)",
+                style: { transition: "stroke-dasharray 0.8s ease" },
+              }),
+            ),
+            React.createElement("div", { className: "storage-circle-text" },
+              React.createElement("div", { className: "storage-circle-percent" }, `${usagePercent}%`),
+              React.createElement("div", { className: "storage-circle-label" }, "已使用"),
+            ),
+          ),
+          React.createElement("div", { className: "storage-usage-details" },
+            React.createElement("div", { className: "storage-detail-row" },
+              React.createElement("span", { className: "storage-detail-label" }, "已使用"),
+              React.createElement("span", { className: "storage-detail-value" }, `${usedKB} KB`),
+            ),
+            React.createElement("div", { className: "storage-detail-row" },
+              React.createElement("span", { className: "storage-detail-label" }, "总容量"),
+              React.createElement("span", { className: "storage-detail-value" }, `${quotaKB} KB`),
+            ),
+            React.createElement("div", { className: "storage-detail-row" },
+              React.createElement("span", { className: "storage-detail-label" }, "剩余空间"),
+              React.createElement("span", { className: "storage-detail-value" }, `${quotaKB - usedKB} KB`),
+            ),
+            storageInfo.isWarning && React.createElement("div", { className: `storage-warning-box ${storageInfo.isCritical ? "critical" : "warning"}` },
+              React.createElement(Icons.AlertTriangle, null),
+              React.createElement("span", null,
+                storageInfo.isCritical
+                  ? "存储空间即将用尽，请导出数据后清理"
+                  : "存储空间使用较高，建议定期备份",
+              ),
+            ),
+          ),
+        ),
       ),
     ),
     React.createElement("div", { className: "card-grid" },
       dataStats.map((stat, idx) => React.createElement("div", { key: idx, className: "card stat-card" },
-        React.createElement("div", { className: "stat-value", style: { color: `var(--color-${stat.color})` } }, stat.value),
-        React.createElement("div", { className: "stat-label" }, stat.label),
+        React.createElement("div", { className: "stat-card-icon", style: { background: `var(--color-${stat.color}-bg)`, color: `var(--color-${stat.color})` } },
+          React.createElement(stat.icon, null),
+        ),
+        React.createElement("div", { className: "stat-card-content" },
+          React.createElement("div", { className: "stat-value" }, stat.value),
+          React.createElement("div", { className: "stat-label" }, stat.label),
+        ),
       )),
     ),
     React.createElement("div", { className: "card" },
       React.createElement("div", { className: "card-header" },
-        React.createElement("h3", null, "数据导出"),
-        React.createElement("p", { className: "card-desc" }, "将系统数据导出为JSON文件，方便备份和迁移"),
+        React.createElement("h3", null, "数据类型明细"),
+        React.createElement("p", { className: "card-desc" }, "各类数据的数量统计"),
+      ),
+      React.createElement("div", { className: "card-body" },
+        React.createElement("div", { className: "data-type-list" },
+          exportTypes.filter((t) => t.id !== "all").map((type) => {
+            const count = getTypeCount(type.id);
+            const percent = usedKB > 0 ? Math.round((count / Math.max(dataStats.reduce((s, d) => s + d.value, 0), 1)) * 100) : 0;
+            return React.createElement("div", { key: type.id, className: "data-type-item" },
+              React.createElement("div", { className: "data-type-icon", style: { background: "var(--color-primary-50)", color: "var(--color-primary)" } },
+                React.createElement(type.icon, null),
+              ),
+              React.createElement("div", { className: "data-type-info" },
+                React.createElement("div", { className: "data-type-name" }, type.name),
+                React.createElement("div", { className: "data-type-desc" }, type.desc),
+                React.createElement("div", { className: "data-type-bar" },
+                  React.createElement("div", {
+                    className: "data-type-bar-fill",
+                    style: { width: `${Math.min(percent, 100)}%` },
+                  }),
+                ),
+              ),
+              React.createElement("div", { className: "data-type-count" }, count),
+            );
+          }),
+        ),
+      ),
+    ),
+    // 操作日志
+    React.createElement("div", { className: "card" },
+      React.createElement("div", { className: "card-header" },
+        React.createElement("h3", null, "最近操作记录"),
+        React.createElement("p", { className: "card-desc" }, "最近 10 条数据操作日志"),
+      ),
+      React.createElement("div", { className: "card-body" },
+        activityLogs.length === 0
+          ? React.createElement("div", { className: "empty", style: { padding: "24px" } },
+              React.createElement("div", { className: "empty-text" }, "暂无操作记录"),
+              React.createElement("div", { className: "empty-desc" }, "导出、导入、清理数据后将在此显示"),
+            )
+          : React.createElement("div", { className: "activity-log-list" },
+              activityLogs.map((log, idx) => React.createElement("div", { key: idx, className: "activity-log-item" },
+                React.createElement("div", { className: "activity-log-icon" },
+                  React.createElement(Icons.History, null),
+                ),
+                React.createElement("div", { className: "activity-log-content" },
+                  React.createElement("div", { className: "activity-log-action" }, log.action),
+                  log.detail && React.createElement("div", { className: "activity-log-detail" }, log.detail),
+                ),
+                React.createElement("div", { className: "activity-log-time" },
+                  new Date(log.time).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }),
+                ),
+              )),
+            ),
+      ),
+    ),
+  );
+
+  const renderExport = () => React.createElement("div", { className: "storage-export" },
+    React.createElement("div", { className: "card" },
+      React.createElement("div", { className: "card-header" },
+        React.createElement("div", null,
+          React.createElement("h3", null, "数据导出"),
+          React.createElement("p", { className: "card-desc" }, "选择要导出的数据类型，导出为JSON格式备份文件"),
+        ),
       ),
       React.createElement("div", { className: "card-body" },
         React.createElement("div", { className: "form-group" },
           React.createElement("label", null, "选择导出类型"),
-          React.createElement("div", { className: "select-group" },
+          React.createElement("div", { className: "export-type-grid" },
             exportTypes.map((type) => React.createElement("button", {
               key: type.id,
-              className: `select-btn ${selectedType === type.id ? "active" : ""}`,
+              className: `export-type-card ${selectedType === type.id ? "active" : ""}`,
               onClick: () => setSelectedType(type.id),
             },
-              React.createElement("span", null, type.name),
-              React.createElement("span", { className: "select-btn-desc" }, type.desc),
+              React.createElement("div", { className: "export-type-icon" },
+                React.createElement(type.icon, null),
+              ),
+              React.createElement("div", { className: "export-type-info" },
+                React.createElement("span", { className: "export-type-name" }, type.name),
+                React.createElement("span", { className: "export-type-desc" }, type.desc),
+                React.createElement("span", { className: "export-type-count" }, `当前 ${getTypeCount(type.id)} 条`),
+              ),
+              selectedType === type.id && React.createElement("div", { className: "export-type-check" },
+                React.createElement(Icons.Check, null),
+              ),
             )),
           ),
         ),
@@ -129,7 +359,7 @@ const StoragePage = ({ state, setState }) => {
             type: "primary",
             onClick: handleExport,
             loading: exporting,
-            style: { minWidth: 140 },
+            style: { minWidth: 160 },
           },
             React.createElement(Icons.Download, null),
             exporting ? "导出中..." : "导出数据",
@@ -137,13 +367,43 @@ const StoragePage = ({ state, setState }) => {
         ),
       ),
     ),
+  );
+
+  const renderImport = () => React.createElement("div", { className: "storage-import" },
     React.createElement("div", { className: "card" },
       React.createElement("div", { className: "card-header" },
-        React.createElement("h3", null, "数据导入"),
-        React.createElement("p", { className: "card-desc" }, "从JSON文件导入数据，覆盖现有配置"),
+        React.createElement("div", null,
+          React.createElement("h3", null, "数据导入"),
+          React.createElement("p", { className: "card-desc" }, "从JSON备份文件导入数据"),
+        ),
       ),
       React.createElement("div", { className: "card-body" },
-        React.createElement("div", { className: "upload-area" },
+        React.createElement("div", { className: "form-group", style: { marginBottom: "20px" } },
+          React.createElement("label", null, "导入模式"),
+          React.createElement("div", { className: "import-mode-grid" },
+            React.createElement("button", {
+              className: `import-mode-card ${importMode === "merge" ? "active" : ""}`,
+              onClick: () => setImportMode("merge"),
+            },
+              React.createElement("div", { className: "import-mode-icon" }, React.createElement(Icons.GitMerge, null)),
+              React.createElement("div", { className: "import-mode-info" },
+                React.createElement("span", { className: "import-mode-name" }, "合并导入"),
+                React.createElement("span", { className: "import-mode-desc" }, "保留现有数据，覆盖同名字段"),
+              ),
+            ),
+            React.createElement("button", {
+              className: `import-mode-card ${importMode === "replace" ? "active" : ""}`,
+              onClick: () => setImportMode("replace"),
+            },
+              React.createElement("div", { className: "import-mode-icon" }, React.createElement(Icons.RefreshCw, null)),
+              React.createElement("div", { className: "import-mode-info" },
+                React.createElement("span", { className: "import-mode-name" }, "替换导入"),
+                React.createElement("span", { className: "import-mode-desc" }, "清空现有数据后完全替换"),
+              ),
+            ),
+          ),
+        ),
+        React.createElement("div", { className: "upload-area", style: { minHeight: 200 } },
           React.createElement("input", {
             ref: fileInputRef,
             type: "file",
@@ -155,56 +415,171 @@ const StoragePage = ({ state, setState }) => {
             className: "upload-area-inner",
             onClick: () => fileInputRef.current?.click(),
           },
-            React.createElement(Icons.Upload, null),
-            React.createElement("div", { className: "upload-area-text" }, "点击选择JSON文件"),
+            React.createElement("div", { className: "upload-icon-lg" },
+              React.createElement(Icons.Upload, null),
+            ),
+            React.createElement("div", { className: "upload-area-text" }, "点击选择JSON文件或拖拽到此处"),
             React.createElement("div", { className: "upload-area-desc" }, "支持从导出的备份文件恢复数据"),
           ),
         ),
         React.createElement("div", { className: "form-actions" },
           React.createElement(Button, {
-            type: "default",
+            type: "primary",
             onClick: () => fileInputRef.current?.click(),
             loading: importing,
-            style: { minWidth: 140 },
+            style: { minWidth: 160 },
           },
             React.createElement(Icons.Upload, null),
-            importing ? "导入中..." : "选择文件",
-          ),
-        ),
-      ),
-    ),
-    React.createElement("div", { className: "card" },
-      React.createElement("div", { className: "card-header" },
-        React.createElement("h3", null, "数据说明"),
-      ),
-      React.createElement("div", { className: "card-body" },
-        React.createElement("ul", { className: "data-list" },
-          React.createElement("li", null,
-            React.createElement("strong", null, "模板配置："),
-            "包含各平台的利润表模板结构和字段映射",
-          ),
-          React.createElement("li", null,
-            React.createElement("strong", null, "计算规则："),
-            "包含所有字段的计算公式和依赖关系",
-          ),
-          React.createElement("li", null,
-            React.createElement("strong", null, "店铺数据："),
-            "包含各平台下的店铺名称和标识信息",
-          ),
-          React.createElement("li", null,
-            React.createElement("strong", null, "样表数据："),
-            "包含已上传的Excel样表文件数据",
-          ),
-          React.createElement("li", null,
-            React.createElement("strong", null, "全局数据："),
-            "包含全局配置项和共享数据",
+            importing ? "导入中..." : "选择文件导入",
           ),
         ),
         React.createElement("div", { className: "warning-box" },
           React.createElement(Icons.AlertTriangle, null),
-          React.createElement("span", null, "导入数据将覆盖现有配置，请谨慎操作。建议先导出备份。"),
+          React.createElement("span", null, `${importMode === "merge" ? "合并模式会覆盖同名字段" : "替换模式会清空现有数据"}，请谨慎操作。建议先导出备份。`),
         ),
       ),
     ),
+  );
+
+  const renderSync = () => React.createElement("div", { className: "storage-sync" },
+    React.createElement("div", { className: "card" },
+      React.createElement("div", { className: "card-header" },
+        React.createElement("div", null,
+          React.createElement("h3", null, "跨设备数据同步"),
+          React.createElement("p", { className: "card-desc" }, "在不同设备间保持数据一致"),
+        ),
+      ),
+      React.createElement("div", { className: "card-body" },
+        React.createElement("div", { className: "sync-info-box" },
+          React.createElement("div", { className: "sync-info-icon" }, React.createElement(Icons.Info, null)),
+          React.createElement("div", { className: "sync-info-content" },
+            React.createElement("div", { className: "sync-info-title" }, "关于数据存储"),
+            React.createElement("div", { className: "sync-info-desc" },
+              "本系统使用浏览器本地存储（localStorage）保存数据，容量约 5MB。数据存储在当前浏览器中，不会自动上传到云端。要在不同设备间同步数据，请使用以下方法：",
+            ),
+          ),
+        ),
+        React.createElement("div", { className: "sync-methods" },
+          React.createElement("div", { className: "sync-method-card" },
+            React.createElement("div", { className: "sync-method-number" }, "1"),
+            React.createElement("div", { className: "sync-method-content" },
+              React.createElement("div", { className: "sync-method-title" }, "导出备份文件"),
+              React.createElement("div", { className: "sync-method-desc" }, "在当前设备点击「数据导出」标签，选择「全部数据」导出为 JSON 文件，保存到可跨设备访问的位置（如网盘、U盘等）。"),
+              React.createElement(Button, { type: "primary", variant: "outline", onClick: () => { setActiveTab("export"); setSelectedType("all"); }, style: { marginTop: "12px" } }, "前往导出"),
+            ),
+          ),
+          React.createElement("div", { className: "sync-method-card" },
+            React.createElement("div", { className: "sync-method-number" }, "2"),
+            React.createElement("div", { className: "sync-method-content" },
+              React.createElement("div", { className: "sync-method-title" }, "在另一设备导入"),
+              React.createElement("div", { className: "sync-method-desc" }, "在目标设备打开本系统，点击「数据导入」标签，选择导出的 JSON 文件，选择「合并导入」或「替换导入」模式完成同步。"),
+              React.createElement(Button, { type: "primary", variant: "outline", onClick: () => setActiveTab("import"), style: { marginTop: "12px" } }, "前往导入"),
+            ),
+          ),
+          React.createElement("div", { className: "sync-method-card" },
+            React.createElement("div", { className: "sync-method-number" }, "3"),
+            React.createElement("div", { className: "sync-method-content" },
+              React.createElement("div", { className: "sync-method-title" }, "定期备份习惯"),
+              React.createElement("div", { className: "sync-method-desc" }, "建议每次修改配置后导出备份，确保数据安全。系统也会自动在本地创建备份，防止意外丢失。"),
+            ),
+          ),
+        ),
+        React.createElement("div", { className: "sync-tips" },
+          React.createElement("div", { className: "sync-tips-title" }, React.createElement(Icons.AlertTriangle, { style: { width: 16, height: 16 } }), " 注意事项"),
+          React.createElement("ul", { className: "sync-tips-list" },
+            React.createElement("li", null, "不同浏览器（Chrome、Edge、Firefox）的数据相互独立，不共享"),
+            React.createElement("li", null, "清除浏览器缓存可能导致本地数据丢失，请提前导出备份"),
+            React.createElement("li", null, "合并导入会保留现有数据并覆盖同名字段，替换导入会清空后导入"),
+            React.createElement("li", null, "导入数据前建议先导出当前数据作为备份"),
+          ),
+        ),
+      ),
+    ),
+  );
+
+  const renderCleanup = () => React.createElement("div", { className: "storage-cleanup" },
+    React.createElement("div", { className: "card" },
+      React.createElement("div", { className: "card-header" },
+        React.createElement("div", null,
+          React.createElement("h3", null, "数据清理"),
+          React.createElement("p", { className: "card-desc" }, "清理不需要的数据以释放存储空间"),
+        ),
+      ),
+      React.createElement("div", { className: "card-body" },
+        React.createElement("div", { className: "cleanup-list" },
+          [
+            { id: "samples", name: "清理样表数据", desc: "删除所有已上传的样表文件数据", icon: Icons.Database, count: getTypeCount("samples") },
+            { id: "externals", name: "清理全局数据", desc: "删除所有全局数据配置", icon: Icons.Server, count: getTypeCount("externals") },
+            { id: "rules", name: "清理计算规则", desc: "删除所有字段的计算规则配置", icon: Icons.Calculator, count: getTypeCount("rules") },
+            { id: "templates", name: "清理模板配置", desc: "删除所有平台的模板配置", icon: Icons.FileSpreadsheet, count: getTypeCount("templates") },
+          ].map((item) => React.createElement("div", { key: item.id, className: "cleanup-item" },
+            React.createElement("div", { className: "cleanup-icon" },
+              React.createElement(item.icon, null),
+            ),
+            React.createElement("div", { className: "cleanup-info" },
+              React.createElement("div", { className: "cleanup-name" }, item.name),
+              React.createElement("div", { className: "cleanup-desc" }, `${item.desc}（当前 ${item.count} 条）`),
+            ),
+            React.createElement(Button, {
+              type: "danger",
+              variant: "outline",
+              onClick: () => doClear(item.id),
+              disabled: item.count === 0,
+            }, "清理"),
+          )),
+        ),
+        React.createElement("div", { className: "cleanup-danger-zone" },
+          React.createElement("div", { className: "cleanup-danger-title" },
+            React.createElement(Icons.AlertTriangle, { style: { color: "var(--color-danger)" } }),
+            React.createElement("span", null, "危险操作"),
+          ),
+          React.createElement("div", { className: "cleanup-danger-desc" },
+            "初始化系统将清空所有数据，恢复到默认状态。此操作不可撤销！",
+          ),
+          React.createElement(Button, {
+            type: "danger",
+            onClick: clearAllData,
+          }, React.createElement(Icons.RefreshCw, null), " 初始化系统"),
+        ),
+      ),
+    ),
+  );
+
+  const renderContent = () => {
+    switch (activeTab) {
+      case "overview": return renderOverview();
+      case "export": return renderExport();
+      case "import": return renderImport();
+      case "sync": return renderSync();
+      case "cleanup": return renderCleanup();
+      default: return renderOverview();
+    }
+  };
+
+  return React.createElement("div", { className: "storage-page fade-in" },
+    React.createElement("div", { className: "page-header" },
+      React.createElement("div", { className: "page-title" },
+        React.createElement("h1", null, "数据管理"),
+        React.createElement("p", null, "管理系统数据，支持导出、导入、跨设备同步和清理"),
+      ),
+    ),
+    React.createElement("div", { className: "storage-tabs" },
+      tabs.map((tab) => React.createElement("button", {
+        key: tab.id,
+        className: `storage-tab ${activeTab === tab.id ? "active" : ""}`,
+        onClick: () => setActiveTab(tab.id),
+      },
+        React.createElement("span", { className: "storage-tab-icon" }, React.createElement(tab.icon, null)),
+        React.createElement("span", { className: "storage-tab-label" }, tab.name),
+      )),
+    ),
+    React.createElement("div", { className: "storage-content" }, renderContent()),
+    confirmDialog && React.createElement(ConfirmModal, {
+      title: confirmDialog.title,
+      message: confirmDialog.message,
+      type: confirmDialog.type,
+      onConfirm: confirmDialog.onConfirm,
+      onCancel: confirmDialog.onCancel,
+    }),
   );
 };
