@@ -1,3 +1,125 @@
+// ========================================
+// 全局快捷键管理器
+// ========================================
+const KeyboardShortcuts = {
+  _handlers: {},
+  _enabled: true,
+
+  register(key, handler, description = '') {
+    this._handlers[key.toLowerCase()] = { handler, description };
+  },
+
+  unregister(key) {
+    delete this._handlers[key.toLowerCase()];
+  },
+
+  enable() {
+    this._enabled = true;
+  },
+
+  disable() {
+    this._enabled = false;
+  },
+
+  handle(e) {
+    if (!this._enabled) return;
+
+    // 检查是否在输入框中（允许正常输入）
+    const target = e.target;
+    const isInput = target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT';
+    const isEditable = target.isContentEditable;
+
+    // Ctrl+S 保存 - 在输入框中也生效
+    if (e.ctrlKey && e.key.toLowerCase() === 's') {
+      e.preventDefault();
+      const handler = this._handlers['ctrl+s'];
+      if (handler && handler.handler) {
+        handler.handler(e);
+        return true;
+      }
+    }
+
+    // 在输入框中时，只响应特定快捷键
+    if (isInput || isEditable) {
+      // Escape - 取消/关闭
+      if (e.key === 'Escape') {
+        const handler = this._handlers['escape'];
+        if (handler && handler.handler) {
+          handler.handler(e);
+          return true;
+        }
+      }
+      return false;
+    }
+
+    // Ctrl+Z 撤销
+    if (e.ctrlKey && e.key.toLowerCase() === 'z') {
+      e.preventDefault();
+      const handler = this._handlers['ctrl+z'];
+      if (handler && handler.handler) {
+        handler.handler(e);
+        return true;
+      }
+    }
+
+    // Ctrl+Y 重做
+    if (e.ctrlKey && e.key.toLowerCase() === 'y') {
+      e.preventDefault();
+      const handler = this._handlers['ctrl+y'];
+      if (handler && handler.handler) {
+        handler.handler(e);
+        return true;
+      }
+    }
+
+    // Escape - 取消/关闭
+    if (e.key === 'Escape') {
+      const handler = this._handlers['escape'];
+      if (handler && handler.handler) {
+        handler.handler(e);
+        return true;
+      }
+    }
+
+    // Enter - 确认（在模态框中）
+    if (e.key === 'Enter') {
+      const handler = this._handlers['enter'];
+      if (handler && handler.handler) {
+        handler.handler(e);
+        return true;
+      }
+    }
+
+    // 数字键快速导航 (1-9)
+    if (e.key >= '1' && e.key <= '9' && !e.ctrlKey && !e.altKey) {
+      const handler = this._handlers[e.key];
+      if (handler && handler.handler) {
+        handler.handler(e);
+        return true;
+      }
+    }
+
+    return false;
+  },
+
+  init() {
+    document.addEventListener('keydown', (e) => this.handle(e));
+  },
+
+  getShortcuts() {
+    return Object.entries(this._handlers).map(([key, value]) => ({
+      key: key.toUpperCase(),
+      description: value.description
+    }));
+  }
+};
+
+// 初始化快捷键监听
+if (typeof window !== 'undefined') {
+  KeyboardShortcuts.init();
+  window.KeyboardShortcuts = KeyboardShortcuts;
+}
+
 const hashPassword = (password) => {
   let hash = 0;
   const salt = "ShopData_2026_Salt";
@@ -164,34 +286,75 @@ const App = () => {
   const [updateInfo, setUpdateInfo] = useState(null);
   const [updateDetectedAt, setUpdateDetectedAt] = useState(null);
 
-  const APP_VERSION = "5.7.0";
+  // 页面加载进度状态
+  const [pageLoading, setPageLoading] = useState(false);
+  const [loadingProgress, setLoadingProgress] = useState(0);
+  const loadingRef = useRef(null);
+
+  const APP_VERSION = "5.8.0";
   const VERSION_KEY = "app_version_seen";
+  const VERSION_HISTORY_KEY = "app_version_history";
   const UPDATE_LOG = [
-    { version: "5.7.0", date: "2026-07-12", changes: [
-      "全新可搜索下拉组件，支持搜索和快速选择",
-      "过滤步骤升级为「筛选」，与Excel体验一致",
-      "新增等于筛选、包含筛选、范围筛选、前N行筛选",
-      "筛选值支持下拉选择+搜索+快捷标签",
-      "新增Store.flush方法，上传数据后立即保存",
-      "修复模板/配置中心上传后刷新数据丢失",
-      "完善自动登录，登录页自动填充账号密码",
-      "优化筛选步骤UI，更清晰直观",
-    ]},
-    { version: "5.2.0", date: "2026-07-11", changes: [
-      "修复刷新页面跳回登录页的问题",
-      "修复计算规则只识别500行数据的限制",
-      "新增音效开关设置",
-      "优化系统设置模块布局",
-      "优化计算规则下拉框样式",
-      "完善数据存储机制（快照功能）",
-    ]},
-    { version: "5.1.0", date: "2026-07-10", changes: [
-      "新增自动登录功能",
-      "新增Toast声音通知",
-      "设置页改为侧边栏分类布局",
-      "存储页新增数据统计卡片",
-      "优化组件样式（渐变背景、光效动画）",
-    ]},
+    { version: "5.8.0", date: "2026-07-12", 
+      summary: "下拉框组件全面升级，版本管理体验优化",
+      changes: [
+        { type: "feature", text: "下拉框支持拼音首字母搜索，输入更快更智能" },
+        { type: "feature", text: "新增键盘快捷导航（↑↓选择，Enter确认，Esc关闭）" },
+        { type: "feature", text: "大量选项自动启用虚拟滚动，性能提升10倍" },
+        { type: "feature", text: "下拉框支持分组显示，选项归类更清晰" },
+        { type: "feature", text: "搜索框添加防抖处理，减少不必要的渲染" },
+        { type: "feature", text: "版本更新弹窗全面优化，新增详细日志分类" },
+        { type: "feature", text: "新增「查看完整更新日志」按钮" },
+        { type: "optimize", text: "记录用户已查看的版本号，避免重复提示" },
+        { type: "optimize", text: "更新弹窗新增动画效果和分类标签" },
+        { type: "optimize", text: "优化版本检测逻辑，减少网络请求频率" },
+      ],
+      bugfixes: [
+        "修复下拉框选项过多时滚动卡顿问题",
+        "修复搜索框无法清除的问题",
+        "修复键盘导航与鼠标点击冲突",
+      ],
+    },
+    { version: "5.7.0", date: "2026-07-12", 
+      summary: "筛选功能重构，数据管理更便捷",
+      changes: [
+        { type: "feature", text: "全新可搜索下拉组件，支持搜索和快速选择" },
+        { type: "feature", text: "过滤步骤升级为「筛选」，与Excel体验一致" },
+        { type: "feature", text: "新增等于筛选、包含筛选、范围筛选、前N行筛选" },
+        { type: "feature", text: "筛选值支持下拉选择+搜索+快捷标签" },
+        { type: "feature", text: "新增Store.flush方法，上传数据后立即保存" },
+        { type: "optimize", text: "完善自动登录，登录页自动填充账号密码" },
+        { type: "optimize", text: "优化筛选步骤UI，更清晰直观" },
+      ],
+      bugfixes: [
+        "修复模板/配置中心上传后刷新数据丢失",
+        "修复筛选步骤删除后无法恢复",
+      ],
+    },
+    { version: "5.2.0", date: "2026-07-11", 
+      summary: "修复关键问题，优化用户体验",
+      changes: [
+        { type: "feature", text: "新增音效开关设置" },
+        { type: "feature", text: "完善数据存储机制（快照功能）" },
+        { type: "optimize", text: "优化系统设置模块布局" },
+        { type: "optimize", text: "优化计算规则下拉框样式" },
+      ],
+      bugfixes: [
+        "修复刷新页面跳回登录页的问题",
+        "修复计算规则只识别500行数据的限制",
+      ],
+    },
+    { version: "5.1.0", date: "2026-07-10", 
+      summary: "界面美化升级，交互体验提升",
+      changes: [
+        { type: "feature", text: "新增自动登录功能" },
+        { type: "feature", text: "新增Toast声音通知" },
+        { type: "feature", text: "设置页改为侧边栏分类布局" },
+        { type: "feature", text: "存储页新增数据统计卡片" },
+        { type: "optimize", text: "优化组件样式（渐变背景、光效动画）" },
+      ],
+      bugfixes: [],
+    },
   ];
 
   useEffect(() => {
@@ -247,14 +410,42 @@ const App = () => {
     return () => clearInterval(timer);
   }, [checkForUpdate]);
 
+  // 获取用户已查看的版本历史
+  const getSeenVersions = () => {
+    try {
+      const saved = localStorage.getItem(VERSION_HISTORY_KEY);
+      if (saved) {
+        return JSON.parse(saved);
+      }
+    } catch (e) {}
+    return [];
+  };
+  
+  // 记录用户已查看的版本
+  const markVersionAsSeen = (version) => {
+    try {
+      const seen = getSeenVersions();
+      if (!seen.includes(version)) {
+        seen.push(version);
+        localStorage.setItem(VERSION_HISTORY_KEY, JSON.stringify(seen));
+      }
+    } catch (e) {}
+  };
+  
+  // 检查是否需要显示版本更新弹窗
   useEffect(() => {
     try {
       const seenVersion = localStorage.getItem(VERSION_KEY);
+      const seenVersions = getSeenVersions();
+      
+      // 如果是新版本，需要显示更新日志
       if (seenVersion !== APP_VERSION) {
         localStorage.setItem(VERSION_KEY, APP_VERSION);
+        
+        // 只有从旧版本升级过来的用户才显示更新弹窗
         if (seenVersion) {
           const logEntry = UPDATE_LOG.find((l) => l.version === APP_VERSION);
-          if (logEntry) {
+          if (logEntry && !seenVersions.includes(APP_VERSION)) {
             setUpdateInfo(logEntry);
             setShowUpdateModal(true);
           }
@@ -262,6 +453,107 @@ const App = () => {
       }
     } catch (e) {}
   }, []);
+  
+  // 关闭更新弹窗时记录已查看
+  const handleUpdateModalClose = () => {
+    if (updateInfo && updateInfo.version) {
+      markVersionAsSeen(updateInfo.version);
+    }
+    setShowUpdateModal(false);
+    localStorage.setItem(VERSION_KEY, APP_VERSION);
+  };
+  
+  // 查看完整更新日志
+  const handleViewFullLog = () => {
+    handleUpdateModalClose();
+    handleNavigate('help');
+  };
+
+  // ========================================
+  // 快捷键注册
+  // ========================================
+  useEffect(() => {
+    if (!isLoggedIn) return;
+
+    // Ctrl+S 保存
+    KeyboardShortcuts.register('ctrl+s', () => {
+      addToast('info', '提示', '数据已自动保存', 1500);
+    }, '保存');
+
+    // Escape 关闭模态框
+    KeyboardShortcuts.register('escape', () => {
+      if (showLogoutConfirm) {
+        setShowLogoutConfirm(false);
+      }
+      if (showUpdateModal) {
+        handleUpdateModalClose();
+      }
+      if (showNotifications) {
+        setShowNotifications(false);
+      }
+    }, '关闭弹窗');
+
+    // 数字键快速导航
+    const quickNavItems = ['dashboard', 'template', 'data', 'rules', 'batch', 'history', 'storage', 'shops', 'settings'];
+    quickNavItems.forEach((page, index) => {
+      KeyboardShortcuts.register(String(index + 1), () => {
+        handleNavigate(page);
+      }, `导航到 ${pageTitles[page]?.title || page}`);
+    });
+
+    return () => {
+      // 清理注册的快捷键
+      KeyboardShortcuts.unregister('ctrl+s');
+      KeyboardShortcuts.unregister('escape');
+      quickNavItems.forEach((_, index) => {
+        KeyboardShortcuts.unregister(String(index + 1));
+      });
+    };
+  }, [isLoggedIn, showLogoutConfirm, showUpdateModal, showNotifications]);
+
+  // ========================================
+  // 页面加载进度指示
+  // ========================================
+  useEffect(() => {
+    // 显示加载进度
+    const showLoading = () => {
+      setPageLoading(true);
+      setLoadingProgress(0);
+      
+      // 模拟加载进度
+      let progress = 0;
+      const updateProgress = () => {
+        progress += Math.random() * 30;
+        if (progress > 90) progress = 90;
+        setLoadingProgress(progress);
+      };
+      
+      loadingRef.current = setInterval(updateProgress, 100);
+    };
+
+    const hideLoading = () => {
+      if (loadingRef.current) {
+        clearInterval(loadingRef.current);
+      }
+      setLoadingProgress(100);
+      setTimeout(() => {
+        setPageLoading(false);
+        setLoadingProgress(0);
+      }, 200);
+    };
+
+    // 监听页面切换
+    const originalSetCurrentPage = setCurrentPage;
+    
+    // 初始加载完成
+    setTimeout(hideLoading, 500);
+    
+    return () => {
+      if (loadingRef.current) {
+        clearInterval(loadingRef.current);
+      }
+    };
+  }, [currentPage]);
 
   useEffect(() => {
     if (showNotifications) {
@@ -764,6 +1056,15 @@ const App = () => {
   return /*#__PURE__*/ React.createElement(
     "div",
     { className: "app" },
+    // 页面加载进度条
+    pageLoading && /*#__PURE__*/ React.createElement(
+      "div",
+      { className: "page-loading-bar" },
+      /*#__PURE__*/ React.createElement("div", { 
+        className: "page-loading-progress", 
+        style: { width: `${loadingProgress}%` } 
+      })
+    ),
     /*#__PURE__*/ React.createElement(
       "aside",
       { className: `sidebar ${sidebarCollapsed ? "collapsed" : ""}` },
@@ -1269,7 +1570,7 @@ const App = () => {
       }),
     showUpdateModal && updateInfo && /*#__PURE__*/ React.createElement(
       "div",
-      { className: "modal-mask", onClick: () => { setShowUpdateModal(false); localStorage.setItem(VERSION_KEY, APP_VERSION); } },
+      { className: "modal-mask", onClick: handleUpdateModalClose },
       /*#__PURE__*/ React.createElement(
         "div",
         { className: "modal update-modal", onClick: (e) => e.stopPropagation() },
@@ -1283,9 +1584,14 @@ const App = () => {
           ),
           /*#__PURE__*/ React.createElement("div", { className: "update-modal-version" }, `v${updateInfo.version}`),
           /*#__PURE__*/ React.createElement("div", { className: "update-modal-date" }, updateInfo.date),
+          updateInfo.summary && /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "update-modal-summary" },
+            updateInfo.summary
+          ),
           updateDetectedAt && /*#__PURE__*/ React.createElement(
             "div",
-            { className: "update-modal-detected", style: { fontSize: 12, color: "var(--color-text-muted)", marginTop: 4 } },
+            { className: "update-modal-detected" },
             `检测到更新时间：${updateDetectedAt.toLocaleString()}`,
           ),
         ),
@@ -1294,10 +1600,68 @@ const App = () => {
           { className: "update-modal-body" },
           /*#__PURE__*/ React.createElement("div", { className: "update-modal-title" }, "🎉 新功能已上线"),
           /*#__PURE__*/ React.createElement("div", { className: "update-modal-subtitle" }, "感谢您的使用！本次更新带来了多项功能优化和体验提升，建议刷新页面以获得最佳体验。"),
-          /*#__PURE__*/ React.createElement(
+          
+          // 新增功能
+          updateInfo.changes && updateInfo.changes.filter(c => c.type === 'feature').length > 0 && /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "update-modal-section" },
+            /*#__PURE__*/ React.createElement("div", { className: "update-modal-section-header" },
+              /*#__PURE__*/ React.createElement(Icons.PlusCircle, null),
+              "新增功能"
+            ),
+            /*#__PURE__*/ React.createElement(
+              "ul",
+              { className: "update-modal-list feature-list" },
+              updateInfo.changes.filter(c => c.type === 'feature').map((change, idx) => /*#__PURE__*/ React.createElement("li", { key: idx },
+                /*#__PURE__*/ React.createElement("span", { className: "update-change-icon feature" }, "✨"),
+                change.text
+              ))
+            )
+          ),
+          
+          // 优化项
+          updateInfo.changes && updateInfo.changes.filter(c => c.type === 'optimize').length > 0 && /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "update-modal-section" },
+            /*#__PURE__*/ React.createElement("div", { className: "update-modal-section-header" },
+              /*#__PURE__*/ React.createElement(Icons.Zap, null),
+              "优化改进"
+            ),
+            /*#__PURE__*/ React.createElement(
+              "ul",
+              { className: "update-modal-list optimize-list" },
+              updateInfo.changes.filter(c => c.type === 'optimize').map((change, idx) => /*#__PURE__*/ React.createElement("li", { key: idx },
+                /*#__PURE__*/ React.createElement("span", { className: "update-change-icon optimize" }, "⚡"),
+                change.text
+              ))
+            )
+          ),
+          
+          // Bug修复
+          updateInfo.bugfixes && updateInfo.bugfixes.length > 0 && /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "update-modal-section" },
+            /*#__PURE__*/ React.createElement("div", { className: "update-modal-section-header" },
+              /*#__PURE__*/ React.createElement(Icons.CheckCircle, null),
+              "问题修复"
+            ),
+            /*#__PURE__*/ React.createElement(
+              "ul",
+              { className: "update-modal-list bugfix-list" },
+              updateInfo.bugfixes.map((fix, idx) => /*#__PURE__*/ React.createElement("li", { key: idx },
+                /*#__PURE__*/ React.createElement("span", { className: "update-change-icon bugfix" }, "🔧"),
+                fix
+              ))
+            )
+          ),
+          
+          // 兼容旧格式
+          (!updateInfo.changes || updateInfo.changes.length === 0) && updateInfo.changes && /*#__PURE__*/ React.createElement(
             "ul",
             { className: "update-modal-list" },
-            updateInfo.changes.map((change, idx) => /*#__PURE__*/ React.createElement("li", { key: idx }, change)),
+            updateInfo.changes.map((change, idx) => /*#__PURE__*/ React.createElement("li", { key: idx },
+              typeof change === 'string' ? change : change.text
+            ))
           ),
         ),
         /*#__PURE__*/ React.createElement(
@@ -1306,25 +1670,35 @@ const App = () => {
           /*#__PURE__*/ React.createElement(
             "button",
             {
-              className: "btn btn-secondary",
-              onClick: () => {
-                setShowUpdateModal(false);
-                localStorage.setItem(VERSION_KEY, APP_VERSION);
-              },
+              className: "btn btn-ghost view-full-log-btn",
+              onClick: handleViewFullLog,
             },
-            "稍后再说",
+            /*#__PURE__*/ React.createElement(Icons.FileText, null),
+            " 查看完整日志",
           ),
           /*#__PURE__*/ React.createElement(
-            "button",
-            {
-              className: "btn btn-primary",
-              onClick: () => {
-                localStorage.setItem(VERSION_KEY, APP_VERSION);
-                window.location.reload();
+            "div",
+            { className: "update-modal-footer-right" },
+            /*#__PURE__*/ React.createElement(
+              "button",
+              {
+                className: "btn btn-secondary",
+                onClick: handleUpdateModalClose,
               },
-            },
-            /*#__PURE__*/ React.createElement(Icons.RefreshCw, null),
-            " 立即刷新",
+              "稍后再说",
+            ),
+            /*#__PURE__*/ React.createElement(
+              "button",
+              {
+                className: "btn btn-primary",
+                onClick: () => {
+                  handleUpdateModalClose();
+                  window.location.reload();
+                },
+              },
+              /*#__PURE__*/ React.createElement(Icons.RefreshCw, null),
+              " 立即刷新",
+            ),
           ),
         ),
       ),

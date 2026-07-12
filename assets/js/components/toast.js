@@ -304,10 +304,19 @@ const ToastProvider = ({ children }) => {
       return;
     }
     const id = Utils.uniqueId();
-    setToasts(prev => [...prev, { id, type, title, message }]);
-    setTimeout(() => {
-      setToasts(prev => prev.filter(t => t.id !== id));
+    setToasts(prev => [...prev, { id, type, title, message, isLeaving: false }]);
+    
+    // 设置自动消失
+    const timeoutId = setTimeout(() => {
+      // 先添加离开动画
+      setToasts(prev => prev.map(t => t.id === id ? { ...t, isLeaving: true } : t));
+      
+      // 动画结束后移除
+      setTimeout(() => {
+        setToasts(prev => prev.filter(t => t.id !== id));
+      }, 300);
     }, duration);
+    
     if (sound) {
       if (type === "success") SoundManager.playSuccess();
       else if (type === "error") SoundManager.playError();
@@ -336,7 +345,10 @@ const ToastProvider = ({ children }) => {
     children,
     React.createElement("div", { className: "toast-container" },
       toasts.map(toast =>
-        React.createElement("div", { key: toast.id, className: `toast ${toast.type}` },
+        React.createElement("div", { 
+          key: toast.id, 
+          className: `toast toast-${toast.type} ${toast.isLeaving ? 'toast-leave' : ''}`
+        },
           React.createElement("div", { className: "toast-icon" }, getIcon(toast.type)),
           React.createElement("div", { className: "toast-content" },
             React.createElement("div", { className: "toast-title" }, toast.title),

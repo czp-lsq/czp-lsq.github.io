@@ -10,10 +10,47 @@
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
   overflow: hidden;
   position: relative;
   height: 100vh;
+}
+
+/* 侧边栏展开动画优化 */
+.sidebar:not(.collapsed) .nav-text,
+.sidebar:not(.collapsed) .nav-group-title-text,
+.sidebar:not(.collapsed) .nav-badge,
+.sidebar:not(.collapsed) .nav-group-arrow {
+  animation: slideInLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+.sidebar.collapsed .nav-text,
+.sidebar.collapsed .nav-group-title-text,
+.sidebar.collapsed .nav-badge,
+.sidebar.collapsed .nav-group-arrow {
+  animation: slideOutLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+}
+
+@keyframes slideInLeft {
+  from {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+@keyframes slideOutLeft {
+  from {
+    opacity: 1;
+    transform: translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateX(-8px);
+  }
 }
 
 .sidebar.collapsed {
@@ -513,6 +550,45 @@
   padding: 24px;
   background: var(--color-bg-primary);
   min-height: 0;
+}
+
+/* 页面切换过渡效果 */
+.main-content > * {
+  animation: pageEnter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+@keyframes pageEnter {
+  from {
+    opacity: 0;
+    transform: translateY(16px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* 页面切换淡入淡出动画类 */
+.page-transition-enter {
+  opacity: 0;
+  transform: translateY(16px);
+}
+
+.page-transition-enter-active {
+  opacity: 1;
+  transform: translateY(0);
+  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.page-transition-exit {
+  opacity: 1;
+  transform: translateY(0);
+}
+
+.page-transition-exit-active {
+  opacity: 0;
+  transform: translateY(-8px);
+  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .header-platform-switcher {
@@ -1073,4 +1149,243 @@
   background: var(--color-bg-secondary);
   border-top: 1px solid var(--color-border-light);
   border-radius: 0 0 var(--radius-xl) var(--radius-xl);
+}
+
+/* ========================================
+   布局切换按钮
+   ======================================== */
+.layout-toggle-btn {
+  width: 40px;
+  height: 40px;
+  border-radius: var(--radius-md);
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  color: var(--color-text-secondary);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.layout-toggle-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-primary);
+  border-color: var(--color-primary);
+  transform: scale(1.08);
+}
+
+.layout-toggle-btn:active {
+  transform: scale(0.95);
+}
+
+.layout-toggle-btn svg {
+  width: 18px;
+  height: 18px;
+  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.layout-toggle-btn:hover svg {
+  transform: rotate(10deg);
+}
+
+/* 布局切换按钮 - header位置 */
+.header-layout-toggle {
+  margin-right: 8px;
+}
+
+/* 布局切换动画提示 */
+.layout-toggle-tooltip {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+  padding: 6px 12px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  white-space: nowrap;
+  box-shadow: var(--shadow-md);
+  opacity: 0;
+  visibility: hidden;
+  pointer-events: none;
+  transition: opacity 0.2s ease, visibility 0.2s ease;
+  z-index: 100;
+}
+
+.layout-toggle-btn:hover .layout-toggle-tooltip {
+  opacity: 1;
+  visibility: visible;
+}
+
+/* ========================================
+   优化响应式布局断点
+   ======================================== */
+/* 大屏幕 (>1440px) */
+@media (min-width: 1440px) {
+  .sidebar {
+    width: 260px;
+  }
+
+  .main-content {
+    padding: 32px;
+  }
+
+  .page-title {
+    font-size: 28px;
+  }
+}
+
+/* 中等屏幕 (1024px - 1280px) */
+@media (max-width: 1280px) and (min-width: 1024px) {
+  .sidebar:not(.collapsed) {
+    width: 220px;
+  }
+
+  .main-content {
+    padding: 20px;
+  }
+
+  .main-header {
+    padding: 0 20px;
+  }
+}
+
+/* 平板设备 (768px - 1024px) */
+@media (max-width: 1024px) and (min-width: 768px) {
+  .sidebar:not(.collapsed) {
+    width: 200px;
+  }
+
+  .sidebar.collapsed {
+    width: 56px;
+  }
+
+  .sidebar-toggle {
+    right: -12px;
+  }
+
+  .main-content {
+    padding: 16px;
+  }
+
+  .page-header {
+    margin-bottom: 16px;
+  }
+}
+
+/* 移动端优化 (< 768px) */
+@media (max-width: 768px) {
+  .sidebar {
+    position: fixed;
+    left: 0;
+    top: 0;
+    bottom: 0;
+    z-index: var(--z-dropdown);
+    transform: translateX(-100%);
+    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    width: 240px;
+    box-shadow: var(--shadow-xl);
+  }
+
+  .sidebar.mobile-open {
+    transform: translateX(0);
+  }
+
+  .sidebar.collapsed.mobile-open {
+    transform: translateX(0);
+  }
+
+  .sidebar-overlay {
+    position: fixed;
+    inset: 0;
+    background: rgba(0, 0, 0, 0.4);
+    z-index: calc(var(--z-dropdown) - 1);
+    opacity: 0;
+    visibility: hidden;
+    transition: opacity 0.3s ease, visibility 0.3s ease;
+    backdrop-filter: blur(4px);
+  }
+
+  .sidebar-overlay.show {
+    opacity: 1;
+    visibility: visible;
+  }
+
+  /* 移动端布局切换按钮 */
+  .mobile-layout-toggle {
+    position: fixed;
+    bottom: 24px;
+    left: 24px;
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    background: var(--color-primary-gradient);
+    color: white;
+    box-shadow: var(--shadow-lg);
+    z-index: 50;
+  }
+
+  .mobile-layout-toggle:hover {
+    transform: scale(1.1);
+  }
+
+  .mobile-layout-toggle svg {
+    width: 24px;
+    height: 24px;
+  }
+
+  .main {
+    width: 100%;
+  }
+
+  .main-header {
+    padding: 0 16px;
+    height: 56px;
+  }
+
+  .header-platform-switcher {
+    display: none;
+  }
+
+  .main-content {
+    padding: 16px;
+  }
+
+  .page-header {
+    margin-bottom: 16px;
+  }
+
+  .page-title {
+    font-size: 20px;
+  }
+}
+
+/* 小屏幕 (< 480px) */
+@media (max-width: 480px) {
+  .sidebar {
+    width: 100%;
+    transform: translateX(-100%);
+  }
+
+  .sidebar.mobile-open {
+    width: 280px;
+    max-width: 85vw;
+  }
+
+  .main-content {
+    padding: 12px;
+  }
+
+  .page-title {
+    font-size: 18px;
+  }
+
+  .page-desc {
+    font-size: 12px;
+  }
 }

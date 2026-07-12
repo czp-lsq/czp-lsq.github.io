@@ -1274,6 +1274,287 @@ const CalcEngine = {
             });
             break;
           }
+          case "movingAverage": {
+            const maCol = step.config.column || "val";
+            const windowSize = Number(step.config.windowSize) || 3;
+            const targetCol = step.config.targetColumn || "moving_avg";
+            const values = data.map((row) =>
+              Number(String(row[maCol] ?? row.val).replace(/[,，]/g, "").replace(/[¥￥$€£]/g, "")) || 0
+            );
+            data = data.map((row, idx) => {
+              let sum = 0;
+              let count = 0;
+              const startIdx = Math.max(0, idx - windowSize + 1);
+              for (let i = startIdx; i <= idx; i++) {
+                sum += values[i];
+                count++;
+              }
+              const avg = count > 0 ? sum / count : 0;
+              return { ...row, [targetCol]: avg };
+            });
+            break;
+          }
+          case "binning": {
+            const binCol = step.config.column || "val";
+            const targetCol = step.config.targetColumn || "bin";
+            const binType = step.config.binType || "equalWidth";
+            const binCount = Number(step.config.binCount) || 5;
+            const binLabels = step.config.binLabels || [];
+            const customBins = step.config.customBins || [];
+            const values = data.map((row) =>
+              Number(String(row[binCol] ?? row.val).replace(/[,，]/g, "").replace(/[¥￥$€£]/g, "")) || 0
+            );
+            const minVal = Math.min(...values);
+            const maxVal = Math.max(...values);
+            const range = maxVal - minVal;
+            const binWidth = range > 0 ? range / binCount : 1;
+            data = data.map((row, idx) => {
+              const val = values[idx];
+              let binIndex = 0;
+              let binLabel = "";
+              if (binType === "equalWidth") {
+                binIndex = range > 0 ? Math.min(Math.floor((val - minVal) / binWidth), binCount - 1) : 0;
+                binLabel = binLabels[binIndex] || `区间${binIndex + 1}`;
+              } else if (binType === "custom") {
+                for (let i = 0; i < customBins.length; i++) {
+                  const bin = customBins[i];
+                  if (val >= (bin.min !== undefined ? Number(bin.min) : -Infinity) &&
+                      val <= (bin.max !== undefined ? Number(bin.max) : Infinity)) {
+                    binIndex = i;
+                    binLabel = bin.label || `区间${i + 1}`;
+                    break;
+                  }
+                }
+                if (!binLabel) {
+                  binLabel = "未分类";
+                }
+              }
+              return { ...row, [targetCol]: binLabel };
+            });
+            break;
+          }
+          case "conditionalTag": {
+            const conditions = step.config.conditions || [];
+            const targetCol = step.config.targetColumn || "tag";
+            const defaultTag = step.config.defaultTag || "";
+            data = data.map((row) => {
+              let matchedTag = defaultTag;
+              for (const cond of conditions) {
+                const col = cond.column || "val";
+                const val = row[col] ?? row.val;
+                const target = cond.value;
+                const v = val != null ? String(val) : "";
+                const t = target != null ? String(target) : "";
+                let match = false;
+                switch (cond.op) {
+                  case "==": match = v === t; break;
+                  case "!=": match = v !== t; break;
+                  case ">": match = Number(val) > Number(target); break;
+                  case "<": match = Number(val) < Number(target); break;
+                  case ">=": match = Number(val) >= Number(target); break;
+                  case "<=": match = Number(val) <= Number(target); break;
+                  case "contains": match = v.includes(t); break;
+                  case "notContains": match = !v.includes(t); break;
+                  case "startsWith": match = v.startsWith(t); break;
+                  case "endsWith": match = v.endsWith(t); break;
+                  case "isEmpty": match = !v; break;
+                  case "notEmpty": match = !!v; break;
+                  case "regex": {
+                    try { match = new RegExp(t).test(v); } catch { match = false; }
+                    break;
+                  }
+                  default: match = false;
+                }
+                if (match) {
+                  matchedTag = cond.tag || "";
+                  break;
+                }
+              }
+              return { ...row, [targetCol]: matchedTag };
+            });
+            break;
+          }
+          case "stringExtract": {
+            const seCol = step.config.column || "val";
+            const targetCol = step.config.targetColumn || "extracted";
+            const extractType = step.config.extractType || "regex";
+            data = data.map((row) => {
+              const src = String(row[seCol] ?? row.val ?? "");
+              let result = "";
+              switch (extractType) {
+                case "regex": {
+                  try {
+                    const regex = new RegExp(step.config.pattern || "");
+                    const match = src.match(regex);
+                    result = match ? (step.config.extractGroup ? match[Number(step.config.extractGroup)] : match[0]) : "";
+                  } catch { result = ""; }
+                  break;
+                }
+                case "substring": {
+                  const start = Number(step.config.start) || 0;
+                  const length = Number(step.config.length) || src.length;
+                  result = src.substring(start, start + length);
+                  break;
+                }
+                case "concat": {
+                  const columns = step.config.columns || [];
+                  const separator = step.config.separator || "";
+                  const parts = columns.map(c => String(row[c] ?? ""));
+                  result = parts.join(separator);
+                  break;
+                }
+                case "split": {
+                  const sep = step.config.separator || ",";
+                  const index = Number(step.config.splitIndex) || 0;
+                  const parts = src.split(sep);
+                  result = parts[index] || "";
+                  break;
+                }
+                case "trim":
+                  result = src.trim();
+                  break;
+                case "upper":
+                  result = src.toUpperCase();
+                  break;
+                case "lower":
+                  result = src.toLowerCase();
+                  break;
+                default:
+                  result = src;
+              }
+              return { ...row, [targetCol]: result };
+            });
+            break;
+          }
+          case "fillNA": {
+            const fillCol = step.config.column || "val";
+            const fillType = step.config.fillType || "value";
+            const fillValue = step.config.fillValue || "";
+            data = data.map((row) => {
+              const currentVal = row[fillCol] ?? row.val;
+              const isEmpty = currentVal === null || currentVal === undefined || currentVal === "" || 
+                              (typeof currentVal === "number" && isNaN(currentVal));
+              if (!isEmpty) return row;
+              let newValue = currentVal;
+              switch (fillType) {
+                case "value":
+                  newValue = fillValue;
+                  break;
+                case "zero":
+                  newValue = 0;
+                  break;
+                case "empty":
+                  newValue = "";
+                  break;
+                case "mean": {
+                  const values = data.map(r => Number(r[fillCol] ?? r.val)).filter(v => !isNaN(v) && v !== null);
+                  newValue = values.length > 0 ? values.reduce((a, b) => a + b, 0) / values.length : 0;
+                  break;
+                }
+                case "median": {
+                  const values = data.map(r => Number(r[fillCol] ?? r.val)).filter(v => !isNaN(v) && v !== null);
+                  if (values.length > 0) {
+                    const sorted = [...values].sort((a, b) => a - b);
+                    const mid = Math.floor(sorted.length / 2);
+                    newValue = sorted.length % 2 !== 0 ? sorted[mid] : (sorted[mid - 1] + sorted[mid]) / 2;
+                  } else {
+                    newValue = 0;
+                  }
+                  break;
+                }
+                case "mode": {
+                  const freq = {};
+                  data.forEach(r => {
+                    const v = r[fillCol] ?? r.val;
+                    if (v !== null && v !== undefined && v !== "" && !isNaN(Number(v))) {
+                      const key = String(v);
+                      freq[key] = (freq[key] || 0) + 1;
+                    }
+                  });
+                  let maxFreq = 0;
+                  let modeVal = fillValue;
+                  Object.entries(freq).forEach(([k, f]) => {
+                    if (f > maxFreq) { maxFreq = f; modeVal = k; }
+                  });
+                  newValue = modeVal;
+                  break;
+                }
+                case "forward": {
+                  // 前向填充 - 需要在循环外处理
+                  break;
+                }
+                case "backward": {
+                  // 后向填充 - 需要在循环外处理
+                  break;
+                }
+                default:
+                  newValue = fillValue;
+              }
+              return { ...row, [fillCol]: newValue };
+            });
+            // 处理前向/后向填充
+            if (fillType === "forward" || fillType === "backward") {
+              let lastValid = null;
+              if (fillType === "forward") {
+                for (let i = 0; i < data.length; i++) {
+                  const currentVal = data[i][fillCol] ?? data[i].val;
+                  const isEmpty = currentVal === null || currentVal === undefined || currentVal === "" ||
+                                  (typeof currentVal === "number" && isNaN(currentVal));
+                  if (!isEmpty) {
+                    lastValid = currentVal;
+                  } else if (lastValid !== null) {
+                    data[i] = { ...data[i], [fillCol]: lastValid };
+                  }
+                }
+              } else {
+                for (let i = data.length - 1; i >= 0; i--) {
+                  const currentVal = data[i][fillCol] ?? data[i].val;
+                  const isEmpty = currentVal === null || currentVal === undefined || currentVal === "" ||
+                                  (typeof currentVal === "number" && isNaN(currentVal));
+                  if (!isEmpty) {
+                    lastValid = currentVal;
+                  } else if (lastValid !== null) {
+                    data[i] = { ...data[i], [fillCol]: lastValid };
+                  }
+                }
+              }
+            }
+            break;
+          }
+          case "normalize": {
+            const normCol = step.config.column || "val";
+            const targetCol = step.config.targetColumn || "normalized";
+            const normType = step.config.normType || "minmax";
+            const values = data.map((row) =>
+              Number(String(row[normCol] ?? row.val).replace(/[,，]/g, "").replace(/[¥￥$€£]/g, "")) || 0
+            );
+            const minVal = Math.min(...values);
+            const maxVal = Math.max(...values);
+            const range = maxVal - minVal;
+            const meanVal = values.reduce((a, b) => a + b, 0) / values.length;
+            const variance = values.reduce((a, v) => a + Math.pow(v - meanVal, 2), 0) / values.length;
+            const stddev = Math.sqrt(variance);
+            data = data.map((row, idx) => {
+              const val = values[idx];
+              let normalized = 0;
+              switch (normType) {
+                case "minmax":
+                  normalized = range > 0 ? (val - minVal) / range : 0;
+                  break;
+                case "zscore":
+                  normalized = stddev > 0 ? (val - meanVal) / stddev : 0;
+                  break;
+                case "decimal":
+                  const maxAbs = Math.max(...values.map(v => Math.abs(v)));
+                  normalized = maxAbs > 0 ? val / maxAbs : 0;
+                  break;
+                default:
+                  normalized = val;
+              }
+              return { ...row, [targetCol]: normalized };
+            });
+            break;
+          }
         }
         stepResults.push({
           step: stepIdx,

@@ -365,4 +365,9 @@ const Icons = {
   Filter: () => React.createElement("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
     React.createElement("polygon", { points: "22 3 2 3 10 12.46 10 19 14 21 14 12.46 22 3" })
   ),
+  PlusCircle: () => React.createElement("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement("circle", { cx: "12", cy: "12", r: "10" }),
+    React.createElement("line", { x1: "12", y1: "8", x2: "12", y2: "16" }),
+    React.createElement("line", { x1: "8", y1: "12", x2: "16", y2: "12" })
+  ),
 };

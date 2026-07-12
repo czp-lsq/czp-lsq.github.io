@@ -698,6 +698,54 @@ const RulesPage = ({ state, currentPlatform }) => {
         bg: "var(--color-warning-bg)",
         category: "compute",
       },
+      movingAverage: {
+        name: "移动平均",
+        desc: "按窗口大小计算移动平均值",
+        icon: /*#__PURE__*/ React.createElement(Icons.BarChart3, null),
+        color: "var(--color-info)",
+        bg: "var(--color-info-bg)",
+        category: "compute",
+      },
+      binning: {
+        name: "数据分箱",
+        desc: "将连续值按区间分组",
+        icon: /*#__PURE__*/ React.createElement(Icons.Grid, null),
+        color: "var(--color-accent)",
+        bg: "var(--color-accent-100)",
+        category: "transform",
+      },
+      conditionalTag: {
+        name: "条件标记",
+        desc: "根据条件添加标签列",
+        icon: /*#__PURE__*/ React.createElement(Icons.Tag, null),
+        color: "var(--color-warning)",
+        bg: "var(--color-warning-bg)",
+        category: "transform",
+      },
+      stringExtract: {
+        name: "字符串提取",
+        desc: "正则提取、截取、拼接等",
+        icon: /*#__PURE__*/ React.createElement(Icons.FileText, null),
+        color: "var(--color-success)",
+        bg: "var(--color-success-bg)",
+        category: "transform",
+      },
+      fillNA: {
+        name: "空值填充",
+        desc: "支持多种填充策略",
+        icon: /*#__PURE__*/ React.createElement(Icons.Droplet, null),
+        color: "var(--color-primary)",
+        bg: "var(--color-primary-50)",
+        category: "transform",
+      },
+      normalize: {
+        name: "数据标准化",
+        desc: "最小最大标准化、Z-score",
+        icon: /*#__PURE__*/ React.createElement(Icons.Minimize2, null),
+        color: "var(--color-info)",
+        bg: "var(--color-info-bg)",
+        category: "compute",
+      },
     };
     return (
       types[type] || {
@@ -817,6 +865,28 @@ const RulesPage = ({ state, currentPlatform }) => {
         return { valid: true, message: "配置完整" };
       case "percentOfTotal":
         if (!cfg.column) return { valid: false, message: "请选择计算列" };
+        return { valid: true, message: "配置完整" };
+      case "movingAverage":
+        if (!cfg.column) return { valid: false, message: "请选择计算列" };
+        if (!cfg.windowSize || cfg.windowSize < 1) return { valid: false, message: "请设置窗口大小" };
+        return { valid: true, message: "配置完整" };
+      case "binning":
+        if (!cfg.column) return { valid: false, message: "请选择分箱列" };
+        if (!cfg.binCount || cfg.binCount < 1) return { valid: false, message: "请设置分箱数量" };
+        return { valid: true, message: "配置完整" };
+      case "conditionalTag":
+        if (!cfg.conditions || cfg.conditions.length === 0) return { valid: false, message: "请添加条件规则" };
+        return { valid: true, message: "配置完整" };
+      case "stringExtract":
+        if (!cfg.column) return { valid: false, message: "请选择源字段" };
+        if (cfg.extractType === "regex" && !cfg.pattern) return { valid: false, message: "请输入正则表达式" };
+        return { valid: true, message: "配置完整" };
+      case "fillNA":
+        if (!cfg.column) return { valid: false, message: "请选择填充列" };
+        if (cfg.fillType === "value" && !cfg.fillValue) return { valid: false, message: "请输入填充值" };
+        return { valid: true, message: "配置完整" };
+      case "normalize":
+        if (!cfg.column) return { valid: false, message: "请选择标准化列" };
         return { valid: true, message: "配置完整" };
       default:
         return { valid: true, message: "配置完整" };
@@ -1001,6 +1071,24 @@ const RulesPage = ({ state, currentPlatform }) => {
         return `累计: ${c.column || "val"}${c.orderColumn ? ` 按${c.orderColumn}排序` : ""}`;
       case "percentOfTotal":
         return `占比: ${c.column || "val"}${c.asPercent ? "%" : ""}`;
+      case "movingAverage":
+        return `移动平均: ${c.column || "val"} → ${c.targetColumn || "moving_avg"} (窗口:${c.windowSize || 3})`;
+      case "binning":
+        return `分箱: ${c.column || "val"} → ${c.targetColumn || "bin"} (${c.binType === "equalWidth" ? `等宽${c.binCount || 5}箱` : "自定义区间"})`;
+      case "conditionalTag":
+        return `条件标记: ${(c.conditions || []).length}条规则 → ${c.targetColumn || "tag"}`;
+      case "stringExtract": {
+        const extractNames = { regex: "正则提取", substring: "截取", concat: "拼接", split: "分割", trim: "去空格", upper: "转大写", lower: "转小写" };
+        return `字符串: ${c.column || "val"} (${extractNames[c.extractType] || c.extractType}) → ${c.targetColumn || "extracted"}`;
+      }
+      case "fillNA": {
+        const fillNames = { value: "指定值", zero: "零值", empty: "空字符串", mean: "平均值", median: "中位数", mode: "众数", forward: "前向填充", backward: "后向填充" };
+        return `空值填充: ${c.column || "val"} (${fillNames[c.fillType] || c.fillType}${c.fillType === "value" ? `:${c.fillValue}` : ""})`;
+      }
+      case "normalize": {
+        const normNames = { minmax: "最小最大", zscore: "Z-score", decimal: "小数定标" };
+        return `标准化: ${c.column || "val"} → ${c.targetColumn || "normalized"} (${normNames[c.normType] || c.normType})`;
+      }
       default:
         return "";
     }
@@ -1177,6 +1265,36 @@ const RulesPage = ({ state, currentPlatform }) => {
           return { ok: false, msg: "「占比计算」前需要有「数据源」" };
         return { ok: true };
       },
+      movingAverage: () => {
+        if (currentSteps.length === 0)
+          return { ok: false, msg: "「移动平均」前需要有「数据源」" };
+        return { ok: true };
+      },
+      binning: () => {
+        if (currentSteps.length === 0)
+          return { ok: false, msg: "「数据分箱」前需要有「数据源」" };
+        return { ok: true };
+      },
+      conditionalTag: () => {
+        if (currentSteps.length === 0)
+          return { ok: false, msg: "「条件标记」前需要有「数据源」" };
+        return { ok: true };
+      },
+      stringExtract: () => {
+        if (currentSteps.length === 0)
+          return { ok: false, msg: "「字符串提取」前需要有「数据源」" };
+        return { ok: true };
+      },
+      fillNA: () => {
+        if (currentSteps.length === 0)
+          return { ok: false, msg: "「空值填充」前需要有「数据源」" };
+        return { ok: true };
+      },
+      normalize: () => {
+        if (currentSteps.length === 0)
+          return { ok: false, msg: "「数据标准化」前需要有「数据源」" };
+        return { ok: true };
+      },
     };
     const check = stepLogicChecks[type]
       ? stepLogicChecks[type]()
@@ -1230,6 +1348,12 @@ const RulesPage = ({ state, currentPlatform }) => {
       crossMatch: { columns: [""], table: "", compareColumns: [""], mode: "keepIntersection" },
       runningTotal: { column: "", orderColumn: "", direction: "asc" },
       percentOfTotal: { column: "", asPercent: true },
+      movingAverage: { column: "", windowSize: 3, targetColumn: "moving_avg" },
+      binning: { column: "", binType: "equalWidth", binCount: 5, binLabels: [], customBins: [], targetColumn: "bin" },
+      conditionalTag: { conditions: [{ column: "", op: "==", value: "", tag: "" }], targetColumn: "tag", defaultTag: "" },
+      stringExtract: { column: "", extractType: "regex", pattern: "", extractGroup: 0, targetColumn: "extracted", separator: "", start: 0, length: 10, splitIndex: 0, columns: [] },
+      fillNA: { column: "", fillType: "value", fillValue: "" },
+      normalize: { column: "", normType: "minmax", targetColumn: "normalized" },
     };
     const newStep = {
       id: `step_${Date.now()}`,
@@ -1413,51 +1537,79 @@ const RulesPage = ({ state, currentPlatform }) => {
           const d = String(nowDate.getDate()).padStart(2, "0");
           return `${y}年${m}月${d}日`;
         };
+        const fillTypeOptions = [
+          { value: "auto", label: "🤖 自动识别（根据占位符类型）", group: "智能" },
+          { value: "shop", label: "🏪 店铺名（从当前店铺）", group: "常用" },
+          { value: "date", label: "📅 日期（数据周期日期）", group: "常用" },
+          { value: "dateNow", label: "📆 日期（当前系统日期）", group: "常用" },
+          { value: "field", label: "📊 从数据字段取值", group: "高级" },
+        ];
+        const dateFormatOptions = [
+          { value: "yyyy", label: "仅年 (2024)" },
+          { value: "mm", label: "仅月 (03)" },
+          { value: "dd", label: "仅日 (15)" },
+          { value: "yyyy-mm", label: "年月 (2024年03月)" },
+          { value: "yyyy-mm-dd", label: "年月日 (2024年03月15日)" },
+          { value: "mm-dd", label: "月日 (03月15日)" },
+        ];
+        const quickFillTypes = ["shop", "date", "dateNow"];
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
           /*#__PURE__*/ React.createElement(
             "div",
-            { className: "form-item" },
+            { className: "config-section" },
             /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u586B\u5145\u65B9\u5F0F",
+              "div",
+              { className: "config-section-header" },
+              /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "config-section-title" },
+                /*#__PURE__*/ React.createElement(Icons.Fill, null),
+                " 基本设置"
+              )
             ),
             /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "填充方式",
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  { className: "form-label-hint" },
+                  "选择数据填充来源"
+                )
+              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
                 value: step.config.fillType,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "fillType", e.target.value),
-              },
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "auto" },
-                "\uD83E\uDD16 \u81EA\u52A8\u8BC6\u522B\uFF08\u6839\u636E\u5360\u4F4D\u7B26\u7C7B\u578B\uFF09",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "shop" },
-                "\uD83C\uDFEA \u5E97\u94FA\u540D\uFF08\u4ECE\u5F53\u524D\u5E97\u94FA\uFF09",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "date" },
-                "\uD83D\uDCC5 \u65E5\u671F\uFF08\u6570\u636E\u5468\u671F\u65E5\u671F\uFF09",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "dateNow" },
-                "\uD83D\uDCC6 \u65E5\u671F\uFF08\u5F53\u524D\u7CFB\u7EDF\u65E5\u671F\uFF09",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "field" },
-                "\uD83D\uDCCA \u4ECE\u6570\u636E\u5B57\u6BB5\u53D6\u503C",
-              ),
-            ),
+                onChange: (val) => updateStepConfig(step.id, "fillType", val),
+                options: fillTypeOptions,
+                placeholder: "请选择填充方式",
+                groupBy: "group",
+              }),
+              quickFillTypes.length > 0 && /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "quick-tags" },
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  { className: "quick-tags-label" },
+                  "常用："
+                ),
+                quickFillTypes.map((ft) =>
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    {
+                      key: ft,
+                      className: `quick-tag ${step.config.fillType === ft ? "active" : ""}`,
+                      onClick: () => updateStepConfig(step.id, "fillType", ft),
+                    },
+                    fillTypeOptions.find((o) => o.value === ft)?.label.replace(/[^\u4e00-\u9fa5a-zA-Z]/g, "").slice(0, 4)
+                  )
+                )
+              )
+            )
           ),
           step.config.fillType === "auto" &&
             /*#__PURE__*/ React.createElement(
@@ -1576,101 +1728,69 @@ const RulesPage = ({ state, currentPlatform }) => {
               null,
               /*#__PURE__*/ React.createElement(
                 "div",
-                { className: "step-info-box" },
+                { className: "config-section" },
                 /*#__PURE__*/ React.createElement(
                   "div",
-                  { className: "step-info-title" },
-                  /*#__PURE__*/ React.createElement(Icons.Clock, null),
+                  { className: "config-section-header" },
                   /*#__PURE__*/ React.createElement(
                     "span",
-                    null,
-                    step.config.fillType === "date"
-                      ? "数据周期日期填充"
-                      : "当前系统日期填充",
-                  ),
+                    { className: "config-section-title" },
+                    /*#__PURE__*/ React.createElement(Icons.Clock, null),
+                    step.config.fillType === "date" ? " 数据周期日期设置" : " 系统日期设置"
+                  )
                 ),
                 /*#__PURE__*/ React.createElement(
                   "div",
-                  { className: "step-info-content" },
+                  { className: "step-preview-box" },
                   /*#__PURE__*/ React.createElement(
                     "div",
-                    { className: "step-info-row" },
+                    { className: "step-preview-row" },
                     /*#__PURE__*/ React.createElement(
                       "span",
-                      { className: "step-info-label" },
-                      "\u586B\u5145\u503C\uFF1A",
+                      { className: "step-preview-label" },
+                      "预览填充值："
                     ),
                     /*#__PURE__*/ React.createElement(
                       "span",
-                      { className: "step-info-value highlight" },
+                      { className: "step-preview-value highlight" },
                       step.config.fillType === "date"
-                        ? `数据周期日期：${formatDetectedDate(detectedDate)}`
-                        : `当前系统日期：${formatNowDate()}`,
-                    ),
-                  ),
-                  step.config.fillType === "date" &&
-                    /*#__PURE__*/ React.createElement(
-                      "div",
-                      { className: "step-info-tip" },
-                      detectedDate
-                        ? `\uD83D\uDCA1 已从上传文件名中识别到数据周期：${formatDetectedDate(detectedDate)}，批量计算时会自动从每个文件中识别对应日期`
-                        : "\uD83D\uDCA1 未从当前文件名中识别到日期，请确保文件名包含日期信息（如：2024年3月、202403、2024-03等），系统将自动识别",
-                    ),
-                  step.config.fillType === "dateNow" &&
-                    /*#__PURE__*/ React.createElement(
-                      "div",
-                      { className: "step-info-tip" },
-                      "\uD83D\uDCA1 使用当前操作系统真实日期，适用于制表日期、填报日期等场景",
-                    ),
-                ),
-              ),
-              /*#__PURE__*/ React.createElement(
-                "div",
-                { className: "form-item" },
-                /*#__PURE__*/ React.createElement(
-                  "label",
-                  { className: "form-label" },
-                  "\u65E5\u671F\u683C\u5F0F",
+                        ? formatDetectedDate(detectedDate)
+                        : formatNowDate()
+                    )
+                  )
                 ),
                 /*#__PURE__*/ React.createElement(
-                  "select",
-                  {
-                    className: "select",
-                    value: step.config.dateFormat,
-                    onChange: (e) =>
-                      updateStepConfig(step.id, "dateFormat", e.target.value),
-                  },
+                  "div",
+                  { className: "form-item" },
                   /*#__PURE__*/ React.createElement(
-                    "option",
-                    { value: "yyyy" },
-                    "\u4EC5\u5E74 (2024)",
+                    "label",
+                    { className: "form-label" },
+                    "日期格式",
+                    /*#__PURE__*/ React.createElement(
+                      "span",
+                      { className: "form-label-hint" },
+                      "选择输出格式"
+                    )
                   ),
-                  /*#__PURE__*/ React.createElement(
-                    "option",
-                    { value: "mm" },
-                    "\u4EC5\u6708 (03)",
-                  ),
-                  /*#__PURE__*/ React.createElement(
-                    "option",
-                    { value: "dd" },
-                    "\u4EC5\u65E5 (15)",
-                  ),
-                  /*#__PURE__*/ React.createElement(
-                    "option",
-                    { value: "yyyy-mm" },
-                    "\u5E74\u6708 (2024\u5E7403\u6708)",
-                  ),
-                  /*#__PURE__*/ React.createElement(
-                    "option",
-                    { value: "yyyy-mm-dd" },
-                    "\u5E74\u6708\u65E5 (2024\u5E7403\u670815\u65E5)",
-                  ),
-                  /*#__PURE__*/ React.createElement(
-                    "option",
-                    { value: "mm-dd" },
-                    "\u6708\u65E5 (03\u670815\u65E5)",
-                  ),
+                  /*#__PURE__*/ React.createElement(SearchableSelect, {
+                    value: step.config.dateFormat || "yyyy-mm-dd",
+                    onChange: (val) => updateStepConfig(step.id, "dateFormat", val),
+                    options: dateFormatOptions,
+                    placeholder: "请选择日期格式",
+                  })
                 ),
+                step.config.fillType === "date" && /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "step-tip-box" },
+                  detectedDate
+                    ? `💡 已识别数据周期：${formatDetectedDate(detectedDate)}`
+                    : "💡 未识别到日期，请确保文件名包含日期信息"
+                ),
+                step.config.fillType === "dateNow" && /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "step-tip-box" },
+                  "💡 使用操作系统当前日期"
+                )
               ),
             ),
           step.config.fillType === "field" &&
@@ -1679,67 +1799,78 @@ const RulesPage = ({ state, currentPlatform }) => {
               null,
               /*#__PURE__*/ React.createElement(
                 "div",
-                { className: "form-item" },
+                { className: "config-section" },
                 /*#__PURE__*/ React.createElement(
-                  "label",
-                  { className: "form-label" },
-                  "\u9009\u62E9\u6570\u636E\u8868",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "select",
-                  {
-                    className: "select",
-                    value: step.config.sourceTable || "",
-                    onChange: (e) =>
-                      updateStepConfig(step.id, "sourceTable", e.target.value),
-                  },
+                  "div",
+                  { className: "config-section-header" },
                   /*#__PURE__*/ React.createElement(
-                    "option",
-                    { value: "" },
-                    "\u8BF7\u9009\u62E9\u6570\u636E\u8868",
-                  ),
-                  sampleTables.map((t) =>
-                    /*#__PURE__*/ React.createElement(
-                      "option",
-                      { key: t.id, value: t.id },
-                      t.name,
-                    ),
-                  ),
-                ),
-              ),
-              /*#__PURE__*/ React.createElement(
-                "div",
-                { className: "form-item" },
-                /*#__PURE__*/ React.createElement(
-                  "label",
-                  { className: "form-label" },
-                  "\u9009\u62E9\u5B57\u6BB5",
+                    "span",
+                    { className: "config-section-title" },
+                    /*#__PURE__*/ React.createElement(Icons.Table, null),
+                    " 数据字段取值设置"
+                  )
                 ),
                 /*#__PURE__*/ React.createElement(
-                  "select",
-                  {
-                    className: "select",
-                    value: step.config.sourceField,
-                    onChange: (e) =>
-                      updateStepConfig(step.id, "sourceField", e.target.value),
-                    disabled: !step.config.sourceTable,
-                  },
+                  "div",
+                  { className: "grid-2" },
                   /*#__PURE__*/ React.createElement(
-                    "option",
-                    { value: "" },
-                    "\u8BF7\u9009\u62E9\u5B57\u6BB5",
-                  ),
-                  (
-                    sampleTables.find((t) => t.id === step.config.sourceTable)
-                      ?.headers || []
-                  ).map((h) =>
+                    "div",
+                    { className: "form-item" },
                     /*#__PURE__*/ React.createElement(
-                      "option",
-                      { key: h, value: h },
-                      h,
+                      "label",
+                      { className: "form-label" },
+                      "数据表",
+                      /*#__PURE__*/ React.createElement(
+                        "span",
+                        { className: "form-label-hint" },
+                        "选择数据来源"
+                      )
                     ),
+                    /*#__PURE__*/ React.createElement(SearchableSelect, {
+                      value: step.config.sourceTable || "",
+                      onChange: (val) => {
+                        updateStepConfig(step.id, "sourceTable", val);
+                        updateStepConfig(step.id, "sourceField", "");
+                      },
+                      options: sampleTables.map((t) => ({
+                        value: t.id,
+                        label: t.name,
+                        group: t.source === "sample" ? "样表数据" : "外部数据"
+                      })),
+                      placeholder: "请选择数据表",
+                      groupBy: "group",
+                    })
                   ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "form-item" },
+                    /*#__PURE__*/ React.createElement(
+                      "label",
+                      { className: "form-label" },
+                      "取值字段",
+                      /*#__PURE__*/ React.createElement(
+                        "span",
+                        { className: "form-label-hint" },
+                        "选择填充字段"
+                      )
+                    ),
+                    /*#__PURE__*/ React.createElement(SearchableSelect, {
+                      value: step.config.sourceField || "",
+                      onChange: (val) => updateStepConfig(step.id, "sourceField", val),
+                      options: (sampleTables.find((t) => t.id === step.config.sourceTable)?.headers || []).map((h) => ({
+                        value: h,
+                        label: h
+                      })),
+                      placeholder: step.config.sourceTable ? "请选择字段" : "先选择数据表",
+                      disabled: !step.config.sourceTable,
+                    })
+                  )
                 ),
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "step-tip-box" },
+                  "💡 从指定数据表的指定字段提取值进行填充"
+                )
               ),
             ),
           /*#__PURE__*/ React.createElement(
@@ -1760,125 +1891,171 @@ const RulesPage = ({ state, currentPlatform }) => {
       }
       case "source": {
         const selectedTables = step.config.tables || [];
+        const firstSelectedTableHeaders = selectedTables.length > 0
+          ? allTables.find((t) => t.id === selectedTables[0])?.headers || []
+          : [];
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
           /*#__PURE__*/ React.createElement(
             "div",
-            { className: "form-item" },
+            { className: "config-section" },
             /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u9009\u62E9\u6570\u636E\u8868",
+              "div",
+              { className: "config-section-header" },
+              /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "config-section-title" },
+                /*#__PURE__*/ React.createElement(Icons.Database, null),
+                " 数据源配置"
+              ),
+              selectedTables.length > 0 && /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "config-section-badge" },
+                `已选 ${selectedTables.length} 个表`
+              )
             ),
             /*#__PURE__*/ React.createElement(
               "div",
-              { style: { display: "flex", flexDirection: "column", gap: 8 } },
-              sampleTables.length > 0 && /*#__PURE__*/ React.createElement(
-                "div",
-                null,
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "数据表",
                 /*#__PURE__*/ React.createElement(
-                  "div",
-                  { className: "form-sub-label" },
-                  "\u6837\u8868\u6570\u636E",
-                ),
-                sampleTables.map((t) =>
-                  /*#__PURE__*/ React.createElement(
-                    "label",
-                    { key: t.id, className: "checkbox-label" },
-                    /*#__PURE__*/ React.createElement("input", {
-                      type: "checkbox",
-                      checked: selectedTables.includes(t.id),
-                      onChange: (e) => {
-                        const newTables = e.target.checked
-                          ? [...selectedTables, t.id]
-                          : selectedTables.filter((id) => id !== t.id);
-                        updateStepConfig(step.id, "tables", newTables);
-                      },
-                    }),
-                    " ",
-                    t.name,
-                  ),
-                ),
+                  "span",
+                  { className: "form-label-hint" },
+                  "勾选需要的数据表"
+                )
               ),
-              externalTables.length > 0 && /*#__PURE__*/ React.createElement(
+              /*#__PURE__*/ React.createElement(
                 "div",
-                null,
-                /*#__PURE__*/ React.createElement(
+                { className: "table-select-grid" },
+                sampleTables.length > 0 && /*#__PURE__*/ React.createElement(
                   "div",
-                  { className: "form-sub-label" },
-                  "\u5168\u5C40\u6570\u636E\u8868",
-                ),
-                externalTables.map((t) =>
+                  { className: "table-select-group" },
                   /*#__PURE__*/ React.createElement(
-                    "label",
-                    { key: t.id, className: "checkbox-label" },
-                    /*#__PURE__*/ React.createElement("input", {
-                      type: "checkbox",
-                      checked: selectedTables.includes(t.id),
-                      onChange: (e) => {
-                        const newTables = e.target.checked
-                          ? [...selectedTables, t.id]
-                          : selectedTables.filter((id) => id !== t.id);
-                        updateStepConfig(step.id, "tables", newTables);
-                      },
-                    }),
-                    " ",
-                    t.name,
+                    "div",
+                    { className: "table-select-group-label" },
+                    "📁 样表数据"
                   ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "table-select-items" },
+                    sampleTables.map((t) =>
+                      /*#__PURE__*/ React.createElement(
+                        "label",
+                        {
+                          key: t.id,
+                          className: `table-select-item ${selectedTables.includes(t.id) ? "selected" : ""}`
+                        },
+                        /*#__PURE__*/ React.createElement("input", {
+                          type: "checkbox",
+                          checked: selectedTables.includes(t.id),
+                          onChange: (e) => {
+                            const newTables = e.target.checked
+                              ? [...selectedTables, t.id]
+                              : selectedTables.filter((id) => id !== t.id);
+                            updateStepConfig(step.id, "tables", newTables);
+                          },
+                        }),
+                        /*#__PURE__*/ React.createElement(
+                          "span",
+                          { className: "table-select-item-name" },
+                          t.name
+                        ),
+                        t.originalName && /*#__PURE__*/ React.createElement(
+                          "span",
+                          { className: "table-select-item-desc" },
+                          t.originalName
+                        )
+                      )
+                    )
+                  )
                 ),
-              ),
-            ),
+                externalTables.length > 0 && /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "table-select-group" },
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "table-select-group-label" },
+                    "🌐 全局数据表"
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "table-select-items" },
+                    externalTables.map((t) =>
+                      /*#__PURE__*/ React.createElement(
+                        "label",
+                        {
+                          key: t.id,
+                          className: `table-select-item ${selectedTables.includes(t.id) ? "selected" : ""}`
+                        },
+                        /*#__PURE__*/ React.createElement("input", {
+                          type: "checkbox",
+                          checked: selectedTables.includes(t.id),
+                          onChange: (e) => {
+                            const newTables = e.target.checked
+                              ? [...selectedTables, t.id]
+                              : selectedTables.filter((id) => id !== t.id);
+                            updateStepConfig(step.id, "tables", newTables);
+                          },
+                        }),
+                        /*#__PURE__*/ React.createElement(
+                          "span",
+                          { className: "table-select-item-name" },
+                          t.name
+                        )
+                      )
+                    )
+                  )
+                )
+              )
+            )
           ),
           /*#__PURE__*/ React.createElement(
             "div",
-            { className: "form-item" },
+            { className: "config-section" },
             /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u9009\u62E9\u5217\uFF08\u53EF\u9009\uFF09",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.column,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "column", e.target.value),
-              },
+              "div",
+              { className: "config-section-header" },
               /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "" },
-                "\u5168\u90E8\u5217",
-              ),
-              selectedTables.length > 0
-                ? allTables
-                    .find((t) => t.id === selectedTables[0])
-                    ?.headers.map((h) =>
-                      /*#__PURE__*/ React.createElement(
-                        "option",
-                        { key: h, value: h },
-                        h,
-                      ),
-                    )
-                : step.config.table
-                ? allTables
-                    .find((t) => t.id === step.config.table)
-                    ?.headers.map((h) =>
-                      /*#__PURE__*/ React.createElement(
-                        "option",
-                        { key: h, value: h },
-                        h,
-                      ),
-                    )
-                : null,
+                "span",
+                { className: "config-section-title" },
+                /*#__PURE__*/ React.createElement(Icons.Column, null),
+                " 列选择（可选）"
+              )
             ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "筛选列",
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  { className: "form-label-hint" },
+                  "不选则获取全部列"
+                )
+              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.column || "",
+                onChange: (val) => updateStepConfig(step.id, "column", val),
+                options: [
+                  { value: "", label: "全部列" },
+                  ...firstSelectedTableHeaders.map((h) => ({ value: h, label: h }))
+                ],
+                placeholder: selectedTables.length > 0 ? "选择列或获取全部" : "请先选择数据表",
+                disabled: selectedTables.length === 0,
+              })
+            )
           ),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "step-desc" },
             /*#__PURE__*/ React.createElement(Icons.Info, null),
-            " \u53EF\u9009\u62E9\u591A\u4E2A\u6570\u636E\u8868\uFF0C\u6570\u636E\u5C06\u81EA\u52A8\u5408\u5E76\u3002\u5982\u679C\u9009\u62E9\u4E86\u5217\uFF0C\u53EA\u4F1A\u83B7\u53D6\u8BE5\u5217\u7684\u6570\u636E",
+            " 💡 可选择多个数据表，数据将自动合并。选择列后仅获取该列数据，不选则获取全部列。",
           ),
         );
       }
@@ -2202,132 +2379,115 @@ const RulesPage = ({ state, currentPlatform }) => {
           ),
         );
       case "aggregate":
+        const aggregateFuncOptions = [
+          { value: "sum", label: "求和 (SUM)", group: "基础统计" },
+          { value: "avg", label: "平均值 (AVG)", group: "基础统计" },
+          { value: "count", label: "计数 (COUNT)", group: "基础统计" },
+          { value: "max", label: "最大值 (MAX)", group: "基础统计" },
+          { value: "min", label: "最小值 (MIN)", group: "基础统计" },
+          { value: "countDistinct", label: "去重计数", group: "高级统计" },
+          { value: "median", label: "中位数", group: "高级统计" },
+          { value: "product", label: "乘积", group: "高级统计" },
+          { value: "stddev", label: "标准差", group: "高级统计" },
+          { value: "variance", label: "方差", group: "高级统计" },
+          { value: "mode", label: "众数", group: "高级统计" },
+          { value: "first", label: "第一个值", group: "位置" },
+          { value: "last", label: "最后一个值", group: "位置" },
+          { value: "sumAbs", label: "绝对值求和", group: "特殊" },
+        ];
+        const columnOptionsWithVal = [
+          { value: "", label: "当前值 (val)", group: "上一步结果" },
+          ...sourceTableHeaders.map((h) => ({ value: h, label: h, group: "数据列" }))
+        ];
+        const quickAggFuncs = ["sum", "avg", "count", "max", "min"];
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
           /*#__PURE__*/ React.createElement(
             "div",
-            { className: "form-item" },
+            { className: "config-section" },
             /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u805A\u5408\u5217",
+              "div",
+              { className: "config-section-header" },
+              /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "config-section-title" },
+                /*#__PURE__*/ React.createElement(Icons.Aggregate, null),
+                " 聚合设置"
+              )
             ),
             /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.column,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "column", e.target.value),
-              },
+              "div",
+              { className: "grid-2" },
               /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "" },
-                "\u5F53\u524D\u503C (val)",
-              ),
-              sourceTableHeaders.map((h) =>
+                "div",
+                { className: "form-item" },
                 /*#__PURE__*/ React.createElement(
-                  "option",
-                  { key: h, value: h },
-                  h,
+                  "label",
+                  { className: "form-label" },
+                  "聚合列",
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "form-label-hint" },
+                    "选择要聚合的数据"
+                  )
                 ),
-              ),
-            ),
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u805A\u5408\u51FD\u6570",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.func,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "func", e.target.value),
-              },
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "sum" },
-                "\u6C42\u548C (SUM)",
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: step.config.column,
+                  onChange: (val) => updateStepConfig(step.id, "column", val),
+                  options: columnOptionsWithVal,
+                  placeholder: "请选择列",
+                  groupBy: "group",
+                })
               ),
               /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "avg" },
-                "\u5E73\u5747\u503C (AVG)",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "count" },
-                "\u8BA1\u6570 (COUNT)",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "countDistinct" },
-                "\u53BB\u91CD\u8BA1\u6570",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "max" },
-                "\u6700\u5927\u503C (MAX)",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "min" },
-                "\u6700\u5C0F\u503C (MIN)",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "median" },
-                "\u4E2D\u4F4D\u6570",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "product" },
-                "\u4E58\u79EF",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "stddev" },
-                "\u6807\u51C6\u5DEE",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "variance" },
-                "\u65B9\u5DEE",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "mode" },
-                "\u4F17\u6570",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "first" },
-                "\u7B2C\u4E00\u4E2A\u503C",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "last" },
-                "\u6700\u540E\u4E00\u4E2A\u503C",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "sumAbs" },
-                "\u7EDD\u5BF9\u503C\u6C42\u548C",
-              ),
-            ),
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement(
+                  "label",
+                  { className: "form-label" },
+                  "聚合函数",
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "form-label-hint" },
+                    "选择计算方式"
+                  )
+                ),
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: step.config.func,
+                  onChange: (val) => updateStepConfig(step.id, "func", val),
+                  options: aggregateFuncOptions,
+                  placeholder: "请选择函数",
+                  groupBy: "group",
+                }),
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "quick-tags" },
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "quick-tags-label" },
+                    "常用："
+                  ),
+                  quickAggFuncs.map((f) =>
+                    /*#__PURE__*/ React.createElement(
+                      "span",
+                      {
+                        key: f,
+                        className: `quick-tag ${step.config.func === f ? "active" : ""}`,
+                        onClick: () => updateStepConfig(step.id, "func", f),
+                      },
+                      aggregateFuncOptions.find((o) => o.value === f)?.label.split("(")[0].trim()
+                    )
+                  )
+                )
+              )
+            )
           ),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "step-desc" },
             /*#__PURE__*/ React.createElement(Icons.Info, null),
-            ' \u5C06\u591A\u884C\u6570\u636E\u805A\u5408\u6210\u5355\u4E2A\u7ED3\u679C\u503C\u3002\u9009\u62E9\u5177\u4F53\u5217\u540D\u65F6\uFF0C\u4F18\u5148\u4F7F\u7528\u8BE5\u5217\u6570\u636E\uFF1B\u9009\u62E9"\u5F53\u524D\u503C"\u65F6\u4F7F\u7528\u4E0A\u4E00\u6B65\u8F93\u51FA\u7684val\u5B57\u6BB5',
+            ' 💡 将多行数据聚合成单个结果值。选择具体列名时使用该列数据；选择"当前值"时使用上一步输出的val字段。',
           ),
         );
       case "formula":
@@ -2359,287 +2519,262 @@ const RulesPage = ({ state, currentPlatform }) => {
           { className: "step-config" },
           /*#__PURE__*/ React.createElement(
             "div",
-            { className: "form-item" },
+            { className: "config-section" },
             /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u8BA1\u7B97\u516C\u5F0F",
+              "div",
+              { className: "config-section-header" },
+              /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "config-section-title" },
+                /*#__PURE__*/ React.createElement(Icons.Formula, null),
+                " 公式编辑"
+              )
             ),
             /*#__PURE__*/ React.createElement(
               "div",
-              { className: "formula-editor" },
-              /*#__PURE__*/ React.createElement("textarea", {
-                className: "input formula-textarea",
-                value: step.config.expr,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "expr", e.target.value),
-                placeholder: "{val} * 0.7 + {销售额} * 0.3",
-                style: { fontFamily: "var(--font-mono)", minHeight: "80px" },
-              }),
-            ),
-          ),
-          availFields.length > 1 && /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u53EF\u7528\u5B57\u6BB5",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "formula-field-list" },
-              availFields.map((f, i) =>
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "计算公式",
                 /*#__PURE__*/ React.createElement(
                   "span",
-                  {
-                    key: i,
-                    className: `formula-field-chip ${f.type}`,
-                    onClick: () => {
-                      const insert = f.type === "result" ? `{${f.key}}` : `{${f.name}}`;
-                      const newExpr = (step.config.expr || "") + insert;
-                      updateStepConfig(step.id, "expr", newExpr);
-                    },
-                    title: "\u70B9\u51FB\u63D2\u5165\u516C\u5F0F",
-                  },
-                  f.name,
-                ),
+                  { className: "form-label-hint" },
+                  "支持数学运算和函数"
+                )
               ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "formula-editor" },
+                /*#__PURE__*/ React.createElement("textarea", {
+                  className: "input formula-textarea",
+                  value: step.config.expr,
+                  onChange: (e) =>
+                    updateStepConfig(step.id, "expr", e.target.value),
+                  placeholder: "{val} * 0.7 + {销售额} * 0.3",
+                  style: { fontFamily: "var(--font-mono)", minHeight: "80px" },
+                }),
+              )
             ),
+            availFields.length > 1 && /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "可用字段",
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  { className: "form-label-hint" },
+                  "点击插入到公式"
+                )
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "formula-field-list" },
+                availFields.map((f, i) =>
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    {
+                      key: i,
+                      className: `formula-field-chip ${f.type}`,
+                      onClick: () => {
+                        const insert = f.type === "result" ? `{${f.key}}` : `{${f.name}}`;
+                        const newExpr = (step.config.expr || "") + insert;
+                        updateStepConfig(step.id, "expr", newExpr);
+                      },
+                      title: "点击插入公式",
+                    },
+                    f.name,
+                  ),
+                ),
+              )
+            )
           ),
           /*#__PURE__*/ React.createElement(
             "div",
-            { className: "formula-hints" },
+            { className: "config-section collapsible" },
             /*#__PURE__*/ React.createElement(
               "div",
-              { style: { marginBottom: 8, fontWeight: 600 } },
-              "\u5E38\u7528\u51FD\u6570\uFF08\u70B9\u51FB\u63D2\u5165\uFF09\uFF1A",
-            ),
-            CalcEngine.getFormulaHints().map((hint, i) =>
+              { className: "config-section-header" },
               /*#__PURE__*/ React.createElement(
-                "div",
-                {
-                  key: i,
-                  className: "formula-hint-item",
-                  onClick: () => {
-                    const newExpr = (step.config.expr || "") + hint.key;
-                    updateStepConfig(step.id, "expr", newExpr);
-                  },
-                },
-                /*#__PURE__*/ React.createElement(
-                  "span",
-                  { className: "formula-hint-key" },
-                  hint.key,
-                ),
-                /*#__PURE__*/ React.createElement("span", null, hint.desc),
-              ),
+                "span",
+                { className: "config-section-title" },
+                /*#__PURE__*/ React.createElement(Icons.Function, null),
+                " 常用函数（点击插入）"
+              )
             ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "formula-hints" },
+              CalcEngine.getFormulaHints().slice(0, 10).map((hint, i) =>
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  {
+                    key: i,
+                    className: "formula-hint-item",
+                    onClick: () => {
+                      const newExpr = (step.config.expr || "") + hint.key;
+                      updateStepConfig(step.id, "expr", newExpr);
+                    },
+                  },
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "formula-hint-key" },
+                    hint.key,
+                  ),
+                  /*#__PURE__*/ React.createElement("span", null, hint.desc),
+                ),
+              ),
+            )
           ),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "step-desc" },
             /*#__PURE__*/ React.createElement(Icons.Info, null),
-            " \u4F7F\u7528 ",
+            " 💡 使用 ",
             /*#__PURE__*/ React.createElement("code", null, "{字段名}"),
-            " \u5F15\u7528\u5B57\u6BB5\u503C\uFF0C",
+            " 引用字段值，",
             /*#__PURE__*/ React.createElement("code", null, "{val}"),
-            " \u4EE3\u8868\u4E0A\u4E00\u6B65\u7ED3\u679C\uFF0C\u652F\u6301\u6240\u6709JavaScript\u6570\u5B66\u51FD\u6570",
+            " 代表上一步结果，支持所有JavaScript数学函数。",
           ),
         );
       case "virtual":
+        const virtualRuleOptions = [
+          { value: "copy", label: "复制", group: "基础" },
+          { value: "toNumber", label: "转数字", group: "类型转换" },
+          { value: "toString", label: "转文本", group: "类型转换" },
+          { value: "trim", label: "去除空格", group: "文本处理" },
+          { value: "parseQty", label: "提取数量", group: "文本处理" },
+          { value: "splitPlus", label: "按+号拆分计数", group: "文本处理" },
+          { value: "abs", label: "绝对值", group: "数值计算" },
+          { value: "round", label: "四舍五入", group: "数值计算" },
+          { value: "floor", label: "向下取整", group: "数值计算" },
+          { value: "ceil", label: "向上取整", group: "数值计算" },
+          { value: "toFixed2", label: "保留2位小数", group: "数值计算" },
+          { value: "percent", label: "百分比转小数", group: "数值计算" },
+          { value: "parsePercent", label: "解析百分比", group: "数值计算" },
+          { value: "formatMoney", label: "格式化金额", group: "数值计算" },
+          { value: "toLowerCase", label: "转小写", group: "文本处理" },
+          { value: "toUpperCase", label: "转大写", group: "文本处理" },
+          { value: "length", label: "字符串长度", group: "文本处理" },
+          { value: "substring", label: "截取子串", group: "文本处理" },
+          { value: "replace", label: "替换", group: "文本处理" },
+          { value: "concat", label: "拼接前后缀", group: "文本处理" },
+          { value: "ifEmpty", label: "空值替换", group: "高级" },
+          { value: "chineseToNumber", label: "中文数字转数字", group: "高级" },
+          { value: "mapValue", label: "映射替换", group: "高级" },
+          { value: "multiply", label: "乘代数", group: "数学运算" },
+          { value: "divide", label: "除代数", group: "数学运算" },
+          { value: "sumFields", label: "字段之和", group: "数学运算" },
+          { value: "diffFields", label: "字段之差", group: "数学运算" },
+        ];
+        const quickVirtualRules = ["copy", "toNumber", "abs", "round", "trim"];
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
           /*#__PURE__*/ React.createElement(
             "div",
-            { className: "grid-2" },
+            { className: "config-section" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "config-section-header" },
+              /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "config-section-title" },
+                /*#__PURE__*/ React.createElement(Icons.Transform, null),
+                " 字段转换设置"
+              )
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "grid-2" },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement(
+                  "label",
+                  { className: "form-label" },
+                  "源字段",
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "form-label-hint" },
+                    "输入字段名"
+                  )
+                ),
+                /*#__PURE__*/ React.createElement("input", {
+                  type: "text",
+                  className: "input",
+                  value: step.config.source,
+                  onChange: (e) =>
+                    updateStepConfig(step.id, "source", e.target.value),
+                  placeholder: "源字段名",
+                })
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement(
+                  "label",
+                  { className: "form-label" },
+                  "目标字段",
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "form-label-hint" },
+                    "输出字段名"
+                  )
+                ),
+                /*#__PURE__*/ React.createElement("input", {
+                  type: "text",
+                  className: "input",
+                  value: step.config.target,
+                  onChange: (e) =>
+                    updateStepConfig(step.id, "target", e.target.value),
+                  placeholder: "目标字段名",
+                })
+              )
+            ),
             /*#__PURE__*/ React.createElement(
               "div",
               { className: "form-item" },
               /*#__PURE__*/ React.createElement(
                 "label",
                 { className: "form-label" },
-                "\u6E90\u5B57\u6BB5",
+                "转换规则",
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  { className: "form-label-hint" },
+                  "选择数据处理方式"
+                )
               ),
-              /*#__PURE__*/ React.createElement("input", {
-                type: "text",
-                className: "input",
-                value: step.config.source,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "source", e.target.value),
-                placeholder: "\u6E90\u5B57\u6BB5\u540D",
-              }),
-            ),
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u76EE\u6807\u5B57\u6BB5",
-              ),
-              /*#__PURE__*/ React.createElement("input", {
-                type: "text",
-                className: "input",
-                value: step.config.target,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "target", e.target.value),
-                placeholder: "\u76EE\u6807\u5B57\u6BB5\u540D",
-              }),
-            ),
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u8F6C\u6362\u89C4\u5219",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
                 value: step.config.rule,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "rule", e.target.value),
-              },
+                onChange: (val) => updateStepConfig(step.id, "rule", val),
+                options: virtualRuleOptions,
+                placeholder: "请选择转换规则",
+                groupBy: "group",
+              }),
               /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "copy" },
-                "\u590D\u5236",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "toNumber" },
-                "\u8F6C\u6570\u5B57",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "toString" },
-                "\u8F6C\u6587\u672C",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "trim" },
-                "\u53BB\u9664\u7A7A\u683C",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "parseQty" },
-                "\u63D0\u53D6\u6570\u91CF",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "splitPlus" },
-                "\u6309+\u53F7\u62C6\u5206\u8BA1\u6570",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "abs" },
-                "\u7EDD\u5BF9\u503C",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "round" },
-                "\u56DB\u820D\u4E94\u5165",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "floor" },
-                "\u5411\u4E0B\u53D6\u6574",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "ceil" },
-                "\u5411\u4E0A\u53D6\u6574",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "toFixed2" },
-                "\u4FDD\u75592\u4F4D\u5C0F\u6570",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "percent" },
-                "\u767E\u5206\u6BD4\u8F6C\u5C0F\u6570",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "parsePercent" },
-                "\u89E3\u6790\u767E\u5206\u6BD4",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "formatMoney" },
-                "\u683C\u5F0F\u5316\u91D1\u989D",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "toLowerCase" },
-                "\u8F6C\u5C0F\u5199",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "toUpperCase" },
-                "\u8F6C\u5927\u5199",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "length" },
-                "\u5B57\u7B26\u4E32\u957F\u5EA6",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "substring" },
-                "\u622A\u53D6\u5B50\u4E32",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "replace" },
-                "\u66FF\u6362",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "concat" },
-                "\u62FC\u63A5\u524D\u540E\u7F00",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "ifEmpty" },
-                "\u7A7A\u503C\u66FF\u6362",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "chineseToNumber" },
-                "\u4E2D\u6587\u6570\u5B57\u8F6C\u6570\u5B57",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "mapValue" },
-                "\u6620\u5C04\u66FF\u6362",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "multiply" },
-                "\u4E58\u4EE3\u6570",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "divide" },
-                "\u9664\u4EE3\u6570",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "sumFields" },
-                "\u5B57\u6BB5\u4E4B\u548C",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "diffFields" },
-                "\u5B57\u6BB5\u4E4B\u5DEE",
-              ),
-            ),
+                "div",
+                { className: "quick-tags" },
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  { className: "quick-tags-label" },
+                  "常用："
+                ),
+                quickVirtualRules.map((r) =>
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    {
+                      key: r,
+                      className: `quick-tag ${step.config.rule === r ? "active" : ""}`,
+                      onClick: () => updateStepConfig(step.id, "rule", r),
+                    },
+                    virtualRuleOptions.find((o) => o.value === r)?.label
+                  )
+                )
+              )
+            )
           ),
           step.config.rule === "mapValue" &&
             /*#__PURE__*/ React.createElement(
@@ -2747,136 +2882,125 @@ const RulesPage = ({ state, currentPlatform }) => {
       case "join": {
         const joinTable = allTables.find((t) => t.id === step.config.table);
         const joinHeaders = joinTable?.headers || [];
+        const joinTableOptions = [
+          ...sampleTables.map((t) => ({ value: t.id, label: t.name, group: "样表数据" })),
+          ...externalTables.map((t) => ({ value: t.id, label: t.name, group: "全局数据表" }))
+        ];
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
           /*#__PURE__*/ React.createElement(
             "div",
-            { className: "form-item" },
+            { className: "config-section" },
             /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u5173\u8054\u6570\u636E\u8868",
+              "div",
+              { className: "config-section-header" },
+              /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "config-section-title" },
+                /*#__PURE__*/ React.createElement(Icons.Join, null),
+                " 关联表设置"
+              )
             ),
             /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.table,
-                onChange: (e) => {
-                  const tableId = e.target.value;
-                  const tbl = allTables.find((t) => t.id === tableId);
-                  updateStepConfig(step.id, "table", tableId);
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "关联数据表",
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  { className: "form-label-hint" },
+                  "选择要关联的数据表"
+                )
+              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.table || "",
+                onChange: (val) => {
+                  const tbl = allTables.find((t) => t.id === val);
+                  updateStepConfig(step.id, "table", val);
                   updateStepConfig(step.id, "externalId", tbl?.externalId || "");
                   updateStepConfig(step.id, "fk", "");
                   updateStepConfig(step.id, "col", "");
                 },
-              },
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "" },
-                "\u8BF7\u9009\u62E9\u6570\u636E\u8868",
-              ),
-              sampleTables.length > 0 && /*#__PURE__*/ React.createElement(
-                "optgroup",
-                { label: "样表数据" },
-                sampleTables.map((t) =>
-                  /*#__PURE__*/ React.createElement(
-                    "option",
-                    { key: t.id, value: t.id },
-                    t.name,
-                  ),
-                ),
-              ),
-              externalTables.length > 0 && /*#__PURE__*/ React.createElement(
-                "optgroup",
-                { label: "全局数据表" },
-                externalTables.map((t) =>
-                  /*#__PURE__*/ React.createElement(
-                    "option",
-                    { key: t.id, value: t.id },
-                    t.name,
-                  ),
-                ),
-              ),
+                options: joinTableOptions,
+                placeholder: "请选择数据表",
+                groupBy: "group",
+              })
             ),
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "grid-2" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "grid-2" },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement(
+                  "label",
+                  { className: "form-label" },
+                  "主表关联键",
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "form-label-hint" },
+                    "主表匹配字段"
+                  )
+                ),
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: step.config.key || "",
+                  onChange: (val) => updateStepConfig(step.id, "key", val),
+                  options: sourceTableHeaders.map((h) => ({ value: h, label: h })),
+                  placeholder: "请选择字段",
+                })
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement(
+                  "label",
+                  { className: "form-label" },
+                  "关联表外键",
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "form-label-hint" },
+                    "关联表匹配字段"
+                  )
+                ),
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: step.config.fk || "",
+                  onChange: (val) => updateStepConfig(step.id, "fk", val),
+                  options: joinHeaders.map((h) => ({ value: h, label: h })),
+                  placeholder: step.config.table ? "请选择字段" : "先选择关联表",
+                  disabled: !step.config.table,
+                })
+              )
+            ),
             /*#__PURE__*/ React.createElement(
               "div",
               { className: "form-item" },
               /*#__PURE__*/ React.createElement(
                 "label",
                 { className: "form-label" },
-                "\u4E3B\u8868\u5173\u8054\u952E",
+                "取关联表列",
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  { className: "form-label-hint" },
+                  "要获取的数据列"
+                )
               ),
-              /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.key,
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "key", e.target.value),
-                },
-                /*#__PURE__*/ React.createElement("option", { value: "" }, "\u8BF7\u9009\u62E9\u5B57\u6BB5"),
-                sourceTableHeaders.map((h) =>
-                  /*#__PURE__*/ React.createElement("option", { key: h, value: h }, h),
-                ),
-              ),
-            ),
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u5173\u8054\u8868\u5916\u952E",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.fk,
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "fk", e.target.value),
-                  disabled: !step.config.table,
-                },
-                /*#__PURE__*/ React.createElement("option", { value: "" }, step.config.table ? "\u8BF7\u9009\u62E9\u5B57\u6BB5" : "\u5148\u9009\u62E9\u5173\u8054\u8868"),
-                joinHeaders.map((h) =>
-                  /*#__PURE__*/ React.createElement("option", { key: h, value: h }, h),
-                ),
-              ),
-            ),
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u53D6\u5173\u8054\u8868\u5217",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-                {
-                  className: "select",
-                  value: step.config.col,
-                  onChange: (e) => updateStepConfig(step.id, "col", e.target.value),
-                  disabled: !step.config.table,
-                },
-                /*#__PURE__*/ React.createElement("option", { value: "" }, step.config.table ? "\u8BF7\u9009\u62E9\u5B57\u6BB5" : "\u5148\u9009\u62E9\u5173\u8054\u8868"),
-                joinHeaders.map((h) =>
-                  /*#__PURE__*/ React.createElement("option", { key: h, value: h }, h),
-                ),
-            ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.col || "",
+                onChange: (val) => updateStepConfig(step.id, "col", val),
+                options: joinHeaders.map((h) => ({ value: h, label: h })),
+                placeholder: step.config.table ? "请选择字段" : "先选择关联表",
+                disabled: !step.config.table,
+              })
+            )
           ),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "step-desc" },
             /*#__PURE__*/ React.createElement(Icons.Info, null),
-            " \u6839\u636E\u4E3B\u8868\u5173\u8054\u952E\u4ECE\u5173\u8054\u8868\u4E2D\u5339\u914D\u6570\u636E\uFF0C\u5C06\u5173\u8054\u8868\u4E2D\u6307\u5B9A\u5217\u7684\u503C\u586B\u5145\u5230\u5F53\u524D\u5B57\u6BB5\u3002\u9002\u7528\u4E8E\u901A\u8FC7\u5546\u54C1ID\u5173\u8054\u6210\u672C\u8868\u3001\u901A\u8FC7\u5E97\u94FA\u540D\u5173\u8054\u5B9A\u4EF7\u8868\u7B49\u573A\u666F\u3002",
+            " 💡 根据主表关联键从关联表中匹配数据，将关联表中指定列的值填充到当前字段。",
           ),
         );
       }
@@ -2886,112 +3010,118 @@ const RulesPage = ({ state, currentPlatform }) => {
           { className: "step-config" },
           /*#__PURE__*/ React.createElement(
             "div",
-            { className: "form-item" },
+            { className: "config-section" },
             /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u53BB\u91CD\u5217",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.column,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "column", e.target.value),
-              },
+              "div",
+              { className: "config-section-header" },
               /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "" },
-                "\u5F53\u524D\u503C (val)",
-              ),
-              sourceTableHeaders.map((h) =>
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { key: h, value: h },
-                  h,
-                ),
-              ),
+                "span",
+                { className: "config-section-title" },
+                /*#__PURE__*/ React.createElement(Icons.Filter, null),
+                " 去重设置"
+              )
             ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "去重列",
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  { className: "form-label-hint" },
+                  "按此列去重"
+                )
+              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.column || "",
+                onChange: (val) => updateStepConfig(step.id, "column", val),
+                options: columnOptionsWithVal,
+                placeholder: "请选择列",
+                groupBy: "group",
+              })
+            )
           ),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "step-desc" },
             /*#__PURE__*/ React.createElement(Icons.Info, null),
-            ' \u53BB\u9664\u6307\u5B9A\u5217\u7684\u91CD\u590D\u503C\uFF0C\u4FDD\u7559\u7B2C\u4E00\u6B21\u51FA\u73B0\u7684\u884C\u3002\u9009\u62E9"\u5F53\u524D\u503C"\u65F6\u4F7F\u7528\u4E0A\u4E00\u6B65\u8F93\u51FA\u7684val\u5B57\u6BB5',
+            ' 💡 去除指定列的重复值，保留第一次出现的行。选择"当前值"时使用上一步输出的val字段。',
           ),
         );
       case "sort":
+        const sortDirectionOptions = [
+          { value: "asc", label: "升序 ↑（从小到大）" },
+          { value: "desc", label: "降序 ↓（从大到小）" },
+        ];
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
           /*#__PURE__*/ React.createElement(
             "div",
-            { className: "grid-2" },
+            { className: "config-section" },
             /*#__PURE__*/ React.createElement(
               "div",
-              { className: "form-item" },
+              { className: "config-section-header" },
               /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u6392\u5E8F\u5217",
-              ),
+                "span",
+                { className: "config-section-title" },
+                /*#__PURE__*/ React.createElement(Icons.Sort, null),
+                " 排序设置"
+              )
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "grid-2" },
               /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.column,
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "column", e.target.value),
-                },
+                "div",
+                { className: "form-item" },
                 /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "" },
-                  "\u5F53\u524D\u503C (val)",
-                ),
-                sourceTableHeaders.map((h) =>
+                  "label",
+                  { className: "form-label" },
+                  "排序列",
                   /*#__PURE__*/ React.createElement(
-                    "option",
-                    { key: h, value: h },
-                    h,
-                  ),
+                    "span",
+                    { className: "form-label-hint" },
+                    "按此列排序"
+                  )
                 ),
-              ),
-            ),
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u6392\u5E8F\u65B9\u5411",
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: step.config.column || "",
+                  onChange: (val) => updateStepConfig(step.id, "column", val),
+                  options: columnOptionsWithVal,
+                  placeholder: "请选择列",
+                  groupBy: "group",
+                })
               ),
               /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.direction,
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "direction", e.target.value),
-                },
+                "div",
+                { className: "form-item" },
                 /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "asc" },
-                  "\u5347\u5E8F \u2191",
+                  "label",
+                  { className: "form-label" },
+                  "排序方向",
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "form-label-hint" },
+                    "升序或降序"
+                  )
                 ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "desc" },
-                  "\u964D\u5E8F \u2193",
-                ),
-              ),
-            ),
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: step.config.direction || "asc",
+                  onChange: (val) => updateStepConfig(step.id, "direction", val),
+                  options: sortDirectionOptions,
+                  placeholder: "请选择方向",
+                })
+              )
+            )
           ),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "step-desc" },
             /*#__PURE__*/ React.createElement(Icons.Info, null),
-            ' \u6309\u6307\u5B9A\u5217\u7684\u503C\u6392\u5E8F\uFF0C\u6570\u5B57\u6309\u6570\u503C\u6392\u5E8F\uFF0C\u6587\u672C\u6309\u5B57\u5178\u5E8F\u6392\u5E8F\u3002\u9009\u62E9"\u5F53\u524D\u503C"\u65F6\u4F7F\u7528\u4E0A\u4E00\u6B65\u8F93\u51FA\u7684val\u5B57\u6BB5',
+            ' 💡 按指定列的值排序，数字按数值排序，文本按字典序排序。选择"当前值"时使用上一步输出的val字段。',
           ),
         );
       case "limit":
@@ -3023,46 +3153,79 @@ const RulesPage = ({ state, currentPlatform }) => {
           ),
         );
       case "condition":
+        const conditionOpOptions = [
+          { value: "==", label: "等于", group: "比较" },
+          { value: "!=", label: "不等于", group: "比较" },
+          { value: ">", label: "大于", group: "比较" },
+          { value: "<", label: "小于", group: "比较" },
+          { value: ">=", label: "大于等于", group: "比较" },
+          { value: "<=", label: "小于等于", group: "比较" },
+          { value: "contains", label: "包含", group: "文本" },
+        ];
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
           /*#__PURE__*/ React.createElement(
             "div",
-            { className: "grid-2" },
+            { className: "config-section" },
             /*#__PURE__*/ React.createElement(
               "div",
-              { className: "form-item" },
+              { className: "config-section-header" },
               /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u5224\u65AD\u5217",
-              ),
+                "span",
+                { className: "config-section-title" },
+                /*#__PURE__*/ React.createElement(Icons.Condition, null),
+                " 条件判断设置"
+              )
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "grid-2" },
               /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.column,
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "column", e.target.value),
-                },
+                "div",
+                { className: "form-item" },
                 /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "" },
-                  "\u9ED8\u8BA4\u4F7F\u7528\u5F53\u524D\u503C(val)",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "val" },
-                  "\u5F53\u524D\u503C (val)",
-                ),
-                sourceTableHeaders.map((h) =>
+                  "label",
+                  { className: "form-label" },
+                  "判断列",
                   /*#__PURE__*/ React.createElement(
-                    "option",
-                    { key: h, value: h },
-                    h,
-                  ),
+                    "span",
+                    { className: "form-label-hint" },
+                    "要判断的字段"
+                  )
                 ),
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: step.config.column || "val",
+                  onChange: (val) => updateStepConfig(step.id, "column", val),
+                  options: [
+                    { value: "val", label: "当前值 (val)", group: "上一步结果" },
+                    ...sourceTableHeaders.map((h) => ({ value: h, label: h, group: "数据列" }))
+                  ],
+                  placeholder: "请选择列",
+                  groupBy: "group",
+                })
               ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement(
+                  "label",
+                  { className: "form-label" },
+                  "操作符",
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "form-label-hint" },
+                    "判断条件"
+                  )
+                ),
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: step.config.op || "==",
+                  onChange: (val) => updateStepConfig(step.id, "op", val),
+                  options: conditionOpOptions,
+                  placeholder: "请选择条件",
+                  groupBy: "group",
+                })
+              )
             ),
             /*#__PURE__*/ React.createElement(
               "div",
@@ -3070,248 +3233,176 @@ const RulesPage = ({ state, currentPlatform }) => {
               /*#__PURE__*/ React.createElement(
                 "label",
                 { className: "form-label" },
-                "\u64CD\u4F5C\u7B26",
+                "对比值",
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  { className: "form-label-hint" },
+                  "与判断列比较的值"
+                )
               ),
+              /*#__PURE__*/ React.createElement("input", {
+                type: "text",
+                className: "input",
+                value: step.config.value,
+                onChange: (e) =>
+                  updateStepConfig(step.id, "value", e.target.value),
+                placeholder: "输入对比值",
+              })
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "grid-2" },
               /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.op,
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement(
+                  "label",
+                  { className: "form-label" },
+                  "满足条件的值",
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "form-label-hint" },
+                    "条件成立时返回"
+                  )
+                ),
+                /*#__PURE__*/ React.createElement("input", {
+                  type: "text",
+                  className: "input",
+                  value: step.config.trueValue,
                   onChange: (e) =>
-                    updateStepConfig(step.id, "op", e.target.value),
-                },
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "==" },
-                  "\u7B49\u4E8E",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "!=" },
-                  "\u4E0D\u7B49\u4E8E",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: ">" },
-                  "\u5927\u4E8E",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "<" },
-                  "\u5C0F\u4E8E",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: ">=" },
-                  "\u5927\u4E8E\u7B49\u4E8E",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "<=" },
-                  "\u5C0F\u4E8E\u7B49\u4E8E",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "contains" },
-                  "\u5305\u542B",
-                ),
+                    updateStepConfig(step.id, "trueValue", e.target.value),
+                  placeholder: "默认 1",
+                })
               ),
-            ),
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u5BF9\u6BD4\u503C",
-            ),
-            /*#__PURE__*/ React.createElement("input", {
-              type: "text",
-              className: "input",
-              value: step.config.value,
-              onChange: (e) =>
-                updateStepConfig(step.id, "value", e.target.value),
-              placeholder: "\u8F93\u5165\u5BF9\u6BD4\u503C",
-            }),
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "grid-2" },
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
               /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u6EE1\u8DB3\u6761\u4EF6\u7684\u503C",
-              ),
-              /*#__PURE__*/ React.createElement("input", {
-                type: "text",
-                className: "input",
-                value: step.config.trueValue,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "trueValue", e.target.value),
-                placeholder: "\u9ED8\u8BA4 1",
-              }),
-            ),
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u4E0D\u6EE1\u8DB3\u7684\u503C",
-              ),
-              /*#__PURE__*/ React.createElement("input", {
-                type: "text",
-                className: "input",
-                value: step.config.falseValue,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "falseValue", e.target.value),
-                placeholder: "\u9ED8\u8BA4 0",
-              }),
-            ),
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement(
+                  "label",
+                  { className: "form-label" },
+                  "不满足的值",
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "form-label-hint" },
+                    "条件不成立时返回"
+                  )
+                ),
+                /*#__PURE__*/ React.createElement("input", {
+                  type: "text",
+                  className: "input",
+                  value: step.config.falseValue,
+                  onChange: (e) =>
+                    updateStepConfig(step.id, "falseValue", e.target.value),
+                  placeholder: "默认 0",
+                })
+              )
+            )
           ),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "step-desc" },
             /*#__PURE__*/ React.createElement(Icons.Info, null),
-            " \uD83E\uDD14 ",
-            /*#__PURE__*/ React.createElement(
-              "strong",
-              null,
-              "\u6761\u4EF6\u5224\u65AD",
-            ),
-            '\uFF1A\u6839\u636E\u6761\u4EF6\u8FD4\u56DE\u4E0D\u540C\u7684\u503C\uFF0C\u4E0D\u4E22\u5F03\u6570\u636E\u3002\u4F8B\u5982\uFF1A\u5982\u679C"\u9500\u91CF\u5927\u4E8E100"\u8FD4\u56DE1\uFF0C\u5426\u5219\u8FD4\u56DE0',
+            " 💡 根据条件返回不同的值，不丢弃数据。例如：如果\"销量大于100\"返回1，否则返回0。",
           ),
         );
       case "group":
+        const groupFuncOptions = [
+          { value: "sum", label: "求和 (SUM)", group: "基础统计" },
+          { value: "avg", label: "平均值 (AVG)", group: "基础统计" },
+          { value: "count", label: "计数 (COUNT)", group: "基础统计" },
+          { value: "max", label: "最大值 (MAX)", group: "基础统计" },
+          { value: "min", label: "最小值 (MIN)", group: "基础统计" },
+          { value: "countDistinct", label: "去重计数", group: "高级" },
+          { value: "median", label: "中位数", group: "高级" },
+        ];
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
           /*#__PURE__*/ React.createElement(
             "div",
-            { className: "grid-2" },
+            { className: "config-section" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "config-section-header" },
+              /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "config-section-title" },
+                /*#__PURE__*/ React.createElement(Icons.Group, null),
+                " 分组聚合设置"
+              )
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "grid-2" },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement(
+                  "label",
+                  { className: "form-label" },
+                  "分组列",
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "form-label-hint" },
+                    "按此列分组"
+                  )
+                ),
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: step.config.column || "",
+                  onChange: (val) => updateStepConfig(step.id, "column", val),
+                  options: sourceTableHeaders.map((h) => ({ value: h, label: h })),
+                  placeholder: "请选择分组列",
+                })
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement(
+                  "label",
+                  { className: "form-label" },
+                  "聚合列",
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "form-label-hint" },
+                    "要聚合的数值"
+                  )
+                ),
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: step.config.aggColumn || "",
+                  onChange: (val) => updateStepConfig(step.id, "aggColumn", val),
+                  options: columnOptionsWithVal,
+                  placeholder: "请选择列",
+                  groupBy: "group",
+                })
+              )
+            ),
             /*#__PURE__*/ React.createElement(
               "div",
               { className: "form-item" },
               /*#__PURE__*/ React.createElement(
                 "label",
                 { className: "form-label" },
-                "\u5206\u7EC4\u5217",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.column,
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "column", e.target.value),
-                },
+                "聚合函数",
                 /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "" },
-                  "\u8BF7\u9009\u62E9\u5206\u7EC4\u5217",
-                ),
-                sourceTableHeaders.map((h) =>
-                  /*#__PURE__*/ React.createElement(
-                    "option",
-                    { key: h, value: h },
-                    h,
-                  ),
-                ),
+                  "span",
+                  { className: "form-label-hint" },
+                  "计算方式"
+                )
               ),
-            ),
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u805A\u5408\u5217",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.aggColumn,
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "aggColumn", e.target.value),
-                },
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "" },
-                  "\u5F53\u524D\u503C (val)",
-                ),
-                sourceTableHeaders.map((h) =>
-                  /*#__PURE__*/ React.createElement(
-                    "option",
-                    { key: h, value: h },
-                    h,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u805A\u5408\u51FD\u6570",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.func,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "func", e.target.value),
-              },
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "sum" },
-                "\u6C42\u548C (SUM)",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "avg" },
-                "\u5E73\u5747\u503C (AVG)",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "count" },
-                "\u8BA1\u6570 (COUNT)",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "countDistinct" },
-                "\u53BB\u91CD\u8BA1\u6570",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "max" },
-                "\u6700\u5927\u503C (MAX)",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "min" },
-                "\u6700\u5C0F\u503C (MIN)",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "median" },
-                "\u4E2D\u4F4D\u6570",
-              ),
-            ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.func || "sum",
+                onChange: (val) => updateStepConfig(step.id, "func", val),
+                options: groupFuncOptions,
+                placeholder: "请选择函数",
+                groupBy: "group",
+              })
+            )
           ),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "step-desc" },
             /*#__PURE__*/ React.createElement(Icons.Info, null),
-            " \u6309\u6307\u5B9A\u5217\u5206\u7EC4\u540E\u5BF9\u53E6\u4E00\u5217\u8FDB\u884C\u805A\u5408\u8BA1\u7B97\uFF0C\u8FD4\u56DE\u5206\u7EC4\u540E\u7684\u7ED3\u679C\u96C6",
+            " 💡 按指定列分组后对另一列进行聚合计算，返回分组后的结果集。",
           ),
         );
       case "lookup":
@@ -4776,6 +4867,752 @@ const RulesPage = ({ state, currentPlatform }) => {
             " \u8BA1\u7B97\u6BCF\u884C\u503C\u5360\u603B\u548C\u7684\u6BD4\u4F8B\uFF0C\u53EF\u9009\u8F6C\u4E3A\u767E\u5206\u6BD4\u3002",
           ),
         );
+      case "movingAverage":
+        return /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "step-config" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "grid-2" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u8BA1\u7B97\u5217",
+              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.column || "",
+                onChange: (val) => updateStepConfig(step.id, "column", val),
+                options: [{ value: "", label: "\u5F53\u524D\u503C (val)" }, ...sourceTableHeaders.map((h) => ({ value: h, label: h }))],
+                placeholder: "\u8BF7\u9009\u62E9\u5217",
+              }),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u7A97\u53E3\u5927\u5C0F",
+              ),
+              /*#__PURE__*/ React.createElement("input", {
+                type: "number",
+                className: "input",
+                value: step.config.windowSize || 3,
+                onChange: (e) => updateStepConfig(step.id, "windowSize", parseInt(e.target.value) || 3),
+                min: 1,
+                max: 100,
+              }),
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-label" },
+              "\u8F93\u51FA\u5217\u540D",
+            ),
+            /*#__PURE__*/ React.createElement("input", {
+              type: "text",
+              className: "input",
+              value: step.config.targetColumn || "moving_avg",
+              onChange: (e) => updateStepConfig(step.id, "targetColumn", e.target.value),
+              placeholder: "moving_avg",
+            }),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "step-desc" },
+            /*#__PURE__*/ React.createElement(Icons.Info, null),
+            " \u6309\u7A97\u53E3\u5927\u5C0E\u8BA1\u7B97\u6EDA\u52A8\u79FB\u52A8\u5E73\u5747\u503C\uFF0C\u7A97\u53E3\u5927\u5C0E\u8868\u793A\u53C2\u8003\u7684\u524D N \u884C\u6570\u636E\u3002",
+          ),
+        );
+      case "binning":
+        return /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "step-config" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "grid-2" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u5206\u7BB1\u5217",
+              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.column || "",
+                onChange: (val) => updateStepConfig(step.id, "column", val),
+                options: [{ value: "", label: "\u5F53\u524D\u503C (val)" }, ...sourceTableHeaders.map((h) => ({ value: h, label: h }))],
+                placeholder: "\u8BF7\u9009\u62E9\u5217",
+              }),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u5206\u7BB1\u65B9\u5F0F",
+              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.binType || "equalWidth",
+                onChange: (val) => updateStepConfig(step.id, "binType", val),
+                options: [
+                  { value: "equalWidth", label: "\u7B49\u5BBD\u5206\u7BB1" },
+                  { value: "custom", label: "\u81EA\u5B9A\u4E49\u5206\u7BB1" },
+                ],
+                placeholder: "\u8BF7\u9009\u62E9\u5206\u7BB1\u65B9\u5F0F",
+              }),
+            ),
+          ),
+          step.config.binType === "equalWidth" && /*#__PURE__*/ React.createElement(
+            React.Fragment,
+            null,
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "grid-2" },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement(
+                  "label",
+                  { className: "form-label" },
+                  "\u5206\u7BB1\u6570\u91CF",
+                ),
+                /*#__PURE__*/ React.createElement("input", {
+                  type: "number",
+                  className: "input",
+                  value: step.config.binCount || 5,
+                  onChange: (e) => updateStepConfig(step.id, "binCount", parseInt(e.target.value) || 5),
+                  min: 1,
+                  max: 20,
+                }),
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement(
+                  "label",
+                  { className: "form-label" },
+                  "\u8F93\u51FA\u5217\u540D",
+                ),
+                /*#__PURE__*/ React.createElement("input", {
+                  type: "text",
+                  className: "input",
+                  value: step.config.targetColumn || "bin",
+                  onChange: (e) => updateStepConfig(step.id, "targetColumn", e.target.value),
+                  placeholder: "bin",
+                }),
+              ),
+            ),
+          ),
+          step.config.binType === "custom" && /*#__PURE__*/ React.createElement(
+            React.Fragment,
+            null,
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u81EA\u5B9A\u4E49\u5206\u7BB1\u533A\u95F4",
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "multi-row-config" },
+                (step.config.customBins || []).map((bin, idx) =>
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { key: idx, className: "multi-row-item" },
+                    /*#__PURE__*/ React.createElement("input", {
+                      type: "number",
+                      className: "input input-sm",
+                      value: bin.min || "",
+                      onChange: (e) => {
+                        const bins = [...(step.config.customBins || [])];
+                        bins[idx] = { ...bins[idx], min: e.target.value };
+                        updateStepConfig(step.id, "customBins", bins);
+                      },
+                      placeholder: "\u4E0B\u9650",
+                    }),
+                    /*#__PURE__*/ React.createElement("span", null, "-"),
+                    /*#__PURE__*/ React.createElement("input", {
+                      type: "number",
+                      className: "input input-sm",
+                      value: bin.max || "",
+                      onChange: (e) => {
+                        const bins = [...(step.config.customBins || [])];
+                        bins[idx] = { ...bins[idx], max: e.target.value };
+                        updateStepConfig(step.id, "customBins", bins);
+                      },
+                      placeholder: "\u4E0A\u9650",
+                    }),
+                    /*#__PURE__*/ React.createElement("input", {
+                      type: "text",
+                      className: "input input-sm",
+                      value: bin.label || "",
+                      onChange: (e) => {
+                        const bins = [...(step.config.customBins || [])];
+                        bins[idx] = { ...bins[idx], label: e.target.value };
+                        updateStepConfig(step.id, "customBins", bins);
+                      },
+                      placeholder: "\u533A\u95F4\u540D",
+                    }),
+                    /*#__PURE__*/ React.createElement(
+                      "button",
+                      {
+                        className: "btn-icon btn-icon-danger",
+                        onClick: () => {
+                          const bins = (step.config.customBins || []).filter((_, i) => i !== idx);
+                          updateStepConfig(step.id, "customBins", bins);
+                        },
+                      },
+                      /*#__PURE__*/ React.createElement(Icons.Trash, null),
+                    ),
+                  )
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "button",
+                  {
+                    className: "btn btn-sm btn-secondary",
+                    onClick: () => {
+                      const bins = [...(step.config.customBins || []), { min: "", max: "", label: "" }];
+                      updateStepConfig(step.id, "customBins", bins);
+                    },
+                  },
+                  /*#__PURE__*/ React.createElement(Icons.Plus, null),
+                  " \u6DFB\u52A0\u533A\u95F4",
+                ),
+              ),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u8F93\u51FA\u5217\u540D",
+              ),
+              /*#__PURE__*/ React.createElement("input", {
+                type: "text",
+                className: "input",
+                value: step.config.targetColumn || "bin",
+                onChange: (e) => updateStepConfig(step.id, "targetColumn", e.target.value),
+                placeholder: "bin",
+              }),
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "step-desc" },
+            /*#__PURE__*/ React.createElement(Icons.Info, null),
+            " \u5C06\u8FDE\u7EED\u6570\u636E\u5206\u7BB1\u4E3A\u5206\u7C7B\u533A\u95F4\uFF0C\u7B49\u5BBD\u5206\u7BB1\u81EA\u52A8\u8BA1\u7B97\u95F4\u9694\uFF0C\u81EA\u5B9A\u4E49\u5206\u7BB1\u53EF\u6307\u5B9A\u8D77\u6B62\u533A\u95F4\u3002",
+          ),
+        );
+      case "conditionalTag":
+        return /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "step-config" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-label" },
+              "\u8F93\u51FA\u5217\u540D",
+            ),
+            /*#__PURE__*/ React.createElement("input", {
+              type: "text",
+              className: "input",
+              value: step.config.targetColumn || "tag",
+              onChange: (e) => updateStepConfig(step.id, "targetColumn", e.target.value),
+              placeholder: "tag",
+            }),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-label" },
+              "\u6807\u8BB0\u6761\u4EF6\u89C4\u5217",
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "multi-row-config" },
+              (step.config.conditions || []).map((cond, idx) =>
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { key: idx, className: "multi-row-item condition-row" },
+                  /*#__PURE__*/ React.createElement(SearchableSelect, {
+                    value: cond.column || "",
+                    onChange: (val) => {
+                      const conditions = [...(step.config.conditions || [])];
+                      conditions[idx] = { ...conditions[idx], column: val };
+                      updateStepConfig(step.id, "conditions", conditions);
+                    },
+                    options: [{ value: "", label: "val" }, ...sourceTableHeaders.map((h) => ({ value: h, label: h }))],
+                    placeholder: "\u5217",
+                  }),
+                  /*#__PURE__*/ React.createElement(SearchableSelect, {
+                    value: cond.op || "==",
+                    onChange: (val) => {
+                      const conditions = [...(step.config.conditions || [])];
+                      conditions[idx] = { ...conditions[idx], op: val };
+                      updateStepConfig(step.id, "conditions", conditions);
+                    },
+                    options: [
+                      { value: "==", label: "\u7B49\u4E8E" },
+                      { value: "!=" },
+                      { value: ">", label: "\u5927\u4E8E" },
+                      { value: "<", label: "\u5C0E\u4E8E" },
+                      { value: ">=" },
+                      { value: "<=" },
+                      { value: "contains", label: "\u5305\u542B" },
+                      { value: "notContains", label: "\u4E0D\u5305\u542B" },
+                      { value: "startsWith", label: "\u5F00\u59CB\u4E3A" },
+                      { value: "endsWith", label: "\u7ED3\u5C3E\u4E3A" },
+                      { value: "isEmpty", label: "\u4E3A\u7A7A" },
+                      { value: "notEmpty", label: "\u4E0D\u4E3A\u7A7A" },
+                      { value: "regex", label: "\u6B63\u5219" },
+                    ],
+                    placeholder: "\u8FD0\u7B97",
+                  }),
+                  /*#__PURE__*/ React.createElement("input", {
+                    type: "text",
+                    className: "input input-sm",
+                    value: cond.value || "",
+                    onChange: (e) => {
+                      const conditions = [...(step.config.conditions || [])];
+                      conditions[idx] = { ...conditions[idx], value: e.target.value };
+                      updateStepConfig(step.id, "conditions", conditions);
+                    },
+                    placeholder: "\u503C",
+                  }),
+                  /*#__PURE__*/ React.createElement("span", null, "\u2192"),
+                  /*#__PURE__*/ React.createElement("input", {
+                    type: "text",
+                    className: "input input-sm",
+                    value: cond.tag || "",
+                    onChange: (e) => {
+                      const conditions = [...(step.config.conditions || [])];
+                      conditions[idx] = { ...conditions[idx], tag: e.target.value };
+                      updateStepConfig(step.id, "conditions", conditions);
+                    },
+                    placeholder: "\u6807\u8BB1",
+                  }),
+                  /*#__PURE__*/ React.createElement(
+                    "button",
+                    {
+                      className: "btn-icon btn-icon-danger",
+                      onClick: () => {
+                        const conditions = (step.config.conditions || []).filter((_, i) => i !== idx);
+                        updateStepConfig(step.id, "conditions", conditions);
+                      },
+                    },
+                    /*#__PURE__*/ React.createElement(Icons.Trash, null),
+                  ),
+                )
+              ),
+              /*#__PURE__*/ React.createElement(
+                "button",
+                {
+                  className: "btn btn-sm btn-secondary",
+                  onClick: () => {
+                    const conditions = [...(step.config.conditions || []), { column: "", op: "==", value: "", tag: "" }];
+                    updateStepConfig(step.id, "conditions", conditions);
+                  },
+                },
+                /*#__PURE__*/ React.createElement(Icons.Plus, null),
+                " \u6DFB\u52A0\u6761\u4EF6",
+              ),
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-label" },
+              "\u9ED8\u8BA4\u6807\u8BB1",
+            ),
+            /*#__PURE__*/ React.createElement("input", {
+              type: "text",
+              className: "input",
+              value: step.config.defaultTag || "",
+              onChange: (e) => updateStepConfig(step.id, "defaultTag", e.target.value),
+              placeholder: "\u6240\u6709\u6761\u4EF6\u90FD\u4E0D\u6EE1\u8DB3\u65F6\u7684\u9ED8\u8BA4\u6807\u8BB1",
+            }),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "step-desc" },
+            /*#__PURE__*/ React.createElement(Icons.Info, null),
+            " \u6EE1\u8DB3\u6761\u4EF6\u65F6\u6DFB\u52A0\u6807\u8BB1\uFF0C\u8BA1\u7B97\u7ED3\u679C\u4E3A\u65B0\u5217\u3002\u6761\u4EF6\u6309\u987A\u5E8F\u5339\u9145\uFF0C\u6EE1\u8DB3\u7B2C\u4E00\u4E2A\u6761\u4EF6\u5373\u7ED3\u675F\u3002",
+          ),
+        );
+      case "stringExtract":
+        return /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "step-config" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "grid-2" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u6E90\u5217",
+              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.column || "",
+                onChange: (val) => updateStepConfig(step.id, "column", val),
+                options: [{ value: "", label: "\u5F53\u524D\u503C (val)" }, ...sourceTableHeaders.map((h) => ({ value: h, label: h }))],
+                placeholder: "\u8BF7\u9009\u62E9\u6E90\u5217",
+              }),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u8F93\u51FA\u5217\u540D",
+              ),
+              /*#__PURE__*/ React.createElement("input", {
+                type: "text",
+                className: "input",
+                value: step.config.targetColumn || "extracted",
+                onChange: (e) => updateStepConfig(step.id, "targetColumn", e.target.value),
+                placeholder: "extracted",
+              }),
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-label" },
+              "\u8F6C\u6362\u65B9\u5F0F",
+            ),
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
+              value: step.config.extractType || "regex",
+              onChange: (val) => updateStepConfig(step.id, "extractType", val),
+              options: [
+                { value: "regex", label: "\u6B63\u5219\u63D0\u53D6" },
+                { value: "substring", label: "\u5B50\u4E32\u622A\u53D6" },
+                { value: "concat", label: "\u5217\u62FC\u63A5" },
+                { value: "split", label: "\u5206\u9694\u63D0\u53D6" },
+                { value: "trim", label: "\u524D\u540E\u7A7A\u5228\u9664" },
+                { value: "upper", label: "\u8F6C\u5927\u5199" },
+                { value: "lower", label: "\u8F6C\u5C0E\u5199" },
+              ],
+              placeholder: "\u8BF7\u9009\u62E9\u8F6C\u6362\u65B9\u5F0F",
+            }),
+          ),
+          step.config.extractType === "regex" && /*#__PURE__*/ React.createElement(
+            React.Fragment,
+            null,
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u6B63\u5219\u8868\u8F93\u5F0F",
+              ),
+              /*#__PURE__*/ React.createElement("input", {
+                type: "text",
+                className: "input",
+                value: step.config.pattern || "",
+                onChange: (e) => updateStepConfig(step.id, "pattern", e.target.value),
+                placeholder: "\u4F8B\u5982: \\d+",
+              }),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u63D0\u53D6\u5206\u7EC4\uFF08\u7B2C\u4E00\u4E2A\u5206\u7EC4\u4E3A 0\uFF09",
+              ),
+              /*#__PURE__*/ React.createElement("input", {
+                type: "number",
+                className: "input",
+                value: step.config.extractGroup || 0,
+                onChange: (e) => updateStepConfig(step.id, "extractGroup", parseInt(e.target.value) || 0),
+                min: 0,
+              }),
+            ),
+          ),
+          step.config.extractType === "substring" && /*#__PURE__*/ React.createElement(
+            React.Fragment,
+            null,
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "grid-2" },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement(
+                  "label",
+                  { className: "form-label" },
+                  "\u5F00\u59CB\u4F4D\u7F6E",
+                ),
+                /*#__PURE__*/ React.createElement("input", {
+                  type: "number",
+                  className: "input",
+                  value: step.config.start || 0,
+                  onChange: (e) => updateStepConfig(step.id, "start", parseInt(e.target.value) || 0),
+                  min: 0,
+                }),
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement(
+                  "label",
+                  { className: "form-label" },
+                  "\u957F\u5EA6",
+                ),
+                /*#__PURE__*/ React.createElement("input", {
+                  type: "number",
+                  className: "input",
+                  value: step.config.length || 10,
+                  onChange: (e) => updateStepConfig(step.id, "length", parseInt(e.target.value) || 10),
+                  min: 1,
+                }),
+              ),
+            ),
+          ),
+          step.config.extractType === "concat" && /*#__PURE__*/ React.createElement(
+            React.Fragment,
+            null,
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u62FC\u63A5\u5217\uFF08\u7528\u82F1\u6587\u4E0E\u5218\u540D\u5206\u9694\uFF0C\u4F8B\u5982\uFF1A\u5546\u54C1ID,\u89C4\u683C\uFF09",
+              ),
+              /*#__PURE__*/ React.createElement("input", {
+                type: "text",
+                className: "input",
+                value: (step.config.columns || []).join(","),
+                onChange: (e) => updateStepConfig(step.id, "columns", e.target.value.split(",").map((s) => s.trim()).filter(Boolean)),
+                placeholder: "\u4F8B\u5982\uFF1A\u5546\u54C1ID,\u89C4\u683C",
+              }),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u5206\u9694\u7B26",
+              ),
+              /*#__PURE__*/ React.createElement("input", {
+                type: "text",
+                className: "input",
+                value: step.config.separator || "",
+                onChange: (e) => updateStepConfig(step.id, "separator", e.target.value),
+                placeholder: "\u4F8B\u5982\uFF1A- \u6216\u7A7A\u4E3A\u76F4\u63A5\u62FC\u63A5",
+              }),
+            ),
+          ),
+          step.config.extractType === "split" && /*#__PURE__*/ React.createElement(
+            React.Fragment,
+            null,
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "grid-2" },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement(
+                  "label",
+                  { className: "form-label" },
+                  "\u5206\u9694\u7B26",
+                ),
+                /*#__PURE__*/ React.createElement("input", {
+                  type: "text",
+                  className: "input",
+                  value: step.config.separator || ",",
+                  onChange: (e) => updateStepConfig(step.id, "separator", e.target.value),
+                  placeholder: "\u4F8B\u5982\uFF1A,",
+                }),
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement(
+                  "label",
+                  { className: "form-label" },
+                  "\u63D0\u53D6\u4F4D\u7F6E\uFF08\u7B2C\u4E00\u4E2A\u4E3A 0\uFF09",
+                ),
+                /*#__PURE__*/ React.createElement("input", {
+                  type: "number",
+                  className: "input",
+                  value: step.config.splitIndex || 0,
+                  onChange: (e) => updateStepConfig(step.id, "splitIndex", parseInt(e.target.value) || 0),
+                  min: 0,
+                }),
+              ),
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "step-desc" },
+            /*#__PURE__*/ React.createElement(Icons.Info, null),
+            " \u5BF9\u5B57\u7B26\u4E32\u8FDB\u884C\u63D0\u53D6\u3001\u622A\u53D6\u3001\u62FC\u63A5\u3001\u5206\u9694\u6216\u5176\u4ED6\u64CD\u4F5C\u3002",
+          ),
+        );
+      case "fillNA":
+        return /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "step-config" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "grid-2" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u5904\u740E\u5217",
+              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.column || "",
+                onChange: (val) => updateStepConfig(step.id, "column", val),
+                options: [{ value: "", label: "\u5F53\u524D\u503C (val)" }, ...sourceTableHeaders.map((h) => ({ value: h, label: h }))],
+                placeholder: "\u8BF7\u9009\u62E9\u5217",
+              }),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u5904\u740E\u65B9\u5F0F",
+              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.fillType || "value",
+                onChange: (val) => updateStepConfig(step.id, "fillType", val),
+                options: [
+                  { value: "value", label: "\u6307\u5B9A\u503C" },
+                  { value: "zero", label: "\u7528\u96F6\u5904\u740E" },
+                  { value: "empty", label: "\u7528\u7A7A\u5B57\u7B26\u4E32\u5904\u740E" },
+                  { value: "mean", label: "\u7528\u5E73\u5747\u503C\u5904\u740E" },
+                  { value: "median", label: "\u7528\u4E2D\u4F4D\u6570\u5904\u740E" },
+                  { value: "mode", label: "\u7528\u4F17\u6570\u5904\u740E" },
+                  { value: "forward", label: "\u524D\u5411\u5904\u740E" },
+                  { value: "backward", label: "\u540E\u5411\u5904\u740E" },
+                ],
+                placeholder: "\u8BF7\u9009\u62E9\u5904\u740E\u65B9\u5F0F",
+              }),
+            ),
+          ),
+          step.config.fillType === "value" && /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-label" },
+              "\u5904\u740E\u503C",
+            ),
+            /*#__PURE__*/ React.createElement("input", {
+              type: "text",
+              className: "input",
+              value: step.config.fillValue || "",
+              onChange: (e) => updateStepConfig(step.id, "fillValue", e.target.value),
+              placeholder: "\u8BF7\u8F93\u5165\u5904\u740E\u503C",
+            }),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "step-desc" },
+            /*#__PURE__*/ React.createElement(Icons.Info, null),
+            " \u5BF9\u7A7A\u503C\uFF08null\u3001\u7A7A\u5B57\u7B26\u4E32\u3001NaN\uFF09\u8FDB\u884C\u5904\u740E\uFF0C\u53EF\u6307\u5B9A\u5E38\u91CF\u6216\u4F7F\u7528\u7EDF\u8BA1\u65B9\u5F0F\u5904\u740E\u3002",
+          ),
+        );
+      case "normalize":
+        return /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "step-config" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "grid-2" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u6807\u51C6\u5316\u5217",
+              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.column || "",
+                onChange: (val) => updateStepConfig(step.id, "column", val),
+                options: [{ value: "", label: "\u5F53\u524D\u503C (val)" }, ...sourceTableHeaders.map((h) => ({ value: h, label: h }))],
+                placeholder: "\u8BF7\u9009\u62E9\u5217",
+              }),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u8F93\u51FA\u5217\u540D",
+              ),
+              /*#__PURE__*/ React.createElement("input", {
+                type: "text",
+                className: "input",
+                value: step.config.targetColumn || "normalized",
+                onChange: (e) => updateStepConfig(step.id, "targetColumn", e.target.value),
+                placeholder: "normalized",
+              }),
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-label" },
+              "\u6807\u51C6\u5316\u65B9\u5F0F",
+            ),
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
+              value: step.config.normType || "minmax",
+              onChange: (val) => updateStepConfig(step.id, "normType", val),
+              options: [
+                { value: "minmax", label: "\u6700\u5C0E-\u6700\u5927\u6807\u51C6\u5316 (Min-Max)" },
+                { value: "zscore", label: "Z-score \u6807\u51C6\u5316" },
+                { value: "decimal", label: "\u5C0E\u5C0E\u5B9A\u6807\u5316" },
+              ],
+              placeholder: "\u8BF7\u9009\u62E9\u6807\u51C6\u5316\u65B9\u5F0F",
+            }),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "step-desc" },
+            /*#__PURE__*/ React.createElement(Icons.Info, null),
+            " \u5BF9\u6570\u636E\u8FDB\u884C\u6807\u51C6\u5316\uFF0C\u7ED3\u679C\u4E3A 0-1 \u4E4B\u95F4\u7684\u6570\u636E\uFF0C\u7528\u4E8E\u4E0D\u540C\u5355\u4F4D\u6570\u636E\u7684\u5BF9\u6BD4\u3002",
+          ),
+        );
       default:
         return /*#__PURE__*/ React.createElement(
           "div",
@@ -6119,15 +6956,15 @@ const RulesPage = ({ state, currentPlatform }) => {
             {
               id: "transform",
               title: "\uD83D\uDD04 \u6570\u636E\u8F6C\u6362",
-              desc: "\u8F6C\u6362\u3001\u66FF\u6362\u3001\u6392\u5E8F\u3001\u65E5\u671F\u5904\u7406",
-              types: ["virtual", "lookup", "sort", "text", "round", "concat", "substring", "date"],
+              desc: "\u8F6C\u6362\u3001\u66FF\u6362\u3001\u6392\u5E8F\u3001\u65E5\u671F\u5904\u7406\u3001\u7A7A\u503C\u5904\u7406",
+              types: ["virtual", "lookup", "sort", "text", "round", "concat", "substring", "date", "stringExtract", "fillNA", "binning", "conditionalTag"],
               color: "var(--color-info)",
             },
             {
               id: "compute",
               title: "\uD83E\uDDEA \u8BA1\u7B97\u805A\u5408",
               desc: "\u6C42\u548C\u3001\u5E73\u5747\u3001\u516C\u5F0F\u3001\u6392\u540D\u3001\u6BD4\u7387\u3001\u7D2F\u8BA1\u3001\u5360\u6BD4",
-              types: ["aggregate", "group", "formula", "math", "rank", "diff", "ratio", "runningTotal", "percentOfTotal"],
+              types: ["aggregate", "group", "formula", "math", "rank", "diff", "ratio", "runningTotal", "percentOfTotal", "movingAverage", "normalize"],
               color: "var(--color-success)",
             },
             {
