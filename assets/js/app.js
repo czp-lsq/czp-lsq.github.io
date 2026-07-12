@@ -291,10 +291,29 @@ const App = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const loadingRef = useRef(null);
 
-  const APP_VERSION = "1.7.0";
+  const APP_VERSION = "1.8.0";
   const VERSION_KEY = "app_version_seen";
   const VERSION_HISTORY_KEY = "app_version_history";
   const UPDATE_LOG = [
+    { version: "1.8.0", date: "2026-07-13 16:30:00",
+      summary: "关键Bug修复与布局稳定性提升",
+      changes: [
+        { type: "feature", text: "侧边栏固定定位，滚动时不再跳动" },
+        { type: "feature", text: "计算规则页面无模板时添加引导提示和跳转按钮" },
+        { type: "feature", text: "系统设置主题切换卡片可视化预览" },
+        { type: "feature", text: "Icons组件添加Proxy兜底，防止图标缺失报错" },
+        { type: "optimize", text: "页面滚动优化，仅内容区滚动，整体布局稳定" },
+        { type: "optimize", text: "使用帮助页面信息密度提升，布局更紧凑" },
+        { type: "optimize", text: "样本数据管理页面间距优化，减少空白" },
+        { type: "optimize", text: "更新提示弹窗样式与图标专业化" },
+        { type: "optimize", text: "版本检测逻辑优化，确保每次更新都有弹窗提示" },
+        { type: "bugfix", text: "修复点击「添加步骤」按钮页面报错（React #130）" },
+        { type: "bugfix", text: "修复浏览器上下滑动时的空白问题" },
+        { type: "bugfix", text: "修复左侧导航栏与内容区滚动跳动问题" },
+        { type: "bugfix", text: "修复刷新页面更新后无提示的问题" },
+      ],
+      bugfixes: [],
+    },
     { version: "1.7.0", date: "2026-07-13 10:00:00",
       summary: "导航栏重构与页面体验全面优化",
       changes: [
@@ -476,20 +495,17 @@ const App = () => {
   // 检查是否需要显示版本更新弹窗
   useEffect(() => {
     try {
-      const seenVersion = localStorage.getItem(VERSION_KEY);
+      const lastVersion = localStorage.getItem(VERSION_KEY);
       const seenVersions = getSeenVersions();
       
-      // 如果是新版本，需要显示更新日志
-      if (seenVersion !== APP_VERSION) {
+      // 版本号变化时（包括首次访问）都显示更新弹窗
+      if (lastVersion !== APP_VERSION) {
         localStorage.setItem(VERSION_KEY, APP_VERSION);
         
-        // 只有从旧版本升级过来的用户才显示更新弹窗
-        if (seenVersion) {
-          const logEntry = UPDATE_LOG.find((l) => l.version === APP_VERSION);
-          if (logEntry && !seenVersions.includes(APP_VERSION)) {
-            setUpdateInfo(logEntry);
-            setShowUpdateModal(true);
-          }
+        const logEntry = UPDATE_LOG.find((l) => l.version === APP_VERSION);
+        if (logEntry && !seenVersions.includes(APP_VERSION)) {
+          setUpdateInfo(logEntry);
+          setShowUpdateModal(true);
         }
       }
     } catch (e) {}

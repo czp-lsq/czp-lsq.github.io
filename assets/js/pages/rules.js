@@ -1,5 +1,5 @@
 // RulesPage - 计算规则页面组件
-const RulesPage = ({ state, currentPlatform }) => {
+const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   const { addToast } = useToast();
   const SearchableSelect = window.SearchableSelect || ((props) => {
     const { value, onChange, options, placeholder, disabled, allowCreate } = props;
@@ -5599,11 +5599,43 @@ const RulesPage = ({ state, currentPlatform }) => {
               ),
             ),
           /*#__PURE__*/ React.createElement(
-            "ul",
-            { className: "field-list" },
+            "div",
+            { className: "field-list-wrapper" },
             fields.length === 0
-              ? null
-              : filteredFields.length === 0
+              ? /*#__PURE__*/ React.createElement(
+                  "div",
+                  {
+                    className: "rules-empty-state",
+                  },
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "rules-empty-icon" },
+                    /*#__PURE__*/ React.createElement(Icons.FileSpreadsheet, null),
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "rules-empty-title" },
+                    "暂无模板配置",
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "rules-empty-desc" },
+                    "请先在模板中心上传利润表模板，系统将自动识别占位符并生成可配置字段",
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    Button,
+                    {
+                      type: "primary",
+                      onClick: () => onNavigate && onNavigate("template"),
+                    },
+                    /*#__PURE__*/ React.createElement(Icons.ArrowRight, null),
+                    " 前往模板中心",
+                  ),
+                )
+              : /*#__PURE__*/ React.createElement(
+                  "ul",
+                  { className: "field-list" },
+                  filteredFields.length === 0
                 ? /*#__PURE__*/ React.createElement(
                     "div",
                     {
@@ -5678,6 +5710,7 @@ const RulesPage = ({ state, currentPlatform }) => {
                       ),
                     );
                   }),
+                ),
           ),
         ),
       ),

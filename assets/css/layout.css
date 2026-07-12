@@ -1,7 +1,14 @@
 .app {
   display: flex;
-  min-height: 100vh;
+  width: 100%;
+  height: 100vh;
+  overflow: hidden;
   contain: layout;
+}
+
+body {
+  overflow: hidden;
+  height: 100vh;
 }
 
 .sidebar {
@@ -11,9 +18,13 @@
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  transition: width var(--duration-slow) var(--ease-smooth), transform var(--duration-slow) var(--ease-smooth);
+  transition: width var(--duration-slow) var(--ease-smooth);
   overflow: hidden;
-  position: relative;
+  position: fixed;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  z-index: 100;
   height: 100vh;
   contain: layout;
 }
@@ -655,11 +666,15 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  overflow-y: auto;
   min-width: 0;
-  min-height: 0;
   height: 100vh;
+  margin-left: 240px;
+  transition: margin-left var(--duration-slow) var(--ease-smooth);
   contain: layout;
+}
+
+.sidebar.collapsed ~ .main {
+  margin-left: 56px;
 }
 
 .main-header {
@@ -671,6 +686,10 @@
   justify-content: space-between;
   padding: 0 24px;
   flex-shrink: 0;
+  position: sticky;
+  top: 0;
+  z-index: 10;
+  backdrop-filter: blur(8px);
 }
 
 .main-content {
