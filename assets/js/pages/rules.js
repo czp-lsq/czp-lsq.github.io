@@ -1,7 +1,7 @@
 // RulesPage - 计算规则页面组件
 const RulesPage = ({ state, currentPlatform }) => {
   const { addToast } = useToast();
-  const SearchableSelect = SearchableSelect || ((props) => {
+  const SearchableSelect = window.SearchableSelect || ((props) => {
     const { value, onChange, options, placeholder } = props;
     return /*#__PURE__*/ React.createElement(
       "select",

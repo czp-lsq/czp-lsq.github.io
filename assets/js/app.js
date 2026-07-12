@@ -204,53 +204,48 @@ const App = () => {
     return unsub;
   }, []);
 
+  const addToastRef = useRef(addToast);
   useEffect(() => {
+    addToastRef.current = addToast;
+  }, [addToast]);
+
+  const checkForUpdate = useCallback(async (showToast = false) => {
     try {
-      const seenVersion = localStorage.getItem(VERSION_KEY);
-      if (seenVersion !== APP_VERSION) {
-        setUpdateInfo(UPDATE_LOG[0]);
+      const res = await fetch(`index.html?_=${Date.now()}`, {
+        cache: "no-store",
+      });
+      if (!res.ok) return;
+      const html = await res.text();
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, "text/html");
+      const meta = doc.querySelector('meta[name="app-version"]');
+      const remoteVersion = meta ? meta.getAttribute("content") : null;
+
+      if (remoteVersion && remoteVersion !== APP_VERSION) {
+        const now = new Date();
+        setUpdateInfo({
+          version: remoteVersion,
+          date: now.toLocaleString(),
+          changes: ["检测到新版本，建议刷新页面以获取最新功能。"],
+          detectedAt: now,
+        });
+        setUpdateDetectedAt(now);
         setShowUpdateModal(true);
+        if (showToast) {
+          addToastRef.current("info", "发现新版本", `v${remoteVersion} 已发布，请刷新页面`, 5000);
+        }
       }
     } catch (e) {}
   }, []);
 
   useEffect(() => {
-    const parseVersion = (html) => {
-      try {
-        const parser = new DOMParser();
-        const doc = parser.parseFromString(html, "text/html");
-        const meta = doc.querySelector('meta[name="app-version"]');
-        return meta ? meta.getAttribute("content") : null;
-      } catch (e) {
-        return null;
-      }
-    };
-    const checkForUpdate = async () => {
-      try {
-        const res = await fetch(`index.html?_=${Date.now()}`, {
-          cache: "no-store",
-        });
-        if (!res.ok) return;
-        const html = await res.text();
-        const remoteVersion = parseVersion(html);
-        if (remoteVersion && remoteVersion !== APP_VERSION) {
-          const now = new Date();
-          setUpdateInfo({
-            version: remoteVersion,
-            date: now.toLocaleString(),
-            changes: ["检测到新版本，建议刷新页面以获取最新功能。"],
-            detectedAt: now,
-          });
-          setUpdateDetectedAt(now);
-          setShowUpdateModal(true);
-          addToast("info", "发现新版本", `v${remoteVersion} 已发布，请刷新页面`, 5000);
-        }
-      } catch (e) {}
-    };
-    checkForUpdate();
-    const timer = setInterval(checkForUpdate, 3 * 60 * 1000);
+    checkForUpdate(false);
+  }, [checkForUpdate]);
+
+  useEffect(() => {
+    const timer = setInterval(() => checkForUpdate(true), 3 * 60 * 1000);
     return () => clearInterval(timer);
-  }, [addToast]);
+  }, [checkForUpdate]);
 
   useEffect(() => {
     if (showNotifications) {
