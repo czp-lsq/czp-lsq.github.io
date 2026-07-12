@@ -141,7 +141,7 @@
 }
 
 .searchable-select-options {
-  max-height: 280px;
+  max-height: 240px;
   overflow-y: auto;
   padding: 6px;
 }

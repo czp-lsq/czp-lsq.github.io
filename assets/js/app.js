@@ -831,6 +831,21 @@ const App = () => {
           icon: /*#__PURE__*/ React.createElement(Icons.HardDrive, null),
         },
         {
+          id: "settings",
+          name: "系统设置",
+          icon: /*#__PURE__*/ React.createElement(Icons.Settings, null),
+        },
+        {
+          id: "changelog",
+          name: "更新日志",
+          icon: /*#__PURE__*/ React.createElement(Icons.GitCommit, null),
+        },
+        {
+          id: "auditlog",
+          name: "操作日志",
+          icon: /*#__PURE__*/ React.createElement(Icons.Shield, null),
+        },
+        {
           id: "help",
           name: "使用帮助",
           icon: /*#__PURE__*/ React.createElement(Icons.HelpCircle, null),
@@ -874,6 +889,8 @@ const App = () => {
     shops: { title: "店铺管理", subtitle: "管理各平台下的店铺信息" },
     settings: { title: "系统设置", subtitle: "管理系统配置和个人信息" },
     help: { title: "使用帮助", subtitle: "系统使用指南和常见问题" },
+    changelog: { title: "更新日志", subtitle: "查看系统版本更新历史" },
+    auditlog: { title: "操作日志", subtitle: "查看用户操作安全记录" },
   };
   const renderPage = () => {
     switch (currentPage) {
@@ -931,6 +948,10 @@ const App = () => {
         });
       case "help":
         return /*#__PURE__*/ React.createElement(HelpPage, {});
+      case "changelog":
+        return /*#__PURE__*/ React.createElement(ChangelogPage, { updateLog: UPDATE_LOG, appVersion: APP_VERSION });
+      case "auditlog":
+        return /*#__PURE__*/ React.createElement(AuditLogPage, { currentUser: currentUser });
       default:
         return /*#__PURE__*/ React.createElement(DashboardPage, {
           state: state,
@@ -1218,24 +1239,6 @@ const App = () => {
       /*#__PURE__*/ React.createElement(
           "div",
           { className: "sidebar-footer" },
-          /*#__PURE__*/ React.createElement(
-            "div",
-            {
-              className: "nav-item",
-              onClick: () => handleNavigate("settings"),
-              "data-tooltip": "\u7CFB\u7EDF\u8BBE\u7F6E",
-            },
-            /*#__PURE__*/ React.createElement(
-              "span",
-              { className: "nav-icon" },
-              /*#__PURE__*/ React.createElement(Icons.Settings, null),
-            ),
-            /*#__PURE__*/ React.createElement(
-              "span",
-              { className: "nav-text" },
-              "\u7CFB\u7EDF\u8BBE\u7F6E",
-            ),
-          ),
           /*#__PURE__*/ React.createElement(
             "div",
             {

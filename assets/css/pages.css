@@ -3739,6 +3739,7 @@
   display: grid;
   grid-template-columns: 1fr;
   gap: 24px;
+  align-items: stretch;
 }
 
 @media (min-width: 992px) {
@@ -3750,6 +3751,20 @@
 .storage-grid-col-1,
 .storage-grid-col-2 {
   min-width: 0;
+  display: flex;
+  flex-direction: column;
+}
+
+.storage-grid-col-1 > .card,
+.storage-grid-col-2 > .card {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.storage-grid-col-1 > .card > .card-body,
+.storage-grid-col-2 > .card > .card-body {
+  flex: 1;
 }
 
 .storage-grid-col-full {
@@ -5190,6 +5205,323 @@
   font-size: 14px;
   color: var(--color-text-secondary);
   line-height: 1.6;
+}
+
+/* ========================================
+   更新日志页面样式
+   ======================================== */
+
+.changelog-page {
+  padding: 24px;
+}
+
+.changelog-header {
+  margin-bottom: 24px;
+}
+
+.changelog-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.changelog-timeline {
+  position: relative;
+  padding-left: 24px;
+}
+
+.changelog-item {
+  position: relative;
+  padding-left: 24px;
+  padding-bottom: 24px;
+}
+
+.changelog-item:last-child {
+  padding-bottom: 0;
+}
+
+.changelog-item-marker {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.changelog-item-marker::before {
+  content: '';
+  position: absolute;
+  top: 12px;
+  bottom: 0;
+  width: 2px;
+  background: var(--color-border);
+}
+
+.changelog-item:last-child .changelog-item-marker::before {
+  display: none;
+}
+
+.changelog-dot {
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: var(--color-border);
+  flex-shrink: 0;
+  position: relative;
+  z-index: 1;
+}
+
+.changelog-dot-current {
+  background: var(--color-primary);
+  box-shadow: 0 0 0 4px var(--color-primary-50, rgba(59, 130, 246, 0.15));
+}
+
+.changelog-item-card {
+  border-radius: var(--radius-lg);
+  padding: 20px 24px;
+}
+
+.changelog-current .changelog-item-card {
+  border-color: var(--color-primary-200, var(--color-primary));
+  box-shadow: 0 0 0 1px var(--color-primary-100, rgba(59, 130, 246, 0.1));
+}
+
+.changelog-item-header {
+  margin-bottom: 16px;
+}
+
+.changelog-version-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.changelog-version-tag {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 10px;
+  font-size: 13px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+  border: 1px solid var(--color-border);
+}
+
+.changelog-version-tag-current {
+  background: var(--color-primary);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.changelog-current-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 2px 8px;
+  font-size: 11px;
+  font-weight: 600;
+  border-radius: var(--radius-full);
+  background: var(--color-success-bg, rgba(34, 197, 94, 0.1));
+  color: var(--color-success);
+}
+
+.changelog-date {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+}
+
+.changelog-summary {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin-top: 8px;
+  margin-bottom: 0;
+}
+
+.changelog-changes {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.changelog-change-group {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.changelog-change-label {
+  font-size: 13px;
+  font-weight: 600;
+  margin-bottom: 2px;
+}
+
+.changelog-change-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+}
+
+.changelog-change-list li {
+  font-size: 13px;
+  color: var(--color-text-secondary);
+  padding: 3px 0 3px 16px;
+  position: relative;
+  line-height: 1.6;
+}
+
+.changelog-change-list li::before {
+  content: '·';
+  position: absolute;
+  left: 4px;
+  color: var(--color-text-tertiary);
+}
+
+/* ========================================
+   操作日志页面样式
+   ======================================== */
+
+.auditlog-page {
+  padding: 24px;
+}
+
+.auditlog-header {
+  margin-bottom: 20px;
+}
+
+.auditlog-title-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.auditlog-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 16px;
+  flex-wrap: wrap;
+}
+
+.auditlog-filter {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.auditlog-count {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+}
+
+.auditlog-actions {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.auditlog-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 48px;
+  gap: 12px;
+  text-align: center;
+}
+
+.auditlog-empty p {
+  font-size: 14px;
+  color: var(--color-text-muted);
+  margin: 0;
+}
+
+.auditlog-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.auditlog-item {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 16px;
+  border-radius: var(--radius-md);
+  gap: 16px;
+  transition: all 0.15s ease;
+}
+
+.auditlog-item:hover {
+  border-color: var(--color-border);
+}
+
+.auditlog-item-left {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex: 1;
+  min-width: 0;
+}
+
+.auditlog-category-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.auditlog-item-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  min-width: 0;
+}
+
+.auditlog-action {
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.auditlog-detail {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.auditlog-item-right {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  flex-shrink: 0;
+}
+
+.auditlog-category-tag {
+  font-size: 11px;
+  font-weight: 500;
+  padding: 2px 8px;
+  border-radius: var(--radius-full);
+  border: 1px solid;
+  white-space: nowrap;
+}
+
+.auditlog-operator {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  white-space: nowrap;
+}
+
+.auditlog-time {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
 }
 
 @media (max-width: 900px) {

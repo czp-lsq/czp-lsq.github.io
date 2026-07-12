@@ -534,6 +534,20 @@ const BatchPage = ({ state, currentPlatform }) => {
                   { className: "upload-hint" },
                   "\u652F\u6301 .xlsx / .xls / .csv / .zip \u683C\u5F0F\uFF0C\u53EF\u6279\u91CF\u4E0A\u4F20\u591A\u4E2A\u6587\u4EF6",
                 ),
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { style: { marginTop: 8 } },
+                  /*#__PURE__*/ React.createElement(
+                    "button",
+                    {
+                      className: "btn btn-ghost",
+                      style: { fontSize: 12 },
+                      onClick: () => document.getElementById("batch-folder-input")?.click(),
+                    },
+                    /*#__PURE__*/ React.createElement(Icons.Folder, null),
+                    " 或选择文件夹上传",
+                  ),
+                ),
                 /*#__PURE__*/ React.createElement("input", {
                   ref: fileInputRef,
                   type: "file",
@@ -541,6 +555,16 @@ const BatchPage = ({ state, currentPlatform }) => {
                   multiple: true,
                   onChange: handleFileUpload,
                   style: { display: "none" },
+                }),
+                /*#__PURE__*/ React.createElement("input", {
+                  id: "batch-folder-input",
+                  type: "file",
+                  accept: ".xlsx,.xls,.csv,.zip",
+                  multiple: true,
+                  onChange: handleFileUpload,
+                  style: { display: "none" },
+                  webkitdirectory: "",
+                  directory: "",
                 }),
               )
             : /*#__PURE__*/ React.createElement(

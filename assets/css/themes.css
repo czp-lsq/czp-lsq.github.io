@@ -1120,3 +1120,201 @@ body.dark .navbar-item.active {
   color: var(--color-primary);
   background: var(--color-primary-50);
 }
+
+/* ===== 深色模式增强样式 - 组件级优化 ===== */
+
+/* --- 1. 侧边栏 footer 版本号区域深色模式对比度优化 --- */
+body.dark .sidebar-footer {
+  background: var(--color-bg-primary);
+  border-top-color: var(--color-border);
+}
+
+body.dark .sidebar-footer .nav-item {
+  color: var(--color-text-muted);
+}
+
+body.dark .sidebar-footer .nav-item:hover {
+  color: var(--color-text-secondary);
+  background: var(--color-bg-tertiary);
+}
+
+body.dark .sidebar-footer .nav-item.active {
+  color: var(--color-text-sidebar-active);
+  background: var(--color-primary-100);
+}
+
+/* --- 2. 导航项 .nav-item.active 深色模式视觉区分增强 --- */
+body.dark .nav-item.active {
+  background: var(--color-primary-100);
+  color: var(--color-text-sidebar-active);
+  font-weight: var(--font-weight-semibold);
+}
+
+body.dark .nav-item.active::before {
+  background: var(--color-primary);
+  width: 3px;
+  height: 22px;
+}
+
+/* --- 3. 更新弹窗 update-modal 深色模式优化 --- */
+body.dark .update-modal {
+  background: var(--color-bg-secondary);
+  box-shadow: var(--shadow-modal), 0 0 0 1px var(--color-border);
+}
+
+body.dark .update-modal-header {
+  background: var(--color-primary-gradient);
+}
+
+body.dark .update-modal-header::before,
+body.dark .update-modal-header::after {
+  opacity: 0.08;
+}
+
+body.dark .update-modal-body {
+  background: var(--color-bg-primary);
+}
+
+body.dark .update-modal-title,
+body.dark .update-modal-section-header {
+  color: var(--color-text-primary);
+}
+
+body.dark .update-modal-subtitle {
+  color: var(--color-text-tertiary);
+}
+
+body.dark .update-modal-list {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border);
+}
+
+body.dark .update-modal-list li {
+  color: var(--color-text-primary);
+  border-bottom-color: var(--color-border-light);
+}
+
+body.dark .update-modal-list li:hover {
+  background: var(--color-bg-hover);
+}
+
+body.dark .update-modal-footer .btn-secondary {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-border);
+  color: var(--color-text-secondary);
+}
+
+body.dark .update-modal-footer .btn-secondary:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+body.dark .view-full-log-btn {
+  color: var(--color-text-muted);
+}
+
+body.dark .view-full-log-btn:hover {
+  color: var(--color-primary);
+  background: var(--color-primary-50);
+}
+
+/* --- 4. SearchableSelect 下拉框深色模式优化 --- */
+body.dark .searchable-select-trigger {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-border);
+  color: var(--color-text-primary);
+}
+
+body.dark .searchable-select-trigger:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-medium);
+}
+
+body.dark .searchable-select.open .searchable-select-trigger {
+  border-color: var(--color-primary);
+  background: var(--color-bg-secondary);
+  box-shadow: 0 0 0 3px var(--color-primary-50);
+}
+
+body.dark .searchable-select-dropdown {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border);
+  box-shadow: var(--shadow-lg);
+}
+
+body.dark .searchable-select-search {
+  background: var(--color-bg-tertiary);
+  border-bottom-color: var(--color-border);
+}
+
+body.dark .searchable-select-search .search-input {
+  color: var(--color-text-primary);
+}
+
+body.dark .searchable-select-search .search-input::placeholder {
+  color: var(--color-text-muted);
+}
+
+body.dark .searchable-select-option {
+  color: var(--color-text-secondary);
+}
+
+body.dark .searchable-select-option:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+body.dark .searchable-select-option.selected {
+  background: var(--color-primary-100);
+  color: var(--color-primary);
+}
+
+body.dark .searchable-select-empty {
+  color: var(--color-text-muted);
+}
+
+/* --- 5. 卡片 .card-body 深色模式背景色优化 --- */
+body.dark .card-body {
+  background: transparent;
+  color: var(--color-text-secondary);
+}
+
+/* --- 6. 表单元素 input/select 深色模式跨主题视觉一致性 --- */
+body.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]),
+body.dark textarea,
+body.dark select {
+  background-color: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  color: var(--color-text-primary);
+}
+
+body.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):hover,
+body.dark textarea:hover,
+body.dark select:hover {
+  border-color: var(--color-border-medium);
+  background-color: var(--color-bg-tertiary);
+}
+
+body.dark input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="color"]):focus,
+body.dark textarea:focus,
+body.dark select:focus {
+  background-color: var(--color-bg-secondary);
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 2px var(--color-primary-50);
+  outline: none;
+}
+
+body.dark input::placeholder,
+body.dark textarea::placeholder {
+  color: var(--color-text-muted);
+  opacity: 0.7;
+}
+
+body.dark input:disabled,
+body.dark textarea:disabled,
+body.dark select:disabled {
+  background-color: var(--color-bg-tertiary);
+  color: var(--color-text-disabled);
+  opacity: 0.5;
+  cursor: not-allowed;
+}

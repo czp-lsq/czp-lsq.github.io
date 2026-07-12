@@ -270,8 +270,58 @@
   display: none;
 }
 
+/* 收起状态下二级菜单浮出显示 */
 .sidebar.collapsed .nav-sub-items {
   display: none;
+}
+
+.sidebar.collapsed .nav-group-collapsible {
+  position: relative;
+}
+
+.sidebar.collapsed .nav-group-collapsible:hover .nav-sub-items {
+  display: flex;
+  position: absolute;
+  left: calc(100% + 8px);
+  top: 0;
+  margin: 0;
+  padding: 8px;
+  padding-left: 12px;
+  min-width: 180px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-lg);
+  z-index: var(--z-tooltip);
+  flex-direction: column;
+  gap: 2px;
+  border-left: none;
+  animation: flyoutIn 0.15s ease-out;
+}
+
+@keyframes flyoutIn {
+  from {
+    opacity: 0;
+    transform: translateX(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: translateX(0);
+  }
+}
+
+.sidebar.collapsed .nav-group-collapsible:hover .nav-sub-item {
+  padding: 8px 12px !important;
+  font-size: 13px !important;
+  white-space: nowrap;
+}
+
+.sidebar.collapsed .nav-group-collapsible:hover .nav-sub-item .nav-text {
+  display: inline;
+}
+
+.sidebar.collapsed .nav-group-collapsible:hover .nav-sub-item .nav-badge {
+  display: inline-block;
 }
 
 .nav-group-title {

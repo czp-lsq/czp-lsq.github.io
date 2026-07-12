@@ -442,6 +442,15 @@ const DataPage = ({ state, currentPlatform }) => {
                 !isUploading && /*#__PURE__*/ React.createElement(Icons.Upload, null),
                 isUploading ? "上传中..." : "上传样表",
               ),
+              /*#__PURE__*/ React.createElement(
+                Button,
+                {
+                  onClick: () => document.getElementById("folder-upload-input")?.click(),
+                  disabled: isUploading,
+                },
+                /*#__PURE__*/ React.createElement(Icons.Folder, null),
+                " 选择文件夹",
+              ),
             ),
           ),
           /*#__PURE__*/ React.createElement("input", {
@@ -451,6 +460,16 @@ const DataPage = ({ state, currentPlatform }) => {
               multiple: true,
               onChange: handleSampleUpload,
               style: { display: "none" },
+            }),
+          /*#__PURE__*/ React.createElement("input", {
+              id: "folder-upload-input",
+              type: "file",
+              accept: ".xlsx,.xls,.csv,.zip",
+              multiple: true,
+              onChange: handleSampleUpload,
+              style: { display: "none" },
+              webkitdirectory: "",
+              directory: "",
             }),
           pendingFiles &&
             /*#__PURE__*/ React.createElement(

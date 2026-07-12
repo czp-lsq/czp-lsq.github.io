@@ -2,20 +2,36 @@
 const RulesPage = ({ state, currentPlatform }) => {
   const { addToast } = useToast();
   const SearchableSelect = window.SearchableSelect || ((props) => {
-    const { value, onChange, options, placeholder } = props;
-    return /*#__PURE__*/ React.createElement(
-      "select",
-      {
-        className: "select",
-        value: value || "",
-        onChange: (e) => onChange && onChange(e.target.value),
-      },
-      placeholder && /*#__PURE__*/ React.createElement("option", { value: "" }, placeholder),
-      (options || []).map((o) => {
-        const optValue = typeof o === "object" ? o.value : o;
-        const optLabel = typeof o === "object" ? (o.label || o.value) : String(o);
-        return /*#__PURE__*/ React.createElement("option", { key: optValue, value: optValue }, optLabel);
-      }),
+    const { value, onChange, options, placeholder, disabled, allowCreate } = props;
+    const [open, setOpen] = useState(false);
+    const [search, setSearch] = useState("");
+    const ref = useRef(null);
+    const opts = (options || []).map((o) => typeof o === "object" ? { value: o.value, label: o.label || o.value } : { value: o, label: String(o) });
+    const filtered = opts.filter((o) => !search || o.label.toLowerCase().includes(search.toLowerCase()) || String(o.value).toLowerCase().includes(search.toLowerCase()));
+    const selectedOpt = opts.find((o) => String(o.value) === String(value));
+    useEffect(() => {
+      const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
+      document.addEventListener("mousedown", handler);
+      return () => document.removeEventListener("mousedown", handler);
+    }, []);
+    return /*#__PURE__*/ React.createElement("div", { ref: ref, className: "searchable-select" + (open ? " open" : "") + (disabled ? " disabled" : ""), style: { position: "relative" } },
+      /*#__PURE__*/ React.createElement("div", { className: "searchable-select-trigger", onClick: () => !disabled && setOpen(!open) },
+        /*#__PURE__*/ React.createElement("span", { className: "searchable-select-value" + (!value ? " placeholder" : "") }, selectedOpt ? selectedOpt.label : (value || placeholder || "请选择")),
+        /*#__PURE__*/ React.createElement("span", { className: "searchable-select-arrow" }, "▼")
+      ),
+      open && /*#__PURE__*/ React.createElement("div", { className: "searchable-select-dropdown" },
+        /*#__PURE__*/ React.createElement("div", { className: "searchable-select-search" },
+          /*#__PURE__*/ React.createElement("input", { className: "search-input", value: search, onChange: (e) => setSearch(e.target.value), placeholder: "搜索...", autoFocus: true, onClick: (e) => e.stopPropagation() })
+        ),
+        /*#__PURE__*/ React.createElement("div", { className: "searchable-select-options", style: { maxHeight: 240, overflowY: "auto" } },
+          filtered.length === 0 && (allowCreate && search) && /*#__PURE__*/ React.createElement("div", { className: "searchable-select-option", onClick: () => { onChange && onChange(search); setOpen(false); setSearch(""); } }, "使用: " + search),
+          filtered.length === 0 && (!allowCreate || !search) && /*#__PURE__*/ React.createElement("div", { className: "searchable-select-empty" }, "无匹配项"),
+          filtered.map((o) => /*#__PURE__*/ React.createElement("div", { key: o.value, className: "searchable-select-option" + (String(o.value) === String(value) ? " selected" : ""), onClick: () => { onChange && onChange(o.value); setOpen(false); setSearch(""); } },
+            o.label,
+            String(o.value) === String(value) && /*#__PURE__*/ React.createElement("span", { className: "check-icon" }, "✓")
+          ))
+        )
+      )
     );
   });
   const [activeField, setActiveField] = useState(() => {
@@ -1475,30 +1491,18 @@ const RulesPage = ({ state, currentPlatform }) => {
       name: s.alias || s.fileName,
       originalName: s.fileName,
       headers: s.sheets[Object.keys(s.sheets)[0]]?.headers || [],
+      rows: s.sheets[Object.keys(s.sheets)[0]]?.rows || [],
       source: "sample",
     }));
     const externalTables = (state.externals || []).map((e) => ({
       id: e.id || e.sheetKey,
       name: e.name || e.sheetKey,
       headers: e.headers || (e.allData && e.allData.length > 0 ? Object.keys(e.allData[0]) : []),
+      rows: e.allData || e.rows || [],
       source: "external",
       externalId: e.id || e.sheetKey,
     }));
     const allTables = [...sampleTables, ...externalTables];
-    const getColumnValues = (columnName) => {
-      if (!columnName) return [];
-      const values = new Set();
-      allTables.forEach((table) => {
-        const rows = table.rows || [];
-        rows.forEach((row) => {
-          const val = row[columnName];
-          if (val !== undefined && val !== null && val !== "") {
-            values.add(String(val));
-          }
-        });
-      });
-      return Array.from(values).slice(0, 50);
-    };
     const sourceStep = currentRule?.steps?.find((s) => s.type === "source");
     const sourceTableId = sourceStep?.config?.table;
     const sourceTableIds = sourceStep?.config?.tables || [];
@@ -1513,6 +1517,34 @@ const RulesPage = ({ state, currentPlatform }) => {
       }
       return allTables.find((t) => t.id === sourceTableId)?.headers || [];
     })();
+    const getColumnValues = (columnName, tableId) => {
+      if (!columnName) return [];
+      const values = new Set();
+      const targetTables = tableId
+        ? allTables.filter((t) => t.id === tableId)
+        : (sourceTableIds.length > 0
+          ? allTables.filter((t) => sourceTableIds.includes(t.id))
+          : (sourceTableId ? allTables.filter((t) => t.id === sourceTableId) : allTables));
+      targetTables.forEach((table) => {
+        const rows = table.rows || [];
+        rows.forEach((row) => {
+          const val = row[columnName];
+          if (val !== undefined && val !== null && val !== "") {
+            values.add(String(val));
+          }
+        });
+      });
+      return Array.from(values).slice(0, 200);
+    };
+    const getTableHeaders = (tableId) => {
+      if (!tableId) return [];
+      const t = allTables.find((t) => t.id === tableId);
+      if (!t) return [];
+      return t.headers || (t.rows && t.rows.length > 0 ? Object.keys(t.rows[0]) : []);
+    };
+    const colOpts = [{ value: "", label: "当前值 (val)" }, ...sourceTableHeaders.map((h) => ({ value: h, label: h }))];
+    const colOptsNoVal = sourceTableHeaders.map((h) => ({ value: h, label: h }));
+    const allTableOpts = [{ value: "", label: "请选择数据表" }, ...allTables.map((t) => ({ value: t.id, label: t.name }))];
     switch (step.type) {
       case "fill": {
         const currentField = currentFieldRef || {};
@@ -3417,27 +3449,12 @@ const RulesPage = ({ state, currentPlatform }) => {
               { className: "form-label" },
               "\u67E5\u627E\u5217",
             ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.column || "",
-                onChange: (e) =>
-                  updateStepConfig(step.id, "column", e.target.value),
-              },
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "" },
-                "\u9ED8\u8BA4\u4F7F\u7528\u5F53\u524D\u503C(val)",
-              ),
-              (sourceTableHeaders || []).map((h) =>
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { key: h, value: h },
-                  h,
-                ),
-              ),
-            ),
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
+              value: step.config.column || "",
+              onChange: (val) => updateStepConfig(step.id, "column", val),
+              options: [{ value: "", label: "默认使用当前值(val)" }, ...(sourceTableHeaders || []).map((h) => ({ value: h, label: h }))],
+              placeholder: "请选择列",
+            }),
           ),
           /*#__PURE__*/ React.createElement(
             "div",
@@ -3450,40 +3467,18 @@ const RulesPage = ({ state, currentPlatform }) => {
                 { className: "form-label" },
                 "\u5339\u914D\u6A21\u5F0F",
               ),
-              /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.mode || "exact",
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "mode", e.target.value),
-                },
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "exact" },
-                  "\u7CBE\u786E\u5339\u914D",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "contains" },
-                  "\u5305\u542B\u5339\u914D",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "regex" },
-                  "\u6B63\u5219\u5339\u914D",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "startsWith" },
-                  "\u5F00\u5934\u5339\u914D",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "endsWith" },
-                  "\u7ED3\u5C3E\u5339\u914D",
-                ),
-              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.mode || "exact",
+                onChange: (val) => updateStepConfig(step.id, "mode", val),
+                options: [
+                  { value: "exact", label: "精确匹配" },
+                  { value: "contains", label: "包含匹配" },
+                  { value: "regex", label: "正则匹配" },
+                  { value: "startsWith", label: "开头匹配" },
+                  { value: "endsWith", label: "结尾匹配" },
+                ],
+                placeholder: "请选择匹配模式",
+              }),
             ),
             /*#__PURE__*/ React.createElement(
               "div",
@@ -3493,30 +3488,16 @@ const RulesPage = ({ state, currentPlatform }) => {
                 { className: "form-label" },
                 "\u672A\u5339\u914D\u65F6",
               ),
-              /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.onMiss || "keep",
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "onMiss", e.target.value),
-                },
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "keep" },
-                  "\u4FDD\u7559\u539F\u503C",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "default" },
-                  "\u4F7F\u7528\u9ED8\u8BA4\u503C",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "empty" },
-                  "\u7F6E\u7A7A",
-                ),
-              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.onMiss || "keep",
+                onChange: (val) => updateStepConfig(step.id, "onMiss", val),
+                options: [
+                  { value: "keep", label: "保留原值" },
+                  { value: "default", label: "使用默认值" },
+                  { value: "empty", label: "置空" },
+                ],
+                placeholder: "请选择未匹配策略",
+              }),
             ),
           ),
           step.config.onMiss === "default" &&
@@ -3687,32 +3668,13 @@ const RulesPage = ({ state, currentPlatform }) => {
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u8F93\u5165\u5217",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.column,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "column", e.target.value),
-              },
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "" },
-                "\u5F53\u524D\u503C (val)",
-              ),
-              sourceTableHeaders.map((h) =>
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { key: h, value: h },
-                  h,
-                ),
-              ),
-            ),
+            /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "输入列"),
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
+              value: step.config.column || "",
+              onChange: (val) => updateStepConfig(step.id, "column", val),
+              options: [{ value: "", label: "当前值 (val)" }, ...sourceTableHeaders.map((h) => ({ value: h, label: h }))],
+              placeholder: "请选择列",
+            }),
           ),
           /*#__PURE__*/ React.createElement(
             "div",
@@ -3758,31 +3720,16 @@ const RulesPage = ({ state, currentPlatform }) => {
                 /*#__PURE__*/ React.createElement(
                   "div",
                   { key: idx, style: { display: "flex", gap: 8 } },
-                  /*#__PURE__*/ React.createElement(
-                    "select",
-                    {
-                      className: "select",
-                      value: col,
-                      onChange: (e) => {
-                        const newCols = [...(step.config.columns || ["", ""])];
-                        newCols[idx] = e.target.value;
-                        updateStepConfig(step.id, "columns", newCols);
-                      },
-                      style: { flex: 1 },
+                  /*#__PURE__*/ React.createElement(SearchableSelect, {
+                    value: col,
+                    onChange: (val) => {
+                      const newCols = [...(step.config.columns || ["", ""])];
+                      newCols[idx] = val;
+                      updateStepConfig(step.id, "columns", newCols);
                     },
-                    /*#__PURE__*/ React.createElement(
-                      "option",
-                      { value: "" },
-                      "\u8BF7\u9009\u62E9\u5B57\u6BB5",
-                    ),
-                    sourceTableHeaders.map((h) =>
-                      /*#__PURE__*/ React.createElement(
-                        "option",
-                        { key: h, value: h },
-                        h,
-                      ),
-                    ),
-                  ),
+                    options: [{ value: "", label: "请选择字段" }, ...colOptsNoVal],
+                    placeholder: "请选择字段",
+                  }),
                   idx < (step.config.columns || ["", ""]).length - 1 &&
                     /*#__PURE__*/ React.createElement(
                       "span",
@@ -3839,32 +3786,13 @@ const RulesPage = ({ state, currentPlatform }) => {
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u6E90\u5B57\u6BB5",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.column,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "column", e.target.value),
-              },
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "" },
-                "\u5F53\u524D\u503C (val)",
-              ),
-              sourceTableHeaders.map((h) =>
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { key: h, value: h },
-                  h,
-                ),
-              ),
-            ),
+            /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "源字段"),
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
+              value: step.config.column || "",
+              onChange: (val) => updateStepConfig(step.id, "column", val),
+              options: colOpts,
+              placeholder: "请选择列",
+            }),
           ),
           /*#__PURE__*/ React.createElement(
             "div",
@@ -3918,118 +3846,47 @@ const RulesPage = ({ state, currentPlatform }) => {
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u65E5\u671F\u5B57\u6BB5",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.column,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "column", e.target.value),
-              },
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "" },
-                "\u5F53\u524D\u503C (val)",
-              ),
-              sourceTableHeaders.map((h) =>
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { key: h, value: h },
-                  h,
-                ),
-              ),
-            ),
+            /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "日期字段"),
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
+              value: step.config.column || "",
+              onChange: (val) => updateStepConfig(step.id, "column", val),
+              options: colOpts,
+              placeholder: "请选择列",
+            }),
           ),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u64CD\u4F5C\u7C7B\u578B",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.operation,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "operation", e.target.value),
-              },
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "format" },
-                "\u683C\u5F0F\u5316\u65E5\u671F",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "extractYear" },
-                "\u63D0\u53D6\u5E74\u4EFd",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "extractMonth" },
-                "\u63D0\u53D6\u6708\u4EFd",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "extractDay" },
-                "\u63D0\u53D6\u65E5",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "addDays" },
-                "\u52A0\u51CF\u5929\u6570",
-              ),
-            ),
+            /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "操作类型"),
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
+              value: step.config.operation || "format",
+              onChange: (val) => updateStepConfig(step.id, "operation", val),
+              options: [
+                { value: "format", label: "格式化日期" },
+                { value: "extractYear", label: "提取年份" },
+                { value: "extractMonth", label: "提取月份" },
+                { value: "extractDay", label: "提取日" },
+                { value: "addDays", label: "加减天数" },
+              ],
+              placeholder: "请选择操作",
+            }),
           ),
           step.config.operation === "format" && /*#__PURE__*/ React.createElement(
             "div",
             { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u683C\u5F0F\u6A21\u677F",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.format,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "format", e.target.value),
-              },
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "yyyy-mm-dd" },
-                "2024-01-15",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "yyyy/mm/dd" },
-                "2024/01/15",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "yyyy年mm月dd日" },
-                "2024年01月15日",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "yyyy-mm" },
-                "2024-01",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "mm-dd" },
-                "01-15",
-              ),
-            ),
+            /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "格式模板"),
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
+              value: step.config.format || "yyyy-mm-dd",
+              onChange: (val) => updateStepConfig(step.id, "format", val),
+              options: [
+                { value: "yyyy-mm-dd", label: "2024-01-15" },
+                { value: "yyyy/mm/dd", label: "2024/01/15" },
+                { value: "yyyy年mm月dd日", label: "2024年01月15日" },
+                { value: "yyyy-mm", label: "2024-01" },
+                { value: "mm-dd", label: "01-15" },
+              ],
+              placeholder: "请选择格式",
+            }),
           ),
           step.config.operation === "addDays" && /*#__PURE__*/ React.createElement(
             "div",
@@ -4062,32 +3919,13 @@ const RulesPage = ({ state, currentPlatform }) => {
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u8F93\u5165\u5217",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.column,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "column", e.target.value),
-              },
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "" },
-                "\u5F53\u524D\u503C (val)",
-              ),
-              sourceTableHeaders.map((h) =>
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { key: h, value: h },
-                  h,
-                ),
-              ),
-            ),
+            /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "输入列"),
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
+              value: step.config.column || "",
+              onChange: (val) => updateStepConfig(step.id, "column", val),
+              options: colOpts,
+              placeholder: "请选择列",
+            }),
           ),
           /*#__PURE__*/ React.createElement(
             "div",
@@ -4095,59 +3933,25 @@ const RulesPage = ({ state, currentPlatform }) => {
             /*#__PURE__*/ React.createElement(
               "div",
               { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u8FD0\u7B97\u7B26",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.operation,
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "operation", e.target.value),
-                },
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "+" },
-                  "+",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "-" },
-                  "-",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "*" },
-                  "\u00D7",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "/" },
-                  "\u00F7",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "^" },
-                  "\u5E42\u6B21\u65B9",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "%" },
-                  "\u5269\u6570",
-                ),
-              ),
+              /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "运算符"),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.operation || "+",
+                onChange: (val) => updateStepConfig(step.id, "operation", val),
+                options: [
+                  { value: "+", label: "+" },
+                  { value: "-", label: "-" },
+                  { value: "*", label: "×" },
+                  { value: "/", label: "÷" },
+                  { value: "^", label: "幂次方" },
+                  { value: "%", label: "余数" },
+                ],
+                placeholder: "请选择运算符",
+              }),
             ),
             /*#__PURE__*/ React.createElement(
               "div",
               { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u6570\u503C",
-              ),
+              /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "数值"),
               /*#__PURE__*/ React.createElement("input", {
                 type: "number",
                 className: "input",
@@ -4171,60 +3975,27 @@ const RulesPage = ({ state, currentPlatform }) => {
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u6392\u540D\u5217",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.column,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "column", e.target.value),
-              },
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "" },
-                "\u5F53\u524D\u503C (val)",
-              ),
-              sourceTableHeaders.map((h) =>
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { key: h, value: h },
-                  h,
-                ),
-              ),
-            ),
+            /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "排名列"),
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
+              value: step.config.column || "",
+              onChange: (val) => updateStepConfig(step.id, "column", val),
+              options: colOpts,
+              placeholder: "请选择列",
+            }),
           ),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u6392\u540D\u65B9\u5411",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.direction,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "direction", e.target.value),
-              },
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "desc" },
-                "\u964D\u5E8F (\u6700\u5927\u4E3A1)",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "asc" },
-                "\u5347\u5E8F (\u6700\u5C0F\u4E3A1)",
-              ),
-            ),
+            /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "排名方向"),
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
+              value: step.config.direction || "desc",
+              onChange: (val) => updateStepConfig(step.id, "direction", val),
+              options: [
+                { value: "desc", label: "降序 (最大为1)" },
+                { value: "asc", label: "升序 (最小为1)" },
+              ],
+              placeholder: "请选择排序方向",
+            }),
           ),
           /*#__PURE__*/ React.createElement(
             "div",
@@ -4243,62 +4014,24 @@ const RulesPage = ({ state, currentPlatform }) => {
             /*#__PURE__*/ React.createElement(
               "div",
               { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u5F53\u524D\u5217",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.column,
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "column", e.target.value),
-                },
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "" },
-                  "\u5F53\u524D\u503C (val)",
-                ),
-                sourceTableHeaders.map((h) =>
-                  /*#__PURE__*/ React.createElement(
-                    "option",
-                    { key: h, value: h },
-                    h,
-                  ),
-                ),
-              ),
+              /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "当前列"),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.column || "",
+                onChange: (val) => updateStepConfig(step.id, "column", val),
+                options: colOpts,
+                placeholder: "请选择列",
+              }),
             ),
             /*#__PURE__*/ React.createElement(
               "div",
               { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u57FA\u51C6\u5217",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.baseColumn,
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "baseColumn", e.target.value),
-                },
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "" },
-                  "\u8BF7\u9009\u62E9\u57FA\u51C6\u5217",
-                ),
-                sourceTableHeaders.map((h) =>
-                  /*#__PURE__*/ React.createElement(
-                    "option",
-                    { key: h, value: h },
-                    h,
-                  ),
-                ),
-              ),
+              /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "基准列"),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.baseColumn || "",
+                onChange: (val) => updateStepConfig(step.id, "baseColumn", val),
+                options: [{ value: "", label: "请选择基准列" }, ...colOptsNoVal],
+                placeholder: "请选择基准列",
+              }),
             ),
           ),
           /*#__PURE__*/ React.createElement(
@@ -4333,62 +4066,24 @@ const RulesPage = ({ state, currentPlatform }) => {
             /*#__PURE__*/ React.createElement(
               "div",
               { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u5206\u5B50",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.numerator,
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "numerator", e.target.value),
-                },
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "" },
-                  "\u5F53\u524D\u503C (val)",
-                ),
-                sourceTableHeaders.map((h) =>
-                  /*#__PURE__*/ React.createElement(
-                    "option",
-                    { key: h, value: h },
-                    h,
-                  ),
-                ),
-              ),
+              /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "分子"),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.numerator || "",
+                onChange: (val) => updateStepConfig(step.id, "numerator", val),
+                options: colOpts,
+                placeholder: "请选择分子列",
+              }),
             ),
             /*#__PURE__*/ React.createElement(
               "div",
               { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u5206\u6BCD",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.denominator,
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "denominator", e.target.value),
-                },
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "" },
-                  "\u8BF7\u9009\u62E9\u5206\u6BCD\u5217",
-                ),
-                sourceTableHeaders.map((h) =>
-                  /*#__PURE__*/ React.createElement(
-                    "option",
-                    { key: h, value: h },
-                    h,
-                  ),
-                ),
-              ),
+              /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "分母"),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.denominator || "",
+                onChange: (val) => updateStepConfig(step.id, "denominator", val),
+                options: [{ value: "", label: "请选择分母列" }, ...colOptsNoVal],
+                placeholder: "请选择分母列",
+              }),
             ),
           ),
           /*#__PURE__*/ React.createElement(
@@ -4432,31 +4127,16 @@ const RulesPage = ({ state, currentPlatform }) => {
                 /*#__PURE__*/ React.createElement(
                   "div",
                   { key: idx, style: { display: "flex", gap: 8 } },
-                  /*#__PURE__*/ React.createElement(
-                    "select",
-                    {
-                      className: "select",
-                      value: tableId,
-                      onChange: (e) => {
-                        const newTables = [...(step.config.tables || [])];
-                        newTables[idx] = e.target.value;
-                        updateStepConfig(step.id, "tables", newTables);
-                      },
-                      style: { flex: 1 },
+                  /*#__PURE__*/ React.createElement(SearchableSelect, {
+                    value: tableId || "",
+                    onChange: (val) => {
+                      const newTables = [...(step.config.tables || [])];
+                      newTables[idx] = val;
+                      updateStepConfig(step.id, "tables", newTables);
                     },
-                    /*#__PURE__*/ React.createElement(
-                      "option",
-                      { value: "" },
-                      "\u8BF7\u9009\u62E9\u6570\u636E\u8868",
-                    ),
-                    sampleTables.map((t) =>
-                      /*#__PURE__*/ React.createElement(
-                        "option",
-                        { key: t.id, value: t.id },
-                        t.name,
-                      ),
-                    ),
-                  ),
+                    options: allTableOpts,
+                    placeholder: "请选择数据表",
+                  }),
                   /*#__PURE__*/ React.createElement(
                     "button",
                     {
@@ -4504,266 +4184,211 @@ const RulesPage = ({ state, currentPlatform }) => {
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u5224\u65AD\u5217",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.column || "",
-                onChange: (e) =>
-                  updateStepConfig(step.id, "column", e.target.value),
-              },
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "" },
-                "\u5F53\u524D\u503C (val)",
-              ),
-              sourceTableHeaders.map((h) =>
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { key: h, value: h },
-                  h,
-                ),
-              ),
-            ),
+            /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "判断列"),
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
+              value: step.config.column || "",
+              onChange: (val) => updateStepConfig(step.id, "column", val),
+              options: [{ value: "", label: "当前值 (val)" }, ...sourceTableHeaders.map((h) => ({ value: h, label: h }))],
+              placeholder: "请选择列",
+            }),
           ),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "step-desc" },
             /*#__PURE__*/ React.createElement(Icons.Info, null),
             step.type === "keepDuplicate"
-              ? " \u6309\u6307\u5B9A\u5217\u5224\u65AD\uFF0C\u4EC5\u4FDD\u7559\u51FA\u73B0\u8FC7\u591A\u6B21\u7684\u91CD\u590D\u884C\uFF08\u91CD\u590D\u884C\u4F1A\u5168\u90E8\u4FDD\u7559\uFF09"
-              : " \u6309\u6307\u5B9A\u5217\u5224\u65AD\uFF0C\u4EC5\u4FDD\u7559\u53EA\u51FA\u73B0\u8FC7\u4E00\u6B21\u7684\u552F\u4E00\u884C",
+              ? " 按指定列判断，仅保留出现过多次的重复行（重复行会全部保留）"
+              : " 按指定列判断，仅保留只出现过一次的唯一行",
           ),
         );
       case "intersect":
-        return /*#__PURE__*/ React.createElement(
-          "div",
-          { className: "step-config" },
-          /*#__PURE__*/ React.createElement(
+        return (() => {
+          const intersectModeOptions = [
+            { value: "keepExist", label: "保留存在于对比表的行（交集）" },
+            { value: "keepNotExist", label: "保留不存在于对比表的行（差集）" },
+          ];
+          const intersectTableHeaders = getTableHeaders(step.config.table);
+          const allTableOptions = [{ value: "", label: "请选择数据表" }, ...allTables.map((t) => ({ value: t.id, label: t.name }))];
+          return /*#__PURE__*/ React.createElement(
             "div",
-            { className: "form-item" },
+            { className: "step-config" },
             /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u5BF9\u6BD4\u6A21\u5F0F",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "对比模式"),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
                 value: step.config.mode || "keepExist",
-                onChange: (e) =>
-                  updateStepConfig(step.id, "mode", e.target.value),
-              },
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "keepExist" },
-                "\u4FDD\u7559\u5B58\u5728\u4E8E\u5BF9\u6BD4\u8868\u7684\u884C\uFF08\u4EA4\u96C6\uFF09",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "keepNotExist" },
-                "\u4FDD\u7559\u4E0D\u5B58\u5728\u4E8E\u5BF9\u6BD4\u8868\u7684\u884C\uFF08\u5DEE\u96C6\uFF09",
-              ),
-            ),
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "grid-2" },
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u5F53\u524D\u8868\u5173\u8054\u5217",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.key || "",
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "key", e.target.value),
-                },
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "" },
-                  "\u8BF7\u9009\u62E9\u5217",
-                ),
-                sourceTableHeaders.map((h) =>
-                  /*#__PURE__*/ React.createElement(
-                    "option",
-                    { key: h, value: h },
-                    h,
-                  ),
-                ),
-              ),
-            ),
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u5BF9\u6BD4\u6570\u636E\u8868",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.table || "",
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "table", e.target.value),
-                },
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "" },
-                  "\u8BF7\u9009\u62E9\u6570\u636E\u8868",
-                ),
-                sampleTables.map((t) =>
-                  /*#__PURE__*/ React.createElement(
-                    "option",
-                    { key: t.id, value: t.id },
-                    t.name,
-                  ),
-                ),
-              ),
-            ),
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u5BF9\u6BD4\u8868\u5173\u8054\u5217",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.compareKey || "",
-                onChange: (e) =>
-                  updateStepConfig(step.id, "compareKey", e.target.value),
-              },
-              /*#__PURE__*/ React.createElement(
-                "option",
-                { value: "" },
-                "\u8BF7\u9009\u62E9\u5217",
-              ),
-              (() => {
-                const t = sampleTables.find((t) => t.id === step.config.table);
-                const headers = t ? t.headers || Object.keys((t.rows && t.rows[0]) || {}) : [];
-                return headers.map((h) =>
-                  /*#__PURE__*/ React.createElement(
-                    "option",
-                    { key: h, value: h },
-                    h,
-                  ),
-                );
-              })(),
-            ),
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "step-desc" },
-            /*#__PURE__*/ React.createElement(Icons.Info, null),
-            " \u5C06\u5F53\u524D\u8868\u4E0E\u53E6\u4E00\u8868\u6309\u6307\u5B9A\u5217\u8FDB\u884C\u5BF9\u6BD4\uFF0C\u7B5B\u9009\u51FA\u5339\u914D\u6216\u4E0D\u5339\u914D\u7684\u884C",
-          ),
-        );
-      case "crossMatch":
-        return /*#__PURE__*/ React.createElement(
-          "div",
-          { className: "step-config" },
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u5904\u7406\u6A21\u5F0F",
-            ),
-            /*#__PURE__*/ React.createElement(
-              "select",
-              {
-                className: "select",
-                value: step.config.mode || "keepIntersection",
-                onChange: (e) => updateStepConfig(step.id, "mode", e.target.value),
-              },
-              /*#__PURE__*/ React.createElement("option", { value: "keepIntersection" }, "\u4FDD\u7559\u4E0E\u5BF9\u6BD4\u8868\u7684\u4EA4\u96C6\u884C"),
-              /*#__PURE__*/ React.createElement("option", { value: "keepDifference" }, "\u4FDD\u7559\u4E0D\u5728\u5BF9\u6BD4\u8868\u7684\u5DEE\u96C6\u884C"),
-              /*#__PURE__*/ React.createElement("option", { value: "removeDuplicates" }, "\u5F53\u524D\u6570\u636E\u591A\u5217\u53BB\u91CD"),
-              /*#__PURE__*/ React.createElement("option", { value: "keepDuplicates" }, "\u5F53\u524D\u6570\u636E\u4FDD\u7559\u91CD\u590D\u884C"),
-            ),
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "form-item" },
-            /*#__PURE__*/ React.createElement(
-              "label",
-              { className: "form-label" },
-              "\u5F53\u524D\u8868\u5339\u914D\u5217\uFF08\u591A\u5217\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694\uFF09",
-            ),
-            /*#__PURE__*/ React.createElement("input", {
-              type: "text",
-              className: "input",
-              value: (step.config.columns || []).join(","),
-              onChange: (e) => updateStepConfig(step.id, "columns", e.target.value.split(",").map((s) => s.trim()).filter(Boolean)),
-              placeholder: "\u4F8B\u5982\uff1a\u5546\u54C1ID,\u89C4\u683C",
-            }),
-          ),
-          (step.config.mode === "keepIntersection" || step.config.mode === "keepDifference") && /*#__PURE__*/ React.createElement(
-            React.Fragment,
-            null,
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u5BF9\u6BD4\u6570\u636E\u8868",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.table || "",
-                  onChange: (e) => updateStepConfig(step.id, "table", e.target.value),
-                },
-                /*#__PURE__*/ React.createElement("option", { value: "" }, "\u8BF7\u9009\u62E9\u6570\u636E\u8868"),
-                sampleTables.map((t) => /*#__PURE__*/ React.createElement("option", { key: t.id, value: t.id }, t.name)),
-              ),
-            ),
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u5BF9\u6BD4\u8868\u5339\u914D\u5217\uFF08\u591A\u5217\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694\uFF09",
-              ),
-              /*#__PURE__*/ React.createElement("input", {
-                type: "text",
-                className: "input",
-                value: (step.config.compareColumns || []).join(","),
-                onChange: (e) => updateStepConfig(step.id, "compareColumns", e.target.value.split(",").map((s) => s.trim()).filter(Boolean)),
-                placeholder: "\u4F8B\u5982\uff1a\u5546\u54C1ID,\u89C4\u683C",
+                onChange: (val) => updateStepConfig(step.id, "mode", val),
+                options: intersectModeOptions,
+                placeholder: "请选择对比模式",
               }),
             ),
-          ),
-          /*#__PURE__*/ React.createElement(
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "grid-2" },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "当前表关联列"),
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: step.config.key || "",
+                  onChange: (val) => updateStepConfig(step.id, "key", val),
+                  options: [{ value: "", label: "请选择列" }, ...sourceTableHeaders.map((h) => ({ value: h, label: h }))],
+                  placeholder: "请选择列",
+                }),
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "对比数据表"),
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: step.config.table || "",
+                  onChange: (val) => {
+                    updateStepConfig(step.id, "table", val);
+                    updateStepConfig(step.id, "compareKey", "");
+                  },
+                  options: allTableOptions,
+                  placeholder: "请选择数据表",
+                }),
+              ),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "对比表关联列"),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.compareKey || "",
+                onChange: (val) => updateStepConfig(step.id, "compareKey", val),
+                options: [{ value: "", label: "请选择列" }, ...intersectTableHeaders.map((h) => ({ value: h, label: h }))],
+                placeholder: step.config.table ? "请选择列" : "请先选择对比表",
+                disabled: !step.config.table,
+              }),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "step-desc" },
+              /*#__PURE__*/ React.createElement(Icons.Info, null),
+              " 将当前表与另一表按指定列进行对比，筛选出匹配或不匹配的行",
+            ),
+          );
+        })();
+      case "crossMatch":
+        return (() => {
+          const crossMatchModeOptions = [
+            { value: "keepIntersection", label: "保留与对比表的交集行" },
+            { value: "keepDifference", label: "保留不在对比表的差集行" },
+            { value: "removeDuplicates", label: "当前数据多列去重" },
+            { value: "keepDuplicates", label: "当前数据保留重复行" },
+          ];
+          const compareTableHeaders = getTableHeaders(step.config.table);
+          const columns = step.config.columns || [""];
+          const compareColumns = step.config.compareColumns || [""];
+          const needCompareTable = step.config.mode === "keepIntersection" || step.config.mode === "keepDifference";
+          const allTableOptions = [{ value: "", label: "请选择数据表" }, ...allTables.map((t) => ({ value: t.id, label: t.name }))];
+          return /*#__PURE__*/ React.createElement(
             "div",
-            { className: "step-desc" },
-            /*#__PURE__*/ React.createElement(Icons.Info, null),
-            " \u6309\u591A\u4E2A\u5217\u7EC4\u5408\u8FDB\u884C\u8DE8\u8868\u4EA4\u96C6\u3001\u5DEE\u96C6\u6216\u5F53\u524D\u6570\u636E\u7684\u53BB\u91CD/\u4FDD\u7559\u91CD\u590D\u3002",
-          ),
-        );
+            { className: "step-config" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "处理模式"),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.mode || "keepIntersection",
+                onChange: (val) => updateStepConfig(step.id, "mode", val),
+                options: crossMatchModeOptions,
+                placeholder: "请选择处理模式",
+              }),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "当前表匹配列"),
+              columns.map((col, idx) => /*#__PURE__*/ React.createElement(
+                "div",
+                { key: idx, className: "grid-2", style: { marginBottom: 6, gap: 6 } },
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: col,
+                  onChange: (val) => {
+                    const newCols = [...columns];
+                    newCols[idx] = val;
+                    updateStepConfig(step.id, "columns", newCols.filter(Boolean));
+                  },
+                  options: sourceTableHeaders.map((h) => ({ value: h, label: h })),
+                  placeholder: "选择匹配列",
+                }),
+                columns.length > 1 && /*#__PURE__*/ React.createElement("button", {
+                  className: "btn-icon",
+                  onClick: () => {
+                    const newCols = columns.filter((_, i) => i !== idx);
+                    updateStepConfig(step.id, "columns", newCols.length ? newCols : [""]);
+                  },
+                  title: "删除此列",
+                }, "×"),
+              )),
+              /*#__PURE__*/ React.createElement("button", {
+                className: "btn-text",
+                onClick: () => updateStepConfig(step.id, "columns", [...columns, ""]),
+                style: { marginTop: 4 },
+              }, "+ 添加匹配列"),
+            ),
+            needCompareTable && /*#__PURE__*/ React.createElement(
+              React.Fragment,
+              null,
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "对比数据表"),
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: step.config.table || "",
+                  onChange: (val) => {
+                    updateStepConfig(step.id, "table", val);
+                    updateStepConfig(step.id, "compareColumns", [""]);
+                  },
+                  options: allTableOptions,
+                  placeholder: "请选择数据表",
+                }),
+              ),
+              step.config.table && /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "对比表匹配列"),
+                compareColumns.map((col, idx) => /*#__PURE__*/ React.createElement(
+                  "div",
+                  { key: idx, className: "grid-2", style: { marginBottom: 6, gap: 6 } },
+                  /*#__PURE__*/ React.createElement(SearchableSelect, {
+                    value: col,
+                    onChange: (val) => {
+                      const newCols = [...compareColumns];
+                      newCols[idx] = val;
+                      updateStepConfig(step.id, "compareColumns", newCols.filter(Boolean));
+                    },
+                    options: compareTableHeaders.map((h) => ({ value: h, label: h })),
+                    placeholder: "选择对比列",
+                  }),
+                  compareColumns.length > 1 && /*#__PURE__*/ React.createElement("button", {
+                    className: "btn-icon",
+                    onClick: () => {
+                      const newCols = compareColumns.filter((_, i) => i !== idx);
+                      updateStepConfig(step.id, "compareColumns", newCols.length ? newCols : [""]);
+                    },
+                    title: "删除此列",
+                  }, "×"),
+                )),
+                /*#__PURE__*/ React.createElement("button", {
+                  className: "btn-text",
+                  onClick: () => updateStepConfig(step.id, "compareColumns", [...compareColumns, ""]),
+                  style: { marginTop: 4 },
+                }, "+ 添加对比列"),
+              ),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "step-desc" },
+              /*#__PURE__*/ React.createElement(Icons.Info, null),
+              " 按多个列组合进行跨表交集、差集或当前数据的去重/保留重复。",
+            ),
+          );
+        })();
       case "runningTotal":
         return /*#__PURE__*/ React.createElement(
           "div",
@@ -5858,18 +5483,7 @@ const RulesPage = ({ state, currentPlatform }) => {
             "ul",
             { className: "field-list" },
             fields.length === 0
-              ? /*#__PURE__*/ React.createElement(
-                  "div",
-                  {
-                    style: {
-                      padding: 20,
-                      textAlign: "center",
-                      color: "var(--color-text-tertiary)",
-                      fontSize: 13,
-                    },
-                  },
-                  "\u8BF7\u5148\u5728\u6A21\u677F\u4E2D\u5FC3\u4E0A\u4F20\u6A21\u677F",
-                )
+              ? null
               : filteredFields.length === 0
                 ? /*#__PURE__*/ React.createElement(
                     "div",
@@ -6852,35 +6466,17 @@ const RulesPage = ({ state, currentPlatform }) => {
                 { className: "form-label" },
                 "\u9009\u62E9\u6E90\u5B57\u6BB5\uFF08\u8981\u590D\u5236\u5176\u89C4\u5219\u7684\u5B57\u6BB5\uFF09",
               ),
-              /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: copySourceFieldId,
-                  onChange: (e) => setCopySourceFieldId(e.target.value),
-                },
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "" },
-                  "\u8BF7\u9009\u62E9\u6E90\u5B57\u6BB5",
-                ),
-                fields
-                  .filter(
-                    (f) =>
-                      (savedRules[f.id]?.steps || []).length > 0 &&
-                      f.id !== activeField?.id,
-                  )
-                  .map((f) =>
-                    /*#__PURE__*/ React.createElement(
-                      "option",
-                      { key: f.id, value: f.id },
-                      f.name,
-                      " (",
-                      (savedRules[f.id]?.steps || []).length,
-                      "\u4E2A\u6B65\u9AA4)",
-                    ),
-                  ),
-              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: copySourceFieldId || "",
+                onChange: (val) => setCopySourceFieldId(val),
+                options: [
+                  { value: "", label: "请选择源字段" },
+                  ...fields
+                    .filter((f) => (savedRules[f.id]?.steps || []).length > 0 && f.id !== activeField?.id)
+                    .map((f) => ({ value: f.id, label: `${f.name} (${(savedRules[f.id]?.steps || []).length}个步骤)` })),
+                ],
+                placeholder: "请选择源字段",
+              }),
             ),
             copySourceFieldId &&
               /*#__PURE__*/ React.createElement(

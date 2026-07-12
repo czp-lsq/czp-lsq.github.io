@@ -680,3 +680,175 @@ const HelpPage = () => {
     ),
   );
 };
+
+const ChangelogPage = ({ updateLog, appVersion }) => {
+  const typeConfig = {
+    feature: { label: "新增", color: "var(--color-success)", icon: "✨" },
+    optimize: { label: "优化", color: "var(--color-primary)", icon: "⚡" },
+    bugfix: { label: "修复", color: "var(--color-warning)", icon: "🔧" },
+  };
+
+  const renderChangeGroup = (type, items) => {
+    const cfg = typeConfig[type];
+    if (!items || items.length === 0) return null;
+    return React.createElement("div", { className: "changelog-change-group", key: type },
+      React.createElement("div", { className: "changelog-change-label", style: { color: cfg.color } },
+        cfg.icon + " " + cfg.label
+      ),
+      React.createElement("ul", { className: "changelog-change-list" },
+        items.map((item, idx) => React.createElement("li", { key: idx }, typeof item === "string" ? item : item.text))
+      )
+    );
+  };
+
+  if (!updateLog || updateLog.length === 0) {
+    return React.createElement("div", { className: "changelog-page fade-in" },
+      React.createElement("div", { className: "card", style: { padding: "40px", textAlign: "center" } },
+        React.createElement("div", { style: { color: "var(--color-text-muted)", fontSize: "14px" } }, "暂无更新记录")
+      )
+    );
+  }
+
+  return React.createElement("div", { className: "changelog-page fade-in" },
+    React.createElement("div", { className: "changelog-header" },
+      React.createElement("div", { className: "changelog-title-row" },
+        React.createElement(Icons.GitCommit, { style: { width: 24, height: 24, color: "var(--color-primary)" } }),
+        React.createElement("h2", { style: { margin: 0, fontSize: 20, fontWeight: 600 } }, "更新日志"),
+      ),
+      React.createElement("p", { style: { margin: "8px 0 0", color: "var(--color-text-secondary)", fontSize: 14 } }, "系统版本更新历史记录")
+    ),
+    React.createElement("div", { className: "changelog-timeline" },
+      updateLog.map((entry, idx) => {
+        var isCurrent = entry.version === appVersion;
+        return React.createElement("div", { key: entry.version, className: "changelog-item" + (isCurrent ? " changelog-current" : "") },
+          React.createElement("div", { className: "changelog-item-marker" },
+            React.createElement("div", { className: "changelog-dot" + (isCurrent ? " changelog-dot-current" : "") })
+          ),
+          React.createElement("div", { className: "card changelog-item-card" },
+            React.createElement("div", { className: "changelog-item-header" },
+              React.createElement("div", { className: "changelog-version-row" },
+                React.createElement("span", { className: "changelog-version-tag" + (isCurrent ? " changelog-version-tag-current" : "") }, "v" + entry.version),
+                isCurrent && React.createElement("span", { className: "changelog-current-badge" }, "当前版本"),
+                React.createElement("span", { className: "changelog-date" }, entry.date)
+              ),
+              entry.summary && React.createElement("p", { className: "changelog-summary" }, entry.summary)
+            ),
+            entry.changes && entry.changes.length > 0 && React.createElement("div", { className: "changelog-changes" },
+              renderChangeGroup("feature", entry.changes.filter(function(c) { return c.type === "feature"; })),
+              renderChangeGroup("optimize", entry.changes.filter(function(c) { return c.type === "optimize"; }))
+            ),
+            entry.bugfixes && entry.bugfixes.length > 0 && renderChangeGroup("bugfix", entry.bugfixes)
+          )
+        );
+      })
+    )
+  );
+};
+
+const AuditLogPage = ({ currentUser }) => {
+  const [logs, setLogs] = useState(() => ActivityLogger.get());
+  const [filterType, setFilterType] = useState("all");
+
+  var loginUser = "";
+  try {
+    var saved = localStorage.getItem("app_login_user");
+    if (saved) loginUser = JSON.parse(saved).username || "";
+  } catch (e) {}
+
+  var categories = ActivityLogger.getCategories ? ActivityLogger.getCategories() : {};
+  var categoryList = Object.entries(categories).map(function(e) { return { key: e[0], name: e[1].name }; });
+
+  var filtered = filterType === "all" ? logs : logs.filter(function(l) { return l.category === filterType; });
+
+  var handleRefresh = function() {
+    setLogs(ActivityLogger.get());
+  };
+
+  var handleExport = function() {
+    var data = JSON.stringify(filtered, null, 2);
+    var blob = new Blob([data], { type: "application/json" });
+    var url = URL.createObjectURL(blob);
+    var a = document.createElement("a");
+    a.href = url;
+    a.download = "audit-log-" + new Date().toISOString().slice(0, 10) + ".json";
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
+  var categoryColorMap = {
+    login: "var(--color-primary)",
+    data: "var(--color-info)",
+    calc: "var(--color-success)",
+    rule: "var(--color-warning)",
+    setting: "var(--color-accent)",
+    account: "var(--color-danger)",
+    export: "var(--color-primary)",
+    system: "var(--color-text-tertiary)",
+  };
+
+  return React.createElement("div", { className: "auditlog-page fade-in" },
+    React.createElement("div", { className: "auditlog-header" },
+      React.createElement("div", { className: "auditlog-title-row" },
+        React.createElement(Icons.Shield, { style: { width: 24, height: 24, color: "var(--color-primary)" } }),
+        React.createElement("h2", { style: { margin: 0, fontSize: 20, fontWeight: 600 } }, "操作日志"),
+      ),
+      React.createElement("p", { style: { margin: "8px 0 0", color: "var(--color-text-secondary)", fontSize: 14 } },
+        "用户操作安全审计记录" + (loginUser ? " · 当前用户: " + loginUser : "")
+      )
+    ),
+    React.createElement("div", { className: "auditlog-toolbar" },
+      React.createElement("div", { className: "auditlog-filter" },
+        React.createElement("select", {
+          className: "form-select",
+          value: filterType,
+          onChange: function(e) { setFilterType(e.target.value); },
+          style: { minWidth: 120 }
+        },
+          React.createElement("option", { value: "all" }, "全部类型"),
+          categoryList.map(function(cat) {
+            return React.createElement("option", { key: cat.key, value: cat.key }, cat.name);
+          })
+        ),
+        React.createElement("span", { className: "auditlog-count" }, "共 " + filtered.length + " 条记录")
+      ),
+      React.createElement("div", { className: "auditlog-actions" },
+        React.createElement(Button, { variant: "outline", size: "sm", onClick: handleRefresh },
+          React.createElement(Icons.RefreshCw, null), " 刷新"
+        ),
+        React.createElement(Button, { variant: "outline", size: "sm", onClick: handleExport },
+          React.createElement(Icons.Download, null), " 导出"
+        )
+      )
+    ),
+    filtered.length === 0
+      ? React.createElement("div", { className: "card auditlog-empty" },
+          React.createElement(Icons.Inbox, { style: { width: 48, height: 48, color: "var(--color-text-muted)" } }),
+          React.createElement("p", null, "暂无操作记录")
+        )
+      : React.createElement("div", { className: "auditlog-list" },
+          filtered.map(function(log, idx) {
+            var catInfo = categories[log.category] || {};
+            var catColor = categoryColorMap[log.category] || "var(--color-text-tertiary)";
+            return React.createElement("div", { key: log.id || idx, className: "card auditlog-item" },
+              React.createElement("div", { className: "auditlog-item-left" },
+                React.createElement("span", {
+                  className: "auditlog-category-dot",
+                  style: { background: catColor }
+                }),
+                React.createElement("div", { className: "auditlog-item-info" },
+                  React.createElement("span", { className: "auditlog-action" }, log.action),
+                  log.detail && React.createElement("span", { className: "auditlog-detail" }, log.detail)
+                )
+              ),
+              React.createElement("div", { className: "auditlog-item-right" },
+                React.createElement("span", { className: "auditlog-category-tag", style: { color: catColor, borderColor: catColor } }, catInfo.name || log.category),
+                React.createElement("span", { className: "auditlog-operator" }, log.operator || "-"),
+                React.createElement("span", { className: "auditlog-time" },
+                  new Date(log.time).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })
+                )
+              )
+            );
+          })
+        )
+  );
+};
