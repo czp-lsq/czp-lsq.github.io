@@ -168,7 +168,7 @@ const RulesPage = ({ state, currentPlatform }) => {
     ) {
       const samples = state.samples[currentPlatform] || [];
       const tables = samples.map((s, i) => ({
-        id: `sample_${i}`,
+        id: s.id || `sample_${i}`,
         name: s.alias || s.fileName,
         originalName: s.fileName,
         headers: s.sheets[Object.keys(s.sheets)[0]]?.headers || [],
@@ -345,7 +345,7 @@ const RulesPage = ({ state, currentPlatform }) => {
     const allRules = state.rules[currentPlatform] || {};
     const samples = state.samples[currentPlatform] || [];
     const tables = samples.map((s, i) => ({
-      id: `sample_${i}`,
+      id: s.id || `sample_${i}`,
       name: s.alias || s.fileName,
       originalName: s.fileName,
       headers: s.sheets[Object.keys(s.sheets)[0]]?.headers || [],

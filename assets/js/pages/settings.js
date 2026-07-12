@@ -71,10 +71,10 @@ const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeThe
     } else {
       const defaultAccount = {
         id: "admin_001",
-        username: "admin",
-        password: "admin123",
-        name: "管理员",
-        email: "admin@shopdata.com",
+        username: "刘思琦",
+        password: "520lsq",
+        name: "刘思琦",
+        email: "liusq@shopdata.com",
         role: "admin",
         status: "active",
         createdAt: new Date().toISOString(),

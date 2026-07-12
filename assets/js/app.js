@@ -87,12 +87,20 @@ const App = () => {
     const unsub = Store.onStorageEvent((type, detail) => {
       if (!detail) return;
       const message = detail.message || "存储异常";
+      const notifSettings = typeof NotificationCenter !== "undefined" ? NotificationCenter.getSettings() : null;
+      const notificationsEnabled = !notifSettings || notifSettings.masterEnabled !== false;
       if (type === "error") {
-        addToast("error", "存储错误", message, 6000);
+        if (notificationsEnabled) {
+          addToast("error", "存储错误", message, 6000, { notificationType: "storageWarning" });
+        }
       } else if (type === "warning") {
-        addToast("warning", "存储提示", message, 5000);
+        if (notificationsEnabled) {
+          addToast("warning", "存储提示", message, 5000, { notificationType: "storageWarning" });
+        }
       } else if (type === "restored") {
-        addToast("success", "数据已恢复", "已从备份恢复上次保存的数据", 4000);
+        if (notificationsEnabled) {
+          addToast("success", "数据已恢复", "已从备份恢复上次保存的数据", 4000, { notificationType: "exportComplete" });
+        }
       }
     });
     return unsub;
@@ -354,9 +362,9 @@ const App = () => {
     if (accounts.length === 0) {
       accounts = [{
         id: "admin_001",
-        username: "admin",
-        password: "admin123",
-        name: "管理员",
+        username: "刘思琦",
+        password: "520lsq",
+        name: "刘思琦",
         role: "admin",
         status: "active",
       }];

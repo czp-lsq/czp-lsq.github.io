@@ -94,6 +94,15 @@ const CalcEngine = {
             for (const p of datePatterns) {
               const match = str.match(p.regex);
               if (match) {
+                if (p.regex.source.includes("(\\d{4})(\\d{2})(\\d{2})")) {
+                  const prevChar = match.index > 0 ? str[match.index - 1] : '';
+                  const nextChar = match.index + match[0].length < str.length 
+                    ? str[match.index + match[0].length] 
+                    : '';
+                  if (/[0-9]/.test(prevChar) || /[0-9]/.test(nextChar)) {
+                    continue;
+                  }
+                }
                 let year = parseInt(match[1], 10);
                 if (p.shortYear) {
                   year += year < 50 ? 2000 : 1900;

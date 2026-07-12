@@ -708,3 +708,190 @@ body.theme-warm .login-left {
 body.theme-elegant .login-left {
   background: linear-gradient(135deg, #7c3aed 0%, #5b21b6 100%);
 }
+
+/* ===== 忘记密码弹窗 ===== */
+.login-forgot-overlay {
+  position: fixed;
+  inset: 0;
+  background: rgba(0, 0, 0, 0.5);
+  backdrop-filter: blur(4px);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+  animation: fadeIn 0.2s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+.login-forgot-modal {
+  background: var(--color-bg-secondary);
+  border-radius: 20px;
+  width: 100%;
+  max-width: 420px;
+  overflow: hidden;
+  box-shadow: 0 25px 60px rgba(0, 0, 0, 0.3);
+  animation: modalIn 0.3s cubic-bezier(0.16, 1, 0.3, 1);
+  border: 1px solid var(--color-border-light);
+}
+
+@keyframes modalIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px) scale(0.98);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.login-forgot-header {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 24px 28px;
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-bg-tertiary);
+}
+
+.login-forgot-header h3 {
+  font-size: 18px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin: 0;
+}
+
+.login-forgot-close {
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-muted);
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-fast);
+}
+
+.login-forgot-close:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-secondary);
+}
+
+.login-forgot-progress {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  padding: 20px 28px;
+}
+
+.login-progress-step {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-muted);
+  font-size: 13px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: var(--transition-base);
+  border: 2px solid var(--color-border-light);
+}
+
+.login-progress-step.active {
+  background: var(--color-primary-gradient);
+  color: white;
+  border-color: var(--color-primary);
+}
+
+.login-progress-line {
+  width: 40px;
+  height: 2px;
+  background: var(--color-border-light);
+  transition: var(--transition-base);
+}
+
+.login-progress-line.active {
+  background: var(--color-primary);
+}
+
+.login-forgot-body {
+  padding: 0 28px 28px;
+}
+
+.login-forgot-desc {
+  font-size: 14px;
+  color: var(--color-text-secondary);
+  margin: 0 0 20px 0;
+  line-height: 1.5;
+}
+
+.login-forgot-actions {
+  display: flex;
+  gap: 12px;
+  margin-top: 20px;
+}
+
+.login-btn-secondary {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-secondary);
+  border: 1px solid var(--color-border);
+}
+
+.login-btn-secondary:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+  box-shadow: none;
+}
+
+.login-forgot-send-captcha {
+  position: absolute;
+  right: 12px;
+  top: 50%;
+  transform: translateY(-50%);
+  height: 32px;
+  padding: 0 14px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-primary);
+  background: var(--color-primary-50);
+  border: 1px solid var(--color-primary-light);
+  border-radius: 8px;
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.login-forgot-send-captcha:hover:not(:disabled) {
+  background: var(--color-primary-100);
+}
+
+.login-forgot-send-captcha:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-muted);
+  border-color: var(--color-border-light);
+}
+
+body.dark .login-forgot-modal {
+  background: var(--color-bg-secondary);
+  border-color: var(--color-border);
+}
+
+body.dark .login-forgot-header {
+  background: var(--color-bg-tertiary);
+}
+
+body.dark .login-progress-step {
+  background: var(--color-bg-tertiary);
+}

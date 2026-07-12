@@ -8,6 +8,16 @@ const LoginPage = ({ onLogin }) => {
   const [usernameError, setUsernameError] = useState("");
   const [passwordError, setPasswordError] = useState("");
   const [showPassword, setShowPassword] = useState(false);
+  const [showForgotModal, setShowForgotModal] = useState(false);
+  const [forgotStep, setForgotStep] = useState(1);
+  const [forgotUsername, setForgotUsername] = useState("");
+  const [forgotEmail, setForgotEmail] = useState("");
+  const [captchaCode, setCaptchaCode] = useState("");
+  const [newPassword, setNewPassword] = useState("");
+  const [confirmPassword, setConfirmPassword] = useState("");
+  const [captchaSent, setCaptchaSent] = useState(false);
+  const [captchaCountdown, setCaptchaCountdown] = useState(0);
+  const [forgotError, setForgotError] = useState("");
 
   const validateUsername = (val) => {
     if (!val.trim()) {
@@ -53,6 +63,127 @@ const LoginPage = ({ onLogin }) => {
         },
       });
     }, 500);
+  };
+
+  const getAccounts = () => {
+    try {
+      const saved = localStorage.getItem("app_accounts");
+      return saved ? JSON.parse(saved) : [];
+    } catch (e) {
+      return [];
+    }
+  };
+
+  const handleForgotStep1 = () => {
+    setForgotError("");
+    if (!forgotUsername.trim()) {
+      setForgotError("请输入用户名");
+      return;
+    }
+    const accounts = getAccounts();
+    const account = accounts.find((a) => a.username === forgotUsername.trim());
+    if (!account) {
+      setForgotError("该用户名不存在");
+      return;
+    }
+    if (!account.email) {
+      setForgotError("该账户未绑定邮箱，请联系管理员重置密码");
+      return;
+    }
+    setForgotEmail(account.email);
+    setForgotStep(2);
+  };
+
+  const sendCaptcha = () => {
+    setForgotError("");
+    const captcha = Math.floor(100000 + Math.random() * 900000).toString();
+    localStorage.setItem("app_reset_captcha", JSON.stringify({
+      code: captcha,
+      username: forgotUsername,
+      expiresAt: Date.now() + 300000,
+    }));
+    setCaptchaSent(true);
+    setCaptchaCountdown(60);
+    alert(`验证码已发送至邮箱 ${forgotEmail}：${captcha}\n\n（注意：当前为演示模式，验证码直接显示在弹窗中）`);
+    const timer = setInterval(() => {
+      setCaptchaCountdown((prev) => {
+        if (prev <= 1) {
+          clearInterval(timer);
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+  };
+
+  const handleForgotStep2 = () => {
+    setForgotError("");
+    if (!captchaCode.trim()) {
+      setForgotError("请输入验证码");
+      return;
+    }
+    try {
+      const savedCaptcha = JSON.parse(localStorage.getItem("app_reset_captcha") || "null");
+      if (!savedCaptcha) {
+        setForgotError("验证码已过期，请重新获取");
+        return;
+      }
+      if (Date.now() > savedCaptcha.expiresAt) {
+        setForgotError("验证码已过期，请重新获取");
+        localStorage.removeItem("app_reset_captcha");
+        return;
+      }
+      if (savedCaptcha.username !== forgotUsername || savedCaptcha.code !== captchaCode.trim()) {
+        setForgotError("验证码不正确");
+        return;
+      }
+      setForgotStep(3);
+    } catch (e) {
+      setForgotError("验证码验证失败");
+    }
+  };
+
+  const handleForgotStep3 = () => {
+    setForgotError("");
+    if (!newPassword.trim()) {
+      setForgotError("请输入新密码");
+      return;
+    }
+    if (newPassword.trim().length < 4) {
+      setForgotError("密码至少4个字符");
+      return;
+    }
+    if (newPassword !== confirmPassword) {
+      setForgotError("两次输入的密码不一致");
+      return;
+    }
+    const accounts = getAccounts();
+    const updatedAccounts = accounts.map((a) =>
+      a.username === forgotUsername ? { ...a, password: newPassword } : a
+    );
+    localStorage.setItem("app_accounts", JSON.stringify(updatedAccounts));
+    localStorage.removeItem("app_reset_captcha");
+    alert("密码重置成功！请使用新密码登录");
+    setShowForgotModal(false);
+    setForgotStep(1);
+    setForgotUsername("");
+    setCaptchaCode("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setCaptchaSent(false);
+    setCaptchaCountdown(0);
+  };
+
+  const closeForgotModal = () => {
+    setShowForgotModal(false);
+    setForgotStep(1);
+    setForgotUsername("");
+    setCaptchaCode("");
+    setNewPassword("");
+    setConfirmPassword("");
+    setCaptchaSent(false);
+    setCaptchaCountdown(0);
+    setForgotError("");
   };
 
   return /*#__PURE__*/ React.createElement(
@@ -255,7 +386,7 @@ const LoginPage = ({ onLogin }) => {
             ),
             /*#__PURE__*/ React.createElement(
               "a",
-              { href: "#", className: "login-forgot" },
+              { href: "#", className: "login-forgot", onClick: (e) => { e.preventDefault(); setShowForgotModal(true); } },
               "\u5FD8\u8BB0\u5BC6\u7801\uFF1F",
             ),
           ),
@@ -276,6 +407,112 @@ const LoginPage = ({ onLogin }) => {
             "p",
             null,
             "\u00A9 2026 \u5E97\u6570\u667A ShopData. \u4FDD\u7559\u6240\u6709\u6743\u5229.",
+          ),
+        ),
+      ),
+    ),
+    showForgotModal && /*#__PURE__*/ React.createElement(
+      "div",
+      { className: "login-forgot-overlay", onClick: closeForgotModal },
+      /*#__PURE__*/ React.createElement(
+        "div",
+        { className: "login-forgot-modal", onClick: (e) => e.stopPropagation() },
+        /*#__PURE__*/ React.createElement("div", { className: "login-forgot-header" },
+          /*#__PURE__*/ React.createElement(Icons.Lock, { style: { width: 24, height: 24, color: "var(--color-primary)" } }),
+          /*#__PURE__*/ React.createElement("h3", null, "找回密码"),
+          /*#__PURE__*/ React.createElement("button", { className: "login-forgot-close", onClick: closeForgotModal },
+            /*#__PURE__*/ React.createElement(Icons.X, null),
+          ),
+        ),
+        /*#__PURE__*/ React.createElement("div", { className: "login-forgot-progress" },
+          /*#__PURE__*/ React.createElement("div", { className: `login-progress-step ${forgotStep >= 1 ? "active" : ""}` }, "1"),
+          /*#__PURE__*/ React.createElement("div", { className: `login-progress-line ${forgotStep >= 2 ? "active" : ""}` }),
+          /*#__PURE__*/ React.createElement("div", { className: `login-progress-step ${forgotStep >= 2 ? "active" : ""}` }, "2"),
+          /*#__PURE__*/ React.createElement("div", { className: `login-progress-line ${forgotStep >= 3 ? "active" : ""}` }),
+          /*#__PURE__*/ React.createElement("div", { className: `login-progress-step ${forgotStep >= 3 ? "active" : ""}` }, "3"),
+        ),
+        forgotError && /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "alert alert-danger", style: { marginBottom: "16px" } },
+          forgotError,
+        ),
+        forgotStep === 1 && /*#__PURE__*/ React.createElement("div", { className: "login-forgot-body" },
+          /*#__PURE__*/ React.createElement("p", { className: "login-forgot-desc" }, "请输入您的用户名，系统将向您绑定的邮箱发送验证码"),
+          /*#__PURE__*/ React.createElement("div", { className: "login-input-group" },
+            /*#__PURE__*/ React.createElement("div", { className: "login-input-icon" },
+              /*#__PURE__*/ React.createElement(Icons.User, null),
+            ),
+            /*#__PURE__*/ React.createElement("input", {
+              type: "text",
+              className: "login-input",
+              placeholder: "请输入用户名",
+              value: forgotUsername,
+              onChange: (e) => setForgotUsername(e.target.value),
+              autoFocus: true,
+            }),
+          ),
+          /*#__PURE__*/ React.createElement("div", { className: "login-forgot-actions" },
+            /*#__PURE__*/ React.createElement("button", { className: "login-btn", onClick: handleForgotStep1 }, "下一步"),
+          ),
+        ),
+        forgotStep === 2 && /*#__PURE__*/ React.createElement("div", { className: "login-forgot-body" },
+          /*#__PURE__*/ React.createElement("p", { className: "login-forgot-desc" }, `验证码已发送至邮箱：${forgotEmail.replace(/@.*/, '@***')}`),
+          /*#__PURE__*/ React.createElement("div", { className: "login-input-group" },
+            /*#__PURE__*/ React.createElement("div", { className: "login-input-icon" },
+              /*#__PURE__*/ React.createElement(Icons.Inbox, null),
+            ),
+            /*#__PURE__*/ React.createElement("input", {
+              type: "text",
+              className: "login-input",
+              placeholder: "请输入6位验证码",
+              value: captchaCode,
+              onChange: (e) => setCaptchaCode(e.target.value),
+              autoFocus: true,
+              maxLength: 6,
+            }),
+            /*#__PURE__*/ React.createElement("button", {
+              className: "login-forgot-send-captcha",
+              onClick: sendCaptcha,
+              disabled: captchaCountdown > 0,
+            },
+              captchaCountdown > 0 ? `${captchaCountdown}s` : (captchaSent ? "重新发送" : "发送验证码"),
+            ),
+          ),
+          /*#__PURE__*/ React.createElement("div", { className: "login-forgot-actions" },
+            /*#__PURE__*/ React.createElement("button", { className: "login-btn login-btn-secondary", onClick: () => setForgotStep(1) }, "返回"),
+            /*#__PURE__*/ React.createElement("button", { className: "login-btn", onClick: handleForgotStep2 }, "验证"),
+          ),
+        ),
+        forgotStep === 3 && /*#__PURE__*/ React.createElement("div", { className: "login-forgot-body" },
+          /*#__PURE__*/ React.createElement("p", { className: "login-forgot-desc" }, "请设置新密码，密码至少4个字符"),
+          /*#__PURE__*/ React.createElement("div", { className: "login-input-group" },
+            /*#__PURE__*/ React.createElement("div", { className: "login-input-icon" },
+              /*#__PURE__*/ React.createElement(Icons.Lock, null),
+            ),
+            /*#__PURE__*/ React.createElement("input", {
+              type: "password",
+              className: "login-input",
+              placeholder: "请输入新密码",
+              value: newPassword,
+              onChange: (e) => setNewPassword(e.target.value),
+              autoFocus: true,
+            }),
+          ),
+          /*#__PURE__*/ React.createElement("div", { className: "login-input-group" },
+            /*#__PURE__*/ React.createElement("div", { className: "login-input-icon" },
+              /*#__PURE__*/ React.createElement(Icons.Lock, null),
+            ),
+            /*#__PURE__*/ React.createElement("input", {
+              type: "password",
+              className: "login-input",
+              placeholder: "请确认新密码",
+              value: confirmPassword,
+              onChange: (e) => setConfirmPassword(e.target.value),
+            }),
+          ),
+          /*#__PURE__*/ React.createElement("div", { className: "login-forgot-actions" },
+            /*#__PURE__*/ React.createElement("button", { className: "login-btn login-btn-secondary", onClick: () => setForgotStep(2) }, "返回"),
+            /*#__PURE__*/ React.createElement("button", { className: "login-btn", onClick: handleForgotStep3 }, "重置密码"),
           ),
         ),
       ),
