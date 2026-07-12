@@ -120,6 +120,7 @@ const DataPage = ({ state, currentPlatform }) => {
           ],
         },
       }));
+      Store.flush();
       addToast(
         "success",
         "上传成功",
@@ -163,6 +164,7 @@ const DataPage = ({ state, currentPlatform }) => {
           ],
         },
       }));
+      Store.flush();
       addToast("success", "上传成功", `样表「${newSamples[0].alias}」已上传`);
       ActivityLogger.add(
         "上传样表",

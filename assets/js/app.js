@@ -23,6 +23,11 @@ const decryptPassword = (encrypted) => {
   }
 };
 
+if (typeof window !== "undefined") {
+  window.encryptPassword = encryptPassword;
+  window.decryptPassword = decryptPassword;
+}
+
 // app.js - 主应用入口 (App / Root / 路由 / 布局)
 const App = () => {
   const { addToast } = useToast();
@@ -158,18 +163,17 @@ const App = () => {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updateInfo, setUpdateInfo] = useState(null);
 
-  const APP_VERSION = "5.5.0";
+  const APP_VERSION = "5.6.0";
   const VERSION_KEY = "app_version_seen";
   const UPDATE_LOG = [
-    { version: "5.5.0", date: "2026-07-12", changes: [
-      "优化更新弹窗样式，更美观精致",
-      "修复刷新后数据丢失问题，增强持久化机制",
-      "新增自动快照功能，每5分钟自动备份",
-      "完善自动登录功能，登录成功有Toast提示",
-      "优化计算步骤添加弹窗，信息更清晰",
-      "修复过滤步骤列重复显示问题",
-      "对比值改为下拉选择当前列的具体值",
-      "优化数据保存多重防护机制",
+    { version: "5.6.0", date: "2026-07-12", changes: [
+      "优化过滤步骤，移除对比值类型，自动识别列值",
+      "过滤值支持下拉选择+手动输入，同Excel筛选体验",
+      "新增过滤值快捷标签，点击快速选择",
+      "修复模板/配置中心上传后刷新数据丢失",
+      "上传数据后立即强制保存，避免数据丢失",
+      "完善自动登录功能，登录页自动填充账号密码",
+      "新增Store.flush方法，支持立即保存",
     ]},
     { version: "5.2.0", date: "2026-07-11", changes: [
       "修复刷新页面跳回登录页的问题",
@@ -621,20 +625,42 @@ const App = () => {
       return;
     }
     
-    const inputHash = hashPassword(userInfo.password);
-    const storedPassword = matchedAccount.password || "";
-    const isHashed = storedPassword.length === 8 && /^[a-f0-9]+$/i.test(storedPassword);
-    
     let passwordMatch = false;
-    if (isHashed) {
-      passwordMatch = storedPassword === inputHash;
-    } else {
-      passwordMatch = storedPassword === userInfo.password;
-      if (passwordMatch && storedPassword) {
-        const updatedAccounts = accounts.map((a) =>
-          a.id === matchedAccount.id ? { ...a, password: inputHash } : a
-        );
-        localStorage.setItem("app_accounts", JSON.stringify(updatedAccounts));
+    
+    if (userInfo.isRemembered) {
+      try {
+        const savedUser = localStorage.getItem("app_login_user");
+        if (savedUser) {
+          const savedData = JSON.parse(savedUser);
+          if (savedData.username === userInfo.username.trim() && savedData.encryptedPassword) {
+            const storedHash = decryptPassword(savedData.encryptedPassword);
+            const accountPassword = matchedAccount.password || "";
+            const isAccountHashed = accountPassword.length === 8 && /^[a-f0-9]+$/i.test(accountPassword);
+            if (isAccountHashed) {
+              passwordMatch = accountPassword === storedHash;
+            } else {
+              passwordMatch = hashPassword(accountPassword) === storedHash;
+            }
+          }
+        }
+      } catch (e) {}
+    }
+    
+    if (!passwordMatch && !userInfo.isRemembered) {
+      const inputHash = hashPassword(userInfo.password);
+      const storedPassword = matchedAccount.password || "";
+      const isHashed = storedPassword.length === 8 && /^[a-f0-9]+$/i.test(storedPassword);
+      
+      if (isHashed) {
+        passwordMatch = storedPassword === inputHash;
+      } else {
+        passwordMatch = storedPassword === userInfo.password;
+        if (passwordMatch && storedPassword) {
+          const updatedAccounts = accounts.map((a) =>
+            a.id === matchedAccount.id ? { ...a, password: inputHash } : a
+          );
+          localStorage.setItem("app_accounts", JSON.stringify(updatedAccounts));
+        }
       }
     }
     
@@ -656,7 +682,11 @@ const App = () => {
     setCurrentUser(userData);
     localStorage.setItem("app_login_user", JSON.stringify({ 
       username: userData.username, 
-      encryptedPassword: encryptPassword(userInfo.password) 
+      encryptedPassword: encryptPassword(
+        userInfo.isRemembered 
+          ? decryptPassword(JSON.parse(localStorage.getItem("app_login_user")).encryptedPassword)
+          : userInfo.password
+      )
     }));
     const updatedAccounts = accounts.map((a) =>
       a.id === matchedAccount.id

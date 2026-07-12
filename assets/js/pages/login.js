@@ -1,8 +1,35 @@
 // LoginPage - 登录页面组件
 const LoginPage = ({ onLogin }) => {
-  const [username, setUsername] = useState("");
-  const [password, setPassword] = useState("");
-  const [remember, setRemember] = useState(false);
+  const [username, setUsername] = useState(() => {
+    try {
+      const saved = localStorage.getItem("app_login_user");
+      if (saved) {
+        const data = JSON.parse(saved);
+        return data.username || "";
+      }
+    } catch (e) {}
+    return "";
+  });
+  const [password, setPassword] = useState(() => {
+    try {
+      const saved = localStorage.getItem("app_login_user");
+      if (saved) {
+        const data = JSON.parse(saved);
+        if (data.encryptedPassword && data.username) {
+          return "********";
+        }
+      }
+    } catch (e) {}
+    return "";
+  });
+  const [remember, setRemember] = useState(() => {
+    try {
+      const saved = localStorage.getItem("app_login_user");
+      return !!saved;
+    } catch (e) {
+      return false;
+    }
+  });
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const [usernameError, setUsernameError] = useState("");
@@ -52,14 +79,19 @@ const LoginPage = ({ onLogin }) => {
     const pwdValid = validatePassword(password);
     if (!userValid || !pwdValid) return;
     setLoading(true);
+    
+    const isRemembered = password === "********";
+    
     setTimeout(() => {
       setLoading(false);
       onLogin({
         username: username.trim(),
         password: password,
         remember,
+        isRemembered,
         onError: (msg) => {
           setError(msg);
+          setPassword("");
         },
       });
     }, 500);

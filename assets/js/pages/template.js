@@ -84,6 +84,7 @@ const TemplatePage = ({ state, currentPlatform }) => {
         },
       },
     }));
+    Store.flush();
     addToast("success", "保存成功", `${platform?.name}模板已保存`);
     ActivityLogger.add("保存模板", `${platform?.name}模板`);
   };

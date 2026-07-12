@@ -125,7 +125,7 @@ const ActivityLogger = (() => {
 const Store = (() => {
   const STORAGE_KEY = "profit_calc_system_v10";
   const BACKUP_KEY = "profit_calc_system_v10_backup";
-  const CURRENT_VERSION = "5.5.0";
+  const CURRENT_VERSION = "5.6.0";
   const QUOTA_WARN_THRESHOLD = 0.85; // 85% 配额告警
   const QUOTA_CRITICAL_THRESHOLD = 0.95; // 95% 严重告警
   const MAX_DATA_SIZE = 4 * 1024 * 1024; // 4MB 数据大小告警阈值
@@ -419,6 +419,14 @@ const Store = (() => {
       newState._version = CURRENT_VERSION;
       newState._lastSaved = new Date().toISOString();
       debouncedSave(newState);
+    },
+    flush: () => {
+      if (saveTimeout) {
+        clearTimeout(saveTimeout);
+        save(state);
+        saveTimeout = null;
+      }
+      return true;
     },
     sub: (fn) => {
       subs.add(fn);

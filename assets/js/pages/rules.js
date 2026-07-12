@@ -1767,6 +1767,7 @@ const RulesPage = ({ state, currentPlatform }) => {
         );
       }
       case "filter":
+        const filterValues = getColumnValues(step.config.column);
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
@@ -1891,95 +1892,62 @@ const RulesPage = ({ state, currentPlatform }) => {
                 ),
               ),
             ),
+          ),
+          (step.config.op !== "isEmpty" && step.config.op !== "notEmpty") && /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
             /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u5BF9\u6BD4\u503C\u7C7B\u578B",
-              ),
-              /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.valueType || "fixed",
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "valueType", e.target.value),
-                },
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "fixed" },
-                  "\u56FA\u5B9A\u503C",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "column" },
-                  "\u5BF9\u6BD4\u5217",
-                ),
+              "label",
+              { className: "form-label" },
+              "\u5BF9\u6BD4\u503C",
+              " ",
+              filterValues.length > 0 && /*#__PURE__*/ React.createElement(
+                "span",
+                { style: { color: "var(--color-text-muted)", fontWeight: 400, fontSize: 12 } },
+                `\uFF08\u5171 ${filterValues.length} \u4E2A\u503C\u53EF\u9009\uFF09`,
               ),
             ),
-            step.config.valueType === "column"
-              ? /*#__PURE__*/ React.createElement(
-                  "div",
-                  { className: "form-item" },
-                  /*#__PURE__*/ React.createElement(
-                    "label",
-                    { className: "form-label" },
-                    "\u5BF9\u6BD4\u5217",
-                  ),
-                  /*#__PURE__*/ React.createElement(
-                    "select",
-                    {
-                      className: "select",
-                      value: step.config.compareColumn || "",
-                      onChange: (e) =>
-                        updateStepConfig(step.id, "compareColumn", e.target.value),
-                    },
-                    /*#__PURE__*/ React.createElement(
-                      "option",
-                      { value: "" },
-                      "\u8BF7\u9009\u62E9\u5217",
-                    ),
-                    sourceTableHeaders.map((h) =>
-                      /*#__PURE__*/ React.createElement(
-                        "option",
-                        { key: h, value: h },
-                        h,
+            /*#__PURE__*/ React.createElement("input", {
+              type: "text",
+              className: "input",
+              value: step.config.value || "",
+              onChange: (e) =>
+                updateStepConfig(step.id, "value", e.target.value),
+              placeholder: "\u70B9\u51FB\u4E0B\u62C9\u9009\u62E9\u6216\u624B\u52A8\u8F93\u5165",
+              list: `filter-datalist-${step.id}`,
+            }),
+            filterValues.length > 0 && /*#__PURE__*/ React.createElement(
+              "datalist",
+              { id: `filter-datalist-${step.id}` },
+              filterValues.map((v) =>
+                /*#__PURE__*/ React.createElement("option", { key: v, value: v }, v),
+              ),
+            ),
+            filterValues.length > 0 && /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "filter-value-tags" },
+              filterValues.slice(0, 8).map((v) =>
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  {
+                    key: v,
+                    className: `filter-value-tag ${step.config.value === v ? "active" : ""}`,
+                    onClick: () =>
+                      updateStepConfig(
+                        step.id,
+                        "value",
+                        step.config.value === v ? "" : v,
                       ),
-                    ),
-                  ),
-                )
-              : /*#__PURE__*/ React.createElement(
-                  "div",
-                  { className: "form-item" },
-                  /*#__PURE__*/ React.createElement(
-                    "label",
-                    { className: "form-label" },
-                    "\u5BF9\u6BD4\u503C",
-                  ),
-                  /*#__PURE__*/ React.createElement(
-                    "select",
-                    {
-                      className: "select",
-                      value: step.config.value || "",
-                      onChange: (e) =>
-                        updateStepConfig(step.id, "value", e.target.value),
-                    },
-                    /*#__PURE__*/ React.createElement(
-                      "option",
-                      { value: "" },
-                      "\u8BF7\u9009\u62E9\u503C",
-                    ),
-                    getColumnValues(step.config.column).map((v) =>
-                      /*#__PURE__*/ React.createElement(
-                        "option",
-                        { key: v, value: v },
-                        v,
-                      ),
-                    ),
-                  ),
+                  },
+                  v,
                 ),
+              ),
+              filterValues.length > 8 && /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "filter-value-tag filter-value-more" },
+                `+${filterValues.length - 8}`,
+              ),
+            ),
           ),
           /*#__PURE__*/ React.createElement(
             "div",
@@ -1987,7 +1955,7 @@ const RulesPage = ({ state, currentPlatform }) => {
             /*#__PURE__*/ React.createElement(Icons.Info, null),
             " \uD83C\uDFAF ",
             /*#__PURE__*/ React.createElement("strong", null, "\u8FC7\u6EE4"),
-            '\uFF1A\u7B5B\u9009\u7B26\u5408\u6761\u4EF6\u7684\u6570\u636E\u884C\uFF0C\u4E0D\u7B26\u5408\u6761\u4EF6\u7684\u884C\u4F1A\u88AB\u4E22\u5F03\u3002\u4F8B\u5982\uFF1A\u53EA\u4FDD\u7559"\u5546\u54C1\u7C7B\u522B=\u670D\u88C5"\u7684\u6570\u636E',
+            '\uFF1A\u7B5B\u9009\u7B26\u5408\u6761\u4EF6\u7684\u6570\u636E\u884C\uFF0C\u4E0D\u7B26\u5408\u6761\u4EF6\u7684\u884C\u4F1A\u88AB\u4E22\u5F03\u3002\u503C\u4E0B\u62C9\u5217\u8868\u81EA\u52A8\u8BC6\u522B\u5217\u4E2D\u6240\u6709\u503C\uFF0C\u540CExcel\u7B5B\u9009\u4F53\u9A8C',
           ),
         );
       case "aggregate":
