@@ -1555,6 +1555,284 @@ const CalcEngine = {
             });
             break;
           }
+          case "cumulativeMax": {
+            const cmCol = step.config.column || "val";
+            const orderCol = step.config.orderColumn;
+            const dir = step.config.direction || "asc";
+            let rows = [...data];
+            if (orderCol) {
+              rows.sort((a, b) => {
+                const av = a[orderCol], bv = b[orderCol];
+                const an = Number(av), bn = Number(bv);
+                if (!isNaN(an) && !isNaN(bn)) {
+                  return dir === "desc" ? bn - an : an - bn;
+                }
+                return dir === "desc" ? String(bv).localeCompare(String(av)) : String(av).localeCompare(String(bv));
+              });
+            }
+            let maxVal = -Infinity;
+            rows = rows.map((row) => {
+              const v = Number(String(row[cmCol] ?? row.val).replace(/[,，]/g, "").replace(/[¥￥$€£]/g, "")) || 0;
+              maxVal = Math.max(maxVal, v);
+              return { ...row, val: maxVal };
+            });
+            data = rows;
+            break;
+          }
+          case "cumulativeMin": {
+            const cminCol = step.config.column || "val";
+            const orderCol = step.config.orderColumn;
+            const dir = step.config.direction || "asc";
+            let rows = [...data];
+            if (orderCol) {
+              rows.sort((a, b) => {
+                const av = a[orderCol], bv = b[orderCol];
+                const an = Number(av), bn = Number(bv);
+                if (!isNaN(an) && !isNaN(bn)) {
+                  return dir === "desc" ? bn - an : an - bn;
+                }
+                return dir === "desc" ? String(bv).localeCompare(String(av)) : String(av).localeCompare(String(bv));
+              });
+            }
+            let minVal = Infinity;
+            rows = rows.map((row) => {
+              const v = Number(String(row[cminCol] ?? row.val).replace(/[,，]/g, "").replace(/[¥￥$€£]/g, "")) || 0;
+              minVal = Math.min(minVal, v);
+              return { ...row, val: minVal };
+            });
+            data = rows;
+            break;
+          }
+          case "lag": {
+            const lagCol = step.config.column || "val";
+            const lagN = Number(step.config.n) || 1;
+            const targetCol = step.config.targetColumn || "lag_value";
+            const values = data.map((row) => Number(String(row[lagCol] ?? row.val).replace(/[,，]/g, "").replace(/[¥￥$€£]/g, "")) || 0);
+            data = data.map((row, idx) => {
+              const lagVal = idx >= lagN ? values[idx - lagN] : null;
+              return { ...row, [targetCol]: lagVal };
+            });
+            break;
+          }
+          case "lead": {
+            const leadCol = step.config.column || "val";
+            const leadN = Number(step.config.n) || 1;
+            const targetCol = step.config.targetColumn || "lead_value";
+            const values = data.map((row) => Number(String(row[leadCol] ?? row.val).replace(/[,，]/g, "").replace(/[¥￥$€£]/g, "")) || 0);
+            data = data.map((row, idx) => {
+              const leadVal = idx + leadN < values.length ? values[idx + leadN] : null;
+              return { ...row, [targetCol]: leadVal };
+            });
+            break;
+          }
+          case "percentRank": {
+            const prCol = step.config.column || "val";
+            const targetCol = step.config.targetColumn || "percent_rank";
+            const values = data.map((row) => Number(String(row[prCol] ?? row.val).replace(/[,，]/g, "").replace(/[¥￥$€£]/g, "")) || 0);
+            const sorted = [...values].sort((a, b) => a - b);
+            data = data.map((row, idx) => {
+              const val = values[idx];
+              const rank = sorted.findIndex(v => v >= val);
+              const percent = sorted.length > 1 ? rank / (sorted.length - 1) : 0;
+              return { ...row, [targetCol]: percent };
+            });
+            break;
+          }
+          case "rankDense": {
+            const rdCol = step.config.column || "val";
+            const rdDir = step.config.direction || "desc";
+            const targetCol = step.config.targetColumn || "dense_rank";
+            const values = data.map((row) => Number(String(row[rdCol] ?? row.val).replace(/[,，]/g, "").replace(/[¥￥$€£]/g, "")) || 0);
+            const sortedUnique = [...new Set(values)].sort((a, b) => rdDir === "desc" ? b - a : a - b);
+            const rankMap = {};
+            sortedUnique.forEach((v, idx) => { rankMap[v] = idx + 1; });
+            data = data.map((row, idx) => {
+              return { ...row, [targetCol]: rankMap[values[idx]] || 0 };
+            });
+            break;
+          }
+          case "rankRowNumber": {
+            const rrCol = step.config.column || "val";
+            const rrDir = step.config.direction || "desc";
+            const targetCol = step.config.targetColumn || "row_number";
+            const indexed = data.map((row, idx) => ({ ...row, __idx: idx }));
+            indexed.sort((a, b) => {
+              const av = Number(String(a[rrCol] ?? a.val).replace(/[,，]/g, "").replace(/[¥￥$€£]/g, ""));
+              const bv = Number(String(b[rrCol] ?? b.val).replace(/[,，]/g, "").replace(/[¥￥$€£]/g, ""));
+              if (av !== bv) return rrDir === "desc" ? bv - av : av - bv;
+              return a.__idx - b.__idx;
+            });
+            indexed.forEach((row, idx) => { row[targetCol] = idx + 1; });
+            indexed.sort((a, b) => a.__idx - b.__idx);
+            data = indexed.map(row => { const { __idx, ...rest } = row; return rest; });
+            break;
+          }
+          case "windowSum": {
+            const wsCol = step.config.column || "val";
+            const wsWindow = Number(step.config.windowSize) || 3;
+            const targetCol = step.config.targetColumn || "window_sum";
+            const values = data.map((row) => Number(String(row[wsCol] ?? row.val).replace(/[,，]/g, "").replace(/[¥￥$€£]/g, "")) || 0);
+            data = data.map((row, idx) => {
+              const start = Math.max(0, idx - wsWindow + 1);
+              const sum = values.slice(start, idx + 1).reduce((a, b) => a + b, 0);
+              return { ...row, [targetCol]: sum };
+            });
+            break;
+          }
+          case "windowAvg": {
+            const waCol = step.config.column || "val";
+            const waWindow = Number(step.config.windowSize) || 3;
+            const targetCol = step.config.targetColumn || "window_avg";
+            const values = data.map((row) => Number(String(row[waCol] ?? row.val).replace(/[,，]/g, "").replace(/[¥￥$€£]/g, "")) || 0);
+            data = data.map((row, idx) => {
+              const start = Math.max(0, idx - waWindow + 1);
+              const slice = values.slice(start, idx + 1);
+              const avg = slice.length > 0 ? slice.reduce((a, b) => a + b, 0) / slice.length : 0;
+              return { ...row, [targetCol]: avg };
+            });
+            break;
+          }
+          case "jsonExtract": {
+            const jeCol = step.config.column || "val";
+            const jePath = step.config.path || "";
+            const targetCol = step.config.targetColumn || "json_value";
+            data = data.map((row) => {
+              const jsonStr = String(row[jeCol] ?? row.val ?? "");
+              let result = "";
+              try {
+                const obj = JSON.parse(jsonStr);
+                if (jePath) {
+                  const parts = jePath.split(".");
+                  let current = obj;
+                  for (const part of parts) {
+                    if (current && typeof current === "object") {
+                      current = current[part];
+                    } else {
+                      current = undefined;
+                      break;
+                    }
+                  }
+                  result = current !== undefined ? String(current) : "";
+                } else {
+                  result = jsonStr;
+                }
+              } catch {
+                result = "";
+              }
+              return { ...row, [targetCol]: result };
+            });
+            break;
+          }
+          case "regexReplace": {
+            const rrCol = step.config.column || "val";
+            const rrPattern = step.config.pattern || "";
+            const rrReplacement = step.config.replacement || "";
+            const targetCol = step.config.targetColumn || "replaced";
+            data = data.map((row) => {
+              const src = String(row[rrCol] ?? row.val ?? "");
+              let result = src;
+              try {
+                const regex = new RegExp(rrPattern, "g");
+                result = src.replace(regex, rrReplacement);
+              } catch {}
+              return { ...row, [targetCol]: result };
+            });
+            break;
+          }
+          case "trim": {
+            const tCol = step.config.column || "val";
+            const tChars = step.config.chars;
+            const targetCol = step.config.targetColumn || "trimmed";
+            data = data.map((row) => {
+              const src = String(row[tCol] ?? row.val ?? "");
+              let result = src.trim();
+              if (tChars) {
+                const regex = new RegExp(`^[${tChars}]+|[${tChars}]+$`, "g");
+                result = src.replace(regex, "");
+              }
+              return { ...row, [targetCol]: result };
+            });
+            break;
+          }
+          case "upperCase": {
+            const ucCol = step.config.column || "val";
+            const targetCol = step.config.targetColumn || "upper";
+            data = data.map((row) => {
+              const src = String(row[ucCol] ?? row.val ?? "");
+              return { ...row, [targetCol]: src.toUpperCase() };
+            });
+            break;
+          }
+          case "lowerCase": {
+            const lcCol = step.config.column || "val";
+            const targetCol = step.config.targetColumn || "lower";
+            data = data.map((row) => {
+              const src = String(row[lcCol] ?? row.val ?? "");
+              return { ...row, [targetCol]: src.toLowerCase() };
+            });
+            break;
+          }
+          case "dateDiff": {
+            const date1Col = step.config.date1Column || "val";
+            const date2Col = step.config.date2Column;
+            const diffUnit = step.config.unit || "days";
+            const targetCol = step.config.targetColumn || "date_diff";
+            data = data.map((row) => {
+              const parseDate = (val) => {
+                if (val instanceof Date) return val;
+                const str = String(val || "");
+                const match = str.match(/(\d{4})[\-_年\.\/](\d{1,2})[\-_月\.\/](\d{1,2})/);
+                if (match) {
+                  return new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+                }
+                return new Date();
+              };
+              const d1 = parseDate(row[date1Col]);
+              const d2 = parseDate(row[date2Col]);
+              const diffMs = d1 - d2;
+              let result = 0;
+              switch (diffUnit) {
+                case "days": result = Math.floor(diffMs / (1000 * 60 * 60 * 24)); break;
+                case "weeks": result = Math.floor(diffMs / (1000 * 60 * 60 * 24 * 7)); break;
+                case "months": result = (d1.getFullYear() - d2.getFullYear()) * 12 + (d1.getMonth() - d2.getMonth()); break;
+                case "years": result = d1.getFullYear() - d2.getFullYear(); break;
+                default: result = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+              }
+              return { ...row, [targetCol]: result };
+            });
+            break;
+          }
+          case "dateAdd": {
+            const daCol = step.config.column || "val";
+            const daUnit = step.config.unit || "days";
+            const daValue = Number(step.config.value) || 0;
+            const targetCol = step.config.targetColumn || "date_added";
+            data = data.map((row) => {
+              const val = row[daCol] ?? row.val;
+              let d;
+              if (val instanceof Date) {
+                d = new Date(val);
+              } else {
+                const str = String(val || "");
+                const match = str.match(/(\d{4})[\-_年\.\/](\d{1,2})[\-_月\.\/](\d{1,2})/);
+                if (match) {
+                  d = new Date(Number(match[1]), Number(match[2]) - 1, Number(match[3]));
+                } else {
+                  d = new Date();
+                }
+              }
+              switch (daUnit) {
+                case "days": d.setDate(d.getDate() + daValue); break;
+                case "weeks": d.setDate(d.getDate() + daValue * 7); break;
+                case "months": d.setMonth(d.getMonth() + daValue); break;
+                case "years": d.setFullYear(d.getFullYear() + daValue); break;
+                case "hours": d.setHours(d.getHours() + daValue); break;
+                case "minutes": d.setMinutes(d.getMinutes() + daValue); break;
+              }
+              return { ...row, [targetCol]: `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}` };
+            });
+            break;
+          }
         }
         stepResults.push({
           step: stepIdx,

@@ -3,35 +3,26 @@ const RulesPage = ({ state, currentPlatform }) => {
   const { addToast } = useToast();
   const SearchableSelect = window.SearchableSelect || ((props) => {
     const { value, onChange, options, placeholder, disabled, allowCreate } = props;
-    const [open, setOpen] = useState(false);
-    const [search, setSearch] = useState("");
-    const ref = useRef(null);
     const opts = (options || []).map((o) => typeof o === "object" ? { value: o.value, label: o.label || o.value } : { value: o, label: String(o) });
-    const filtered = opts.filter((o) => !search || o.label.toLowerCase().includes(search.toLowerCase()) || String(o.value).toLowerCase().includes(search.toLowerCase()));
     const selectedOpt = opts.find((o) => String(o.value) === String(value));
-    useEffect(() => {
-      const handler = (e) => { if (ref.current && !ref.current.contains(e.target)) setOpen(false); };
-      document.addEventListener("mousedown", handler);
-      return () => document.removeEventListener("mousedown", handler);
-    }, []);
-    return /*#__PURE__*/ React.createElement("div", { ref: ref, className: "searchable-select" + (open ? " open" : "") + (disabled ? " disabled" : ""), style: { position: "relative" } },
-      /*#__PURE__*/ React.createElement("div", { className: "searchable-select-trigger", onClick: () => !disabled && setOpen(!open) },
-        /*#__PURE__*/ React.createElement("span", { className: "searchable-select-value" + (!value ? " placeholder" : "") }, selectedOpt ? selectedOpt.label : (value || placeholder || "请选择")),
-        /*#__PURE__*/ React.createElement("span", { className: "searchable-select-arrow" }, "▼")
+    return /*#__PURE__*/ React.createElement("div", { className: "searchable-select" + (disabled ? " disabled" : "") },
+      /*#__PURE__*/ React.createElement("select", {
+        className: "select",
+        value: value || "",
+        onChange: (e) => onChange && onChange(e.target.value),
+        disabled: disabled,
+      },
+        placeholder && /*#__PURE__*/ React.createElement("option", { value: "" }, placeholder),
+        opts.map((o) => /*#__PURE__*/ React.createElement("option", { key: o.value, value: o.value }, o.label)),
+        allowCreate && /*#__PURE__*/ React.createElement("option", { value: "__create__" }, "输入自定义值")
       ),
-      open && /*#__PURE__*/ React.createElement("div", { className: "searchable-select-dropdown" },
-        /*#__PURE__*/ React.createElement("div", { className: "searchable-select-search" },
-          /*#__PURE__*/ React.createElement("input", { className: "search-input", value: search, onChange: (e) => setSearch(e.target.value), placeholder: "搜索...", autoFocus: true, onClick: (e) => e.stopPropagation() })
-        ),
-        /*#__PURE__*/ React.createElement("div", { className: "searchable-select-options", style: { maxHeight: 240, overflowY: "auto" } },
-          filtered.length === 0 && (allowCreate && search) && /*#__PURE__*/ React.createElement("div", { className: "searchable-select-option", onClick: () => { onChange && onChange(search); setOpen(false); setSearch(""); } }, "使用: " + search),
-          filtered.length === 0 && (!allowCreate || !search) && /*#__PURE__*/ React.createElement("div", { className: "searchable-select-empty" }, "无匹配项"),
-          filtered.map((o) => /*#__PURE__*/ React.createElement("div", { key: o.value, className: "searchable-select-option" + (String(o.value) === String(value) ? " selected" : ""), onClick: () => { onChange && onChange(o.value); setOpen(false); setSearch(""); } },
-            o.label,
-            String(o.value) === String(value) && /*#__PURE__*/ React.createElement("span", { className: "check-icon" }, "✓")
-          ))
-        )
-      )
+      allowCreate && !disabled && /*#__PURE__*/ React.createElement("input", {
+        type: "text",
+        className: "input",
+        placeholder: "或输入自定义值",
+        style: { marginTop: 4, fontSize: 12, padding: "4px 8px" },
+        onChange: (e) => onChange && onChange(e.target.value),
+      })
     );
   });
   const [activeField, setActiveField] = useState(() => {
@@ -92,7 +83,7 @@ const RulesPage = ({ state, currentPlatform }) => {
   const [showCopyModal, setShowCopyModal] = useState(false);
   const [copySourceFieldId, setCopySourceFieldId] = useState("");
   const [showPresets, setShowPresets] = useState(false);
-  const [debugMode, setDebugMode] = useState(false);
+  const [debugMode, setDebugMode] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showAddStepModal, setShowAddStepModal] = useState(false);
   const platform = state.platforms.find((p) => p.id === currentPlatform);
@@ -761,6 +752,134 @@ const RulesPage = ({ state, currentPlatform }) => {
         color: "var(--color-info)",
         bg: "var(--color-info-bg)",
         category: "compute",
+      },
+      cumulativeMax: {
+        name: "累计最大",
+        desc: "按顺序计算累计最大值",
+        icon: /*#__PURE__*/ React.createElement(Icons.Maximize2, null),
+        color: "var(--color-success)",
+        bg: "var(--color-success-bg)",
+        category: "compute",
+      },
+      cumulativeMin: {
+        name: "累计最小",
+        desc: "按顺序计算累计最小值",
+        icon: /*#__PURE__*/ React.createElement(Icons.Minimize2, null),
+        color: "var(--color-info)",
+        bg: "var(--color-info-bg)",
+        category: "compute",
+      },
+      lag: {
+        name: "滞后值",
+        desc: "获取前N行的值",
+        icon: /*#__PURE__*/ React.createElement(Icons.ArrowLeft, null),
+        color: "var(--color-danger)",
+        bg: "var(--color-danger-bg)",
+        category: "compute",
+      },
+      lead: {
+        name: "领先值",
+        desc: "获取后N行的值",
+        icon: /*#__PURE__*/ React.createElement(Icons.ArrowRight, null),
+        color: "var(--color-success)",
+        bg: "var(--color-success-bg)",
+        category: "compute",
+      },
+      percentRank: {
+        name: "百分比排名",
+        desc: "计算值在数据集中的百分比位置",
+        icon: /*#__PURE__*/ React.createElement(Icons.PieChart, null),
+        color: "var(--color-warning)",
+        bg: "var(--color-warning-bg)",
+        category: "compute",
+      },
+      rankDense: {
+        name: "稠密排名",
+        desc: "无间隔排名，相同值相同排名",
+        icon: /*#__PURE__*/ React.createElement(Icons.BarChart3, null),
+        color: "var(--color-accent)",
+        bg: "var(--color-accent-100)",
+        category: "compute",
+      },
+      rankRowNumber: {
+        name: "行号排名",
+        desc: "连续行号，相同值不同排名",
+        icon: /*#__PURE__*/ React.createElement(Icons.List, null),
+        color: "var(--color-primary)",
+        bg: "var(--color-primary-50)",
+        category: "compute",
+      },
+      windowSum: {
+        name: "窗口求和",
+        desc: "在滑动窗口内求和",
+        icon: /*#__PURE__*/ React.createElement(Icons.Calculator, null),
+        color: "var(--color-success)",
+        bg: "var(--color-success-bg)",
+        category: "compute",
+      },
+      windowAvg: {
+        name: "窗口平均",
+        desc: "在滑动窗口内计算平均值",
+        icon: /*#__PURE__*/ React.createElement(Icons.Calculator, null),
+        color: "var(--color-info)",
+        bg: "var(--color-info-bg)",
+        category: "compute",
+      },
+      jsonExtract: {
+        name: "JSON提取",
+        desc: "从JSON字符串中提取字段",
+        icon: /*#__PURE__*/ React.createElement(Icons.Braces, null),
+        color: "var(--color-accent)",
+        bg: "var(--color-accent-100)",
+        category: "transform",
+      },
+      regexReplace: {
+        name: "正则替换",
+        desc: "使用正则表达式替换文本",
+        icon: /*#__PURE__*/ React.createElement(Icons.Search, null),
+        color: "var(--color-warning)",
+        bg: "var(--color-warning-bg)",
+        category: "transform",
+      },
+      trim: {
+        name: "去除空格",
+        desc: "去除字符串首尾空格或指定字符",
+        icon: /*#__PURE__*/ React.createElement(Icons.FileText, null),
+        color: "var(--color-info)",
+        bg: "var(--color-info-bg)",
+        category: "transform",
+      },
+      upperCase: {
+        name: "转大写",
+        desc: "将字符串转换为大写",
+        icon: /*#__PURE__*/ React.createElement(Icons.FileText, null),
+        color: "var(--color-text-tertiary)",
+        bg: "var(--color-bg-tertiary)",
+        category: "transform",
+      },
+      lowerCase: {
+        name: "转小写",
+        desc: "将字符串转换为小写",
+        icon: /*#__PURE__*/ React.createElement(Icons.FileText, null),
+        color: "var(--color-text-tertiary)",
+        bg: "var(--color-bg-tertiary)",
+        category: "transform",
+      },
+      dateDiff: {
+        name: "日期差值",
+        desc: "计算两个日期之间的天数/月数/年数",
+        icon: /*#__PURE__*/ React.createElement(Icons.Clock, null),
+        color: "var(--color-primary)",
+        bg: "var(--color-primary-50)",
+        category: "compute",
+      },
+      dateAdd: {
+        name: "日期增减",
+        desc: "对日期进行加减操作",
+        icon: /*#__PURE__*/ React.createElement(Icons.Clock, null),
+        color: "var(--color-primary)",
+        bg: "var(--color-primary-50)",
+        category: "transform",
       },
     };
     return (
@@ -6031,21 +6150,95 @@ const RulesPage = ({ state, currentPlatform }) => {
                                           )
                                         : /*#__PURE__*/ React.createElement(
                                             "div",
-                                            { className: "debug-step-meta" },
-                                            sr.rows,
-                                            " \u6761\u6570\u636E",
-                                            sr.preview?.[0] &&
+                                            { className: "debug-step-details" },
+                                            /*#__PURE__*/ React.createElement(
+                                              "div",
+                                              { className: "debug-step-meta-row" },
                                               /*#__PURE__*/ React.createElement(
                                                 "span",
-                                                {
-                                                  className:
-                                                    "debug-step-preview",
-                                                },
-                                                "\u2192 ",
-                                                JSON.stringify(
-                                                  sr.preview[0],
-                                                ).slice(0, 60),
+                                                { className: "debug-step-meta-label" },
+                                                "行数:",
                                               ),
+                                              /*#__PURE__*/ React.createElement(
+                                                "span",
+                                                { className: "debug-step-meta-value" },
+                                                sr.rows?.length || sr.rows || 0,
+                                              ),
+                                              sr.columns && /*#__PURE__*/ React.createElement(
+                                                React.Fragment,
+                                                null,
+                                                /*#__PURE__*/ React.createElement(
+                                                  "span",
+                                                  { className: "debug-step-meta-divider" },
+                                                  "|",
+                                                ),
+                                                /*#__PURE__*/ React.createElement(
+                                                  "span",
+                                                  { className: "debug-step-meta-label" },
+                                                  "列数:",
+                                                ),
+                                                /*#__PURE__*/ React.createElement(
+                                                  "span",
+                                                  { className: "debug-step-meta-value" },
+                                                  sr.columns,
+                                                ),
+                                              ),
+                                            ),
+                                            sr.preview && sr.preview.length > 0 && /*#__PURE__*/ React.createElement(
+                                              "div",
+                                              { className: "debug-step-preview-box" },
+                                              /*#__PURE__*/ React.createElement(
+                                                "div",
+                                                { className: "debug-step-preview-label" },
+                                                "预览:",
+                                              ),
+                                              /*#__PURE__*/ React.createElement(
+                                                "div",
+                                                { className: "debug-step-preview-content" },
+                                                sr.preview.slice(0, 3).map((row, ri) => /*#__PURE__*/ React.createElement(
+                                                  "div",
+                                                  { key: ri, className: "debug-step-preview-row" },
+                                                  Object.entries(row).map(([k, v]) => /*#__PURE__*/ React.createElement(
+                                                    "span",
+                                                    { key: k, className: "debug-step-preview-cell" },
+                                                    /*#__PURE__*/ React.createElement(
+                                                      "span",
+                                                      { className: "debug-step-preview-key" },
+                                                      k,
+                                                    ),
+                                                    ": ",
+                                                    typeof v === "number"
+                                                      ? v.toLocaleString("zh-CN", { maximumFractionDigits: 2 })
+                                                      : v != null
+                                                        ? String(v).slice(0, 30)
+                                                        : "-",
+                                                  ),
+                                                )),
+                                                sr.preview.length > 3 && ri === 0 && /*#__PURE__*/ React.createElement(
+                                                  "span",
+                                                  { className: "debug-step-preview-more" },
+                                                  `...(共${sr.preview.length}条)`,
+                                                ),
+                                              )),
+                                            ),
+                                            sr.value !== undefined && sr.value !== null && sr.value !== "" && /*#__PURE__*/ React.createElement(
+                                              "div",
+                                              { className: "debug-step-value-box" },
+                                              /*#__PURE__*/ React.createElement(
+                                                "span",
+                                                { className: "debug-step-value-label" },
+                                                "输出值:",
+                                              ),
+                                              /*#__PURE__*/ React.createElement(
+                                                "span",
+                                                { className: "debug-step-value-content" },
+                                                typeof sr.value === "number"
+                                                  ? sr.value.toLocaleString("zh-CN", { maximumFractionDigits: 2 })
+                                                  : typeof sr.value === "object"
+                                                    ? JSON.stringify(sr.value).slice(0, 80)
+                                                    : String(sr.value),
+                                              ),
+                                            ),
                                           ),
                                     ),
                                   );
@@ -6349,65 +6542,7 @@ const RulesPage = ({ state, currentPlatform }) => {
                   /*#__PURE__*/ React.createElement(
                     "div",
                     { className: "empty-desc" },
-                    "\u9009\u62E9\u5B57\u6BB5\u540E\u53EF\u914D\u7F6E\u5BF9\u5E94\u7684\u8BA1\u7B97\u89C4\u5219\uFF0C\u4E0B\u65B9\u662F\u5E38\u89C1\u914D\u7F6E\u573A\u666F\u793A\u4F8B",
-                  ),
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "div",
-                  { className: "rules-guide-section" },
-                  /*#__PURE__*/ React.createElement("h3", { className: "rules-guide-title" }, "\uD83D\uDCE5 \u573A\u666F\u4E00\uFF1A\u81EA\u52A8\u586B\u5145\u65E5\u671F\u548C\u5E97\u94FA\u540D"),
-                  /*#__PURE__*/ React.createElement("p", { className: "rules-guide-desc" }, "\u5BF9\u4E8E\u6A21\u677F\u4E2D\u7684\u5360\u4F4D\u7B26\uFF08\u5982 xxxx\u3001xx\u5E74xx\u6708\uFF09\uFF0C\u7CFB\u7EDF\u4F1A\u81EA\u52A8\u8BC6\u522B\u7C7B\u578B\u5E76\u586B\u5145\u3002"),
-                  /*#__PURE__*/ React.createElement("div", { className: "rules-guide-steps" },
-                    React.createElement("div", { className: "rules-guide-step" }, "1. \u9009\u62E9\u5B57\u6BB5 \u2192 \u6DFB\u52A0\u300C\u586B\u5145\u5360\u4F4D\u7B26\u300D\u6B65\u9AA4"),
-                    React.createElement("div", { className: "rules-guide-step" }, "2. \u586B\u5145\u65B9\u5F0F\u9009\u62E9\u300C\u81EA\u52A8\u300D\uFF0C\u7CFB\u7EDF\u6839\u636E\u5B57\u6BB5\u7C7B\u578B\u81EA\u52A8\u586B\u5145"),
-                    React.createElement("div", { className: "rules-guide-step" }, "3. \u4E5F\u53EF\u9009\u62E9\u300C\u6307\u5B9A\u503C\u300D\u624B\u52A8\u8F93\u5165\u56FA\u5B9A\u5185\u5BB9"),
-                  ),
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "div",
-                  { className: "rules-guide-section" },
-                  /*#__PURE__*/ React.createElement("h3", { className: "rules-guide-title" }, "\uD83D\uDD17 \u573A\u666F\u4E8C\uFF1A\u901A\u8FC7\u5546\u54C1ID\u5173\u8054\u53E6\u4E00\u5F20\u8868\u83B7\u53D6\u6570\u636E"),
-                  /*#__PURE__*/ React.createElement("p", { className: "rules-guide-desc" }, "\u5982\u679C\u5229\u6DA6\u8868\u9700\u8981\u5F15\u7528\u5546\u54C1\u6210\u672C\u8868\u4E2D\u7684\u6570\u636E\uFF0C\u53EF\u4F7F\u7528\u300C\u8DE8\u8868\u5173\u8054\u300D\u6B65\u9AA4\u3002"),
-                  /*#__PURE__*/ React.createElement("div", { className: "rules-guide-steps" },
-                    React.createElement("div", { className: "rules-guide-step" }, "1. \u6DFB\u52A0\u300C\u6570\u636E\u6E90\u300D\u6B65\u9AA4\uFF0C\u9009\u62E9\u4E3B\u6570\u636E\u8868"),
-                    React.createElement("div", { className: "rules-guide-step" }, "2. \u6DFB\u52A0\u300C\u8DE8\u8868\u5173\u8054\u300D\u6B65\u9AA4\uFF0C\u9009\u62E9\u5173\u8054\u6570\u636E\u8868"),
-                    React.createElement("div", { className: "rules-guide-step" }, "3. \u4E3B\u8868\u5173\u8054\u952E\u9009\u62E9\u5546\u54C1ID\u5217\uFF0C\u5173\u8054\u8868\u5916\u952E\u9009\u62E9\u5546\u54C1ID\u5217"),
-                    React.createElement("div", { className: "rules-guide-step" }, "4. \u53D6\u5173\u8054\u8868\u5217\u9009\u62E9\u9700\u8981\u83B7\u53D6\u7684\u5217\uFF08\u5982\u6210\u672C\u4EF7\uFF09"),
-                  ),
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "div",
-                  { className: "rules-guide-section" },
-                  /*#__PURE__*/ React.createElement("h3", { className: "rules-guide-title" }, "\uD83D\uDD0D \u573A\u666F\u4E09\uFF1A\u5C06\u6587\u672C\u63CF\u8FF0\u8F6C\u4E3A\u6570\u503C"),
-                  /*#__PURE__*/ React.createElement("p", { className: "rules-guide-desc" }, "\u5982\u300C\u5546\u54C1\u89C4\u683C\u300D\u5217\u6709\u300C\u767D+\u9ED1+\u7070\u300D\u300C6\u6761\u88C5\u300D\u7B49\u63CF\u8FF0\uFF0C\u53EF\u7528\u300C\u67E5\u627E\u66FF\u6362\u300D\u8F6C\u4E3A\u6570\u503C\u3002"),
-                  /*#__PURE__*/ React.createElement("div", { className: "rules-guide-steps" },
-                    React.createElement("div", { className: "rules-guide-step" }, "1. \u6DFB\u52A0\u300C\u67E5\u627E\u66FF\u6362\u300D\u6B65\u9AA4"),
-                    React.createElement("div", { className: "rules-guide-step" }, "2. \u5339\u914D\u6A21\u5F0F\u9009\u62E9\u300C\u5305\u542B\u5339\u914D\u300D"),
-                    React.createElement("div", { className: "rules-guide-step" }, "3. \u6DFB\u52A0\u6620\u5C04\u89C4\u5219\uFF1A\u300C6\u6761\u88C5\u300D\u2192\u300C6\u300D\u3001\u300C3\u6761\u88C5\u300D\u2192\u300C3\u300D"),
-                    React.createElement("div", { className: "rules-guide-step" }, "4. \u672A\u5339\u914D\u65F6\u53EF\u8BBE\u7F6E\u9ED8\u8BA4\u503C\uFF08\u5982 1\uFF09"),
-                  ),
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "div",
-                  { className: "rules-guide-section" },
-                  /*#__PURE__*/ React.createElement("h3", { className: "rules-guide-title" }, "\uD83E\uDDEA \u573A\u666F\u56DB\uFF1A\u4F7F\u7528\u516C\u5F0F\u8FDB\u884C\u590D\u6742\u8BA1\u7B97"),
-                  /*#__PURE__*/ React.createElement("p", { className: "rules-guide-desc" }, "\u53EF\u4EE5\u5F15\u7528\u5DF2\u8BA1\u7B97\u5B57\u6BB5\u3001\u6570\u636E\u6E90\u5B57\u6BB5\u8FDB\u884C\u516C\u5F0F\u8BA1\u7B97\u3002"),
-                  /*#__PURE__*/ React.createElement("div", { className: "rules-guide-steps" },
-                    React.createElement("div", { className: "rules-guide-step" }, "1. \u5148\u914D\u7F6E\u597D\u9700\u8981\u5F15\u7528\u7684\u5B57\u6BB5\uFF08\u5982\u300C\u9500\u552E\u989D\u300D\u3001\u300C\u6210\u672C\u300D\uFF09"),
-                    React.createElement("div", { className: "rules-guide-step" }, "2. \u6DFB\u52A0\u300C\u516C\u5F0F\u8BA1\u7B97\u300D\u6B65\u9AA4"),
-                    React.createElement("div", { className: "rules-guide-step" }, "3. \u70B9\u51FB\u53EF\u7528\u5B57\u6BB5\u5217\u8868\u63D2\u5165\u53D8\u91CF\uFF0C\u5982 {销售额} * 0.7 - {成本}"),
-                    React.createElement("div", { className: "rules-guide-step" }, "4. \u652F\u6301 Math.max\u3001Math.round\u3001Math.abs \u7B49\u51FD\u6570"),
-                  ),
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "div",
-                  { className: "rules-guide-section" },
-                  /*#__PURE__*/ React.createElement("h3", { className: "rules-guide-title" }, "\uD83D\uDCA1 \u573A\u666F\u4E94\uFF1A\u7ED9\u8868\u65B0\u589E\u4E00\u4E2A\u8BA1\u7B97\u5217"),
-                  /*#__PURE__*/ React.createElement("p", { className: "rules-guide-desc" }, "\u6570\u636E\u6765\u6E90\u4E8E\u672C\u8868\u5173\u8054\u5176\u4ED6\u8868\u540E\u8FDB\u884C\u8BA1\u7B97\uFF0C\u53EF\u7EC4\u5408\u591A\u4E2A\u6B65\u9AA4\u3002"),
-                  /*#__PURE__*/ React.createElement("div", { className: "rules-guide-steps" },
-                    React.createElement("div", { className: "rules-guide-step" }, "1. \u6DFB\u52A0\u300C\u6570\u636E\u6E90\u300D\u2192 \u300C\u8DE8\u8868\u5173\u8054\u300D\u83B7\u53D6\u5173\u8054\u6570\u636E"),
-                    React.createElement("div", { className: "rules-guide-step" }, "2. \u6DFB\u52A0\u300C\u516C\u5F0F\u8BA1\u7B97\u300D\u6216\u300C\u6570\u5B66\u8FD0\u7B97\u300D\u8FDB\u884C\u8BA1\u7B97"),
-                    React.createElement("div", { className: "rules-guide-step" }, "3. \u53EF\u7EE7\u7EED\u6DFB\u52A0\u300C\u56DB\u820D\u4E94\u5165\u300D\u3001\u300C\u6392\u540D\u300D\u7B49\u540E\u7EED\u5904\u7406"),
+                    "\u9009\u62E9\u5B57\u6BB5\u540E\u53EF\u914D\u7F6E\u5BF9\u5E94\u7684\u8BA1\u7B97\u89C4\u5219",
                   ),
                 ),
               ),
@@ -6546,28 +6681,28 @@ const RulesPage = ({ state, currentPlatform }) => {
               id: "filter",
               title: "\uD83D\uDD0D \u6570\u636E\u7B5B\u9009",
               desc: "\u8FC7\u6EE4\u3001\u53BB\u91CD\u3001\u9650\u5236\u6570\u636E\u8303\u56F4",
-              types: ["filter", "distinct", "condition", "limit"],
+              types: ["filter", "filterEqual", "filterContain", "filterRange", "topN", "distinct", "condition", "limit", "keepDuplicate", "keepUnique"],
               color: "var(--color-warning)",
             },
             {
               id: "transform",
               title: "\uD83D\uDD04 \u6570\u636E\u8F6C\u6362",
               desc: "\u8F6C\u6362\u3001\u66FF\u6362\u3001\u6392\u5E8F\u3001\u65E5\u671F\u5904\u7406\u3001\u7A7A\u503C\u5904\u7406",
-              types: ["virtual", "lookup", "sort", "text", "round", "concat", "substring", "date", "stringExtract", "fillNA", "binning", "conditionalTag"],
+              types: ["virtual", "lookup", "sort", "text", "round", "concat", "substring", "date", "stringExtract", "fillNA", "binning", "conditionalTag", "jsonExtract", "regexReplace", "trim", "upperCase", "lowerCase", "dateAdd"],
               color: "var(--color-info)",
             },
             {
               id: "compute",
               title: "\uD83E\uDDEA \u8BA1\u7B97\u805A\u5408",
               desc: "\u6C42\u548C\u3001\u5E73\u5747\u3001\u516C\u5F0F\u3001\u6392\u540D\u3001\u6BD4\u7387\u3001\u7D2F\u8BA1\u3001\u5360\u6BD4",
-              types: ["aggregate", "group", "formula", "math", "rank", "diff", "ratio", "runningTotal", "percentOfTotal", "movingAverage", "normalize"],
+              types: ["aggregate", "group", "formula", "math", "rank", "diff", "ratio", "runningTotal", "percentOfTotal", "movingAverage", "normalize", "cumulativeMax", "cumulativeMin", "lag", "lead", "percentRank", "rankDense", "rankRowNumber", "windowSum", "windowAvg", "dateDiff"],
               color: "var(--color-success)",
             },
             {
               id: "join",
               title: "\uD83D\uDD17 \u8DE8\u8868\u5173\u8054",
               desc: "\u5173\u8054\u5168\u5C40\u6570\u636E\u8868\u3001\u5408\u5E76\u6570\u636E\u3001\u8DE8\u8868\u4EA4\u96C6/\u53BB\u91CD",
-              types: ["join", "union", "crossMatch"],
+              types: ["join", "union", "crossMatch", "intersect"],
               color: "var(--color-accent)",
             },
           ].map((group) =>

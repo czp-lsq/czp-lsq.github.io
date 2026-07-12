@@ -34,14 +34,11 @@ const getPinyinFirstLetter = (str) => {
   const result = [];
   for (let i = 0; i < str.length; i++) {
     const char = str[i];
-    // 检查是否为英文字母
     if (/[a-zA-Z]/.test(char)) {
       result.push(char.toLowerCase());
       continue;
     }
-    // 检查是否为中文字符
     if (/[\u4e00-\u9fa5]/.test(char)) {
-      // 使用简化的拼音映射
       for (const [letter, chars] of Object.entries(PINYIN_TABLE)) {
         if (chars.includes(char)) {
           result.push(letter);
@@ -122,10 +119,11 @@ const SearchableSelect = ({
   size = "default",
   disabled = false,
   allowCreate = false,
-  groups = null, // 分组配置: [{ id: 'group1', label: '分组名', options: [] }]
-  virtualScroll = false, // 是否启用虚拟滚动
-  virtualScrollThreshold = 100, // 超过多少条启用虚拟滚动
-  debounceDelay = 300, // 搜索防抖延迟(ms)
+  groups = null,
+  groupBy = null,
+  virtualScroll = false,
+  virtualScrollThreshold = 100,
+  debounceDelay = 300,
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
@@ -135,8 +133,7 @@ const SearchableSelect = ({
   const containerRef = useRef(null);
   const inputRef = useRef(null);
   const optionsRef = useRef(null);
-  
-  // 防抖搜索
+
   const debouncedSearch = useMemo(
     () => debounce((query) => setDebouncedQuery(query), debounceDelay),
     [debounceDelay]
@@ -145,22 +142,36 @@ const SearchableSelect = ({
   useEffect(() => {
     debouncedSearch(searchQuery);
   }, [searchQuery, debouncedSearch]);
-  
-  // 实时搜索（非防抖）用于快速响应
-  const immediateSearchQuery = searchQuery;
-  
-  // 搜索过滤逻辑（支持拼音首字母）
+
+  const processedGroups = useMemo(() => {
+    if (groups) return groups;
+    if (groupBy && options && options.length > 0) {
+      const groupMap = {};
+      options.forEach((opt) => {
+        const groupVal = typeof opt === "object" ? opt[groupBy] : "";
+        const groupLabel = groupVal || "未分类";
+        if (!groupMap[groupLabel]) {
+          groupMap[groupLabel] = [];
+        }
+        groupMap[groupLabel].push(opt);
+      });
+      return Object.keys(groupMap).map((key) => ({
+        id: key,
+        label: key,
+        options: groupMap[key],
+      }));
+    }
+    return null;
+  }, [groups, groupBy, options]);
+
   const filterOptions = (opts, query) => {
     if (!query.trim()) return opts;
     const q = query.toLowerCase();
     return opts.filter((opt) => {
       const label = typeof opt === "object" ? (opt.label || opt.value || "") : String(opt);
-      // 普通文本匹配
       if (label.toLowerCase().includes(q)) return true;
-      // 拼音首字母匹配
       const pinyin = getPinyinFirstLetter(label);
       if (pinyin.includes(q)) return true;
-      // 拼音全拼匹配（简化版）
       const fullPinyin = label.split('').map(c => {
         for (const [letter, chars] of Object.entries(PINYIN_TABLE)) {
           if (chars.includes(c)) return letter;
@@ -171,13 +182,12 @@ const SearchableSelect = ({
       return false;
     });
   };
-  
-  // 处理分组选项
+
   const processedOptions = useMemo(() => {
-    if (groups) {
-      // 使用分组配置
+    const useGroups = processedGroups || groups;
+    if (useGroups) {
       const result = [];
-      groups.forEach((group, groupIdx) => {
+      useGroups.forEach((group, groupIdx) => {
         result.push({
           type: 'group-header',
           id: group.id,
@@ -197,23 +207,20 @@ const SearchableSelect = ({
       });
       return result;
     } else {
-      // 无分组，直接过滤
       return filterOptions(options, debouncedQuery).map((opt, idx) => ({
         ...opt,
         type: 'option',
         index: idx,
       }));
     }
-  }, [groups, options, debouncedQuery]);
-  
-  // 获取可选择的选项列表（排除分组头）
+  }, [processedGroups, groups, options, debouncedQuery]);
+
   const selectableOptions = useMemo(() => {
     return processedOptions.filter(item => item.type === 'option');
   }, [processedOptions]);
-  
-  // 是否启用虚拟滚动
+
   const enableVirtualScroll = virtualScroll || selectableOptions.length > virtualScrollThreshold;
-  
+
   const displayValue = useMemo(() => {
     if (value === "" || value == null) return "";
     const opt = options.find(
@@ -221,8 +228,7 @@ const SearchableSelect = ({
     );
     return opt ? (typeof opt === "object" ? opt.label : opt) : value;
   }, [value, options]);
-  
-  // 点击外部关闭
+
   useEffect(() => {
     const handleClickOutside = (e) => {
       if (containerRef.current && !containerRef.current.contains(e.target)) {
@@ -235,16 +241,14 @@ const SearchableSelect = ({
     document.addEventListener("mousedown", handleClickOutside);
     return () => document.removeEventListener("mousedown", handleClickOutside);
   }, []);
-  
-  // 打开时聚焦输入框
+
   useEffect(() => {
     if (isOpen && inputRef.current) {
       inputRef.current.focus();
       setSelectedIndex(-1);
     }
   }, [isOpen]);
-  
-  // 选择选项
+
   const handleSelect = (optValue) => {
     onChange(optValue);
     setIsOpen(false);
@@ -252,8 +256,7 @@ const SearchableSelect = ({
     setDebouncedQuery("");
     setSelectedIndex(-1);
   };
-  
-  // 键盘导航
+
   const handleKeyDown = (e) => {
     const selectableCount = selectableOptions.length;
     
@@ -285,7 +288,6 @@ const SearchableSelect = ({
           const optValue = typeof selectedOpt === "object" ? selectedOpt.value : selectedOpt;
           handleSelect(optValue);
         } else if (allowCreate && searchQuery.trim()) {
-          // 允许创建新选项
           const exists = options.some(
             (o) => (typeof o === "object" ? o.value : o) === searchQuery.trim(),
           );
@@ -311,8 +313,7 @@ const SearchableSelect = ({
         break;
     }
   };
-  
-  // 渲染选项
+
   const renderOption = (item, index) => {
     if (item.type === 'group-header') {
       return React.createElement(
@@ -347,14 +348,14 @@ const SearchableSelect = ({
       )
     );
   };
-  
-  // 获取选项列表高度
+
   const getListHeight = () => {
     const maxHeight = 320;
-    const estimatedHeight = enableVirtualScroll ? maxHeight : Math.min(selectableOptions.length * 36 + (groups ? groups.length * 32 : 0), maxHeight);
+    const useGroups = processedGroups || groups;
+    const estimatedHeight = enableVirtualScroll ? maxHeight : Math.min(selectableOptions.length * 36 + (useGroups ? useGroups.length * 32 : 0), maxHeight);
     return Math.max(120, estimatedHeight);
   };
-  
+
   return React.createElement(
     "div",
     {
