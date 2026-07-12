@@ -6247,12 +6247,12 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                                         : "-",
                                                   ),
                                                 )),
-                                                sr.preview.length > 3 && ri === 0 && /*#__PURE__*/ React.createElement(
-                                                  "span",
-                                                  { className: "debug-step-preview-more" },
-                                                  `...(共${sr.preview.length}条)`,
-                                                ),
                                               )),
+                                              sr.preview.length > 3 && /*#__PURE__*/ React.createElement(
+                                                "span",
+                                                { className: "debug-step-preview-more" },
+                                                `...(共${sr.preview.length}条)`,
+                                              ),
                                             ),
                                             sr.value !== undefined && sr.value !== null && sr.value !== "" && /*#__PURE__*/ React.createElement(
                                               "div",

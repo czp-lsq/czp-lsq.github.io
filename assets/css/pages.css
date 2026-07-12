@@ -3853,6 +3853,41 @@
   font-family: var(--font-mono);
 }
 
+.settings-page .payment-qr-container {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 24px;
+  background: var(--color-bg-tertiary);
+  border-radius: var(--radius-lg);
+  border: 1px dashed var(--color-border);
+  min-height: 200px;
+}
+
+.settings-page .payment-qr-img {
+  max-width: 200px;
+  max-height: 200px;
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-md);
+}
+
+.settings-page .payment-qr-placeholder {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  color: var(--color-text-tertiary);
+}
+
+.settings-page .qr-upload-input {
+  display: none;
+}
+
+.settings-page .qr-upload-input + button {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
 
 /* ========================================
    9. History 计算记录页
@@ -5960,14 +5995,14 @@
 }
 
 .table-select-items {
-  display: flex;
-  flex-direction: column;
-  gap: 6px;
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
 }
 
 .table-select-item {
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   gap: 10px;
   padding: 10px 12px;
   background: var(--color-bg-secondary);
@@ -5975,6 +6010,7 @@
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: all var(--transition-fast);
+  min-height: 44px;
 }
 
 .table-select-item:hover {
@@ -5988,19 +6024,29 @@
 }
 
 .table-select-item input[type="checkbox"] {
-  margin-top: 2px;
+  flex-shrink: 0;
+  width: 16px;
+  height: 16px;
+  accent-color: var(--color-primary);
 }
 
 .table-select-item-name {
-  font-size: 14px;
+  flex: 1;
+  font-size: 13px;
   font-weight: 500;
   color: var(--color-text-primary);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .table-select-item-desc {
-  font-size: 12px;
+  font-size: 11px;
   color: var(--color-text-tertiary);
-  margin-top: 2px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  max-width: 100%;
 }
 
 /* 响应式调整 */

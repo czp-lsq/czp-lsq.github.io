@@ -291,11 +291,23 @@ const App = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const loadingRef = useRef(null);
 
-  const APP_VERSION = "1.8.0";
+  const APP_VERSION = "Czp-1.9.0";
   const VERSION_KEY = "app_version_seen";
   const VERSION_HISTORY_KEY = "app_version_history";
   const UPDATE_LOG = [
-    { version: "1.8.0", date: "2026-07-13 16:30:00",
+    { version: "Czp-1.9.0", date: "2026-07-13 18:00:00",
+      summary: "关键Bug修复与版本号格式统一",
+      changes: [
+        { type: "feature", text: "版本号格式统一为 Czp-X.X.X" },
+        { type: "feature", text: "修复点击选择表格时的页面崩溃错误" },
+        { type: "feature", text: "计算规则页面「前往模板中心」按钮功能完善" },
+        { type: "optimize", text: "计算步骤数据源选择布局优化为两列网格" },
+        { type: "optimize", text: "数据表名称过长自动省略显示" },
+        { type: "bugfix", text: "修复变量作用域错误导致的页面崩溃" },
+      ],
+      bugfixes: [],
+    },
+    { version: "Czp-1.8.0", date: "2026-07-13 16:30:00",
       summary: "关键Bug修复与布局稳定性提升",
       changes: [
         { type: "feature", text: "侧边栏固定定位，滚动时不再跳动" },
@@ -314,7 +326,7 @@ const App = () => {
       ],
       bugfixes: [],
     },
-    { version: "1.7.0", date: "2026-07-13 10:00:00",
+    { version: "Czp-1.7.0", date: "2026-07-13 10:00:00",
       summary: "导航栏重构与页面体验全面优化",
       changes: [
         { type: "feature", text: "重构导航栏分类布局，新增「帮助信息」独立分组" },
@@ -331,7 +343,7 @@ const App = () => {
       ],
       bugfixes: [],
     },
-    { version: "1.6.0", date: "2026-07-12 16:50:16",
+    { version: "Czp-1.6.0", date: "2026-07-12 16:50:16",
       summary: "计算规则引擎增强与数据保存机制重构",
       changes: [
         { type: "feature", text: "新增17种计算步骤类型（累计、窗口、排名、日期等）" },
@@ -344,7 +356,7 @@ const App = () => {
       ],
       bugfixes: [],
     },
-    { version: "1.5.0", date: "2026-07-12 14:15:19",
+    { version: "Czp-1.5.0", date: "2026-07-12 14:15:19",
       summary: "全面优化升级：界面、交互与功能提升",
       changes: [
         { type: "feature", text: "深色模式配色优化，4种主题全面适配" },
@@ -356,7 +368,7 @@ const App = () => {
       ],
       bugfixes: [],
     },
-    { version: "1.4.0", date: "2026-07-12 12:24:54",
+    { version: "Czp-1.4.0", date: "2026-07-12 12:24:54",
       summary: "可搜索下拉组件与筛选步骤全面升级",
       changes: [
         { type: "feature", text: "全新可搜索下拉组件，支持拼音首字母搜索" },
@@ -367,7 +379,7 @@ const App = () => {
       ],
       bugfixes: [],
     },
-    { version: "1.3.0", date: "2026-07-12 11:41:48",
+    { version: "Czp-1.3.0", date: "2026-07-12 11:41:48",
       summary: "数据持久化增强与自动快照功能",
       changes: [
         { type: "feature", text: "数据持久化增强，LZString压缩存储" },
@@ -377,7 +389,7 @@ const App = () => {
       ],
       bugfixes: [],
     },
-    { version: "1.2.0", date: "2026-07-12 10:36:11",
+    { version: "Czp-1.2.0", date: "2026-07-12 10:36:11",
       summary: "计算引擎扩展与操作日志系统",
       changes: [
         { type: "feature", text: "新增3种计算步骤类型" },
@@ -388,7 +400,7 @@ const App = () => {
       ],
       bugfixes: [],
     },
-    { version: "1.1.0", date: "2026-07-12 10:18:58",
+    { version: "Czp-1.1.0", date: "2026-07-12 10:18:58",
       summary: "系统稳定性增强与存储优化",
       changes: [
         { type: "feature", text: "新增音效开关设置" },
@@ -402,7 +414,7 @@ const App = () => {
         "修复配置中心错误",
       ],
     },
-    { version: "1.0.0", date: "2026-07-12 08:50:41",
+    { version: "Czp-1.0.0", date: "2026-07-12 08:50:41",
       summary: "店数智平台初始版本发布",
       changes: [
         { type: "feature", text: "店铺数据智能分析与报表平台上线" },
@@ -973,6 +985,7 @@ const App = () => {
         return /*#__PURE__*/ React.createElement(RulesPage, {
           state: state,
           currentPlatform: currentPlatform,
+          onNavigate: onNavigate,
         });
       case "batch":
         return /*#__PURE__*/ React.createElement(BatchPage, {
