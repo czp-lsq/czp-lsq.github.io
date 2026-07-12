@@ -7,6 +7,9 @@ const StoragePage = ({ state, setState }) => {
   const [importMode, setImportMode] = useState("merge");
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [activityLogs, setActivityLogs] = useState([]);
+  const [syncCode, setSyncCode] = useState("");
+  const [syncCodeInput, setSyncCodeInput] = useState("");
+  const [syncCodeType, setSyncCodeType] = useState("config");
   const fileInputRef = useRef(null);
 
   const exportTypes = [
@@ -94,6 +97,78 @@ const StoragePage = ({ state, setState }) => {
       }
       setExporting(false);
     }, 500);
+  };
+
+  const generateSyncCode = () => {
+    try {
+      let data;
+      if (syncCodeType === "config") {
+        data = {
+          platforms: state.platforms,
+          templates: state.templates,
+          rules: state.rules,
+          shops: state.shops,
+          externals: state.externals,
+          settings: state.settings,
+        };
+      } else {
+        data = state;
+      }
+      const jsonStr = JSON.stringify(data);
+      const encoded = btoa(unescape(encodeURIComponent(jsonStr)));
+      const prefix = syncCodeType === "config" ? "SD-CFG-" : "SD-ALL-";
+      setSyncCode(prefix + encoded);
+      addToast("success", "同步码已生成", "复制同步码到另一设备粘贴即可同步");
+    } catch (e) {
+      addToast("error", "生成失败", e.message);
+    }
+  };
+
+  const copySyncCode = () => {
+    if (!syncCode) return;
+    navigator.clipboard.writeText(syncCode).then(() => {
+      addToast("success", "已复制", "同步码已复制到剪贴板");
+    }).catch(() => {
+      addToast("error", "复制失败", "请手动选择复制");
+    });
+  };
+
+  const applySyncCode = () => {
+    if (!syncCodeInput.trim()) {
+      addToast("error", "请输入同步码", "请粘贴有效的同步码");
+      return;
+    }
+    try {
+      let code = syncCodeInput.trim();
+      let isConfig = false;
+      if (code.startsWith("SD-CFG-")) {
+        isConfig = true;
+        code = code.substring(7);
+      } else if (code.startsWith("SD-ALL-")) {
+        code = code.substring(7);
+      }
+      const decoded = decodeURIComponent(escape(atob(code)));
+      const data = JSON.parse(decoded);
+      
+      if (isConfig) {
+        setState((prev) => ({
+          ...prev,
+          platforms: data.platforms || prev.platforms,
+          templates: data.templates || prev.templates,
+          rules: data.rules || prev.rules,
+          shops: data.shops || prev.shops,
+          externals: data.externals || prev.externals,
+          settings: data.settings || prev.settings,
+        }));
+      } else {
+        Store.importData(data);
+      }
+      addToast("success", "同步成功", "数据已成功导入");
+      ActivityLogger.add("导入配置", "同步码导入");
+      setSyncCodeInput("");
+    } catch (e) {
+      addToast("error", "同步失败", "同步码无效或已损坏，请检查后重试");
+    }
   };
 
   const handleImport = (e) => {
@@ -485,6 +560,72 @@ const StoragePage = ({ state, setState }) => {
   );
 
   const renderSync = () => React.createElement("div", { className: "storage-sync" },
+    React.createElement("div", { className: "card", style: { marginBottom: "20px" } },
+      React.createElement("div", { className: "card-header" },
+        React.createElement("div", null,
+          React.createElement("h3", null, "同步码快速同步"),
+          React.createElement("p", { className: "card-desc" }, "生成同步码，复制粘贴到另一设备即可快速同步配置"),
+        ),
+      ),
+      React.createElement("div", { className: "card-body" },
+        React.createElement("div", { className: "grid-2", style: { marginBottom: "20px" } },
+          React.createElement("div", { className: "sync-code-section" },
+            React.createElement("div", { className: "sync-code-title" },
+              React.createElement("span", { className: "sync-code-icon" }, React.createElement(Icons.Link, null)),
+              " 生成同步码",
+            ),
+            React.createElement("div", { className: "form-item" },
+              React.createElement("label", { className: "form-label" }, "同步类型"),
+              React.createElement("select", {
+                className: "select",
+                value: syncCodeType,
+                onChange: (e) => setSyncCodeType(e.target.value),
+              },
+                React.createElement("option", { value: "config" }, "仅配置（规则/模板/店铺等）"),
+                React.createElement("option", { value: "all" }, "全部数据"),
+              ),
+            ),
+            React.createElement(Button, { type: "primary", onClick: generateSyncCode, style: { width: "100%", marginBottom: "12px" } },
+              React.createElement(Icons.FileText, null), " 生成同步码",
+            ),
+            syncCode && React.createElement("div", { className: "sync-code-result" },
+              React.createElement("textarea", {
+                className: "input",
+                value: syncCode,
+                readOnly: true,
+                style: { width: "100%", minHeight: "100px", fontFamily: "monospace", fontSize: "12px", resize: "vertical" },
+              }),
+              React.createElement(Button, { type: "primary", variant: "outline", onClick: copySyncCode, style: { marginTop: "8px", width: "100%" } },
+                React.createElement(Icons.Copy, null), " 复制同步码",
+              ),
+            ),
+          ),
+          React.createElement("div", { className: "sync-code-section" },
+            React.createElement("div", { className: "sync-code-title" },
+              React.createElement("span", { className: "sync-code-icon" }, React.createElement(Icons.Download, null)),
+              " 导入同步码",
+            ),
+            React.createElement("div", { className: "form-item" },
+              React.createElement("label", { className: "form-label" }, "粘贴同步码"),
+              React.createElement("textarea", {
+                className: "input",
+                value: syncCodeInput,
+                onChange: (e) => setSyncCodeInput(e.target.value),
+                placeholder: "在此粘贴同步码...",
+                style: { width: "100%", minHeight: "100px", fontFamily: "monospace", fontSize: "12px", resize: "vertical" },
+              }),
+            ),
+            React.createElement(Button, { type: "success", onClick: applySyncCode, style: { width: "100%" } },
+              React.createElement(Icons.CheckCircle, null), " 应用同步码",
+            ),
+          ),
+        ),
+        React.createElement("div", { className: "step-desc" },
+          React.createElement(Icons.Info, null),
+          " 提示：同步码为 Base64 编码格式，配置同步码较短，全部数据同步码可能很长。大数据量建议使用文件导出导入。",
+        ),
+      ),
+    ),
     React.createElement("div", { className: "card" },
       React.createElement("div", { className: "card-header" },
         React.createElement("div", null,

@@ -3237,56 +3237,103 @@
 
 .settings-page .theme-selector {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, 1fr);
   gap: 16px;
 }
 
 .settings-page .theme-option {
   cursor: pointer;
-  border: 2px solid var(--color-border-light);
-  border-radius: var(--radius-lg);
+  border: 2px solid var(--color-border-medium);
+  border-radius: var(--radius-xl);
   overflow: hidden;
-  transition: var(--transition-base);
+  transition: all var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
 }
 
 .settings-page .theme-option:hover {
   border-color: var(--color-primary-light);
-  transform: translateY(-2px);
-  box-shadow: var(--theme-glow);
+  transform: translateY(-3px);
+  box-shadow: var(--shadow-lg), var(--theme-glow);
 }
 
 .settings-page .theme-option.active {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-50), var(--theme-glow);
+  box-shadow: 0 0 0 4px var(--color-primary-50), var(--shadow-md);
+}
+
+.settings-page .theme-option.active::after {
+  content: "";
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: var(--color-primary);
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='white' stroke-width='3' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='20 6 9 17 4 12'%3E%3C/polyline%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: center;
+  background-size: 16px;
 }
 
 .settings-page .theme-preview {
-  height: 80px;
+  height: 100px;
   padding: 16px;
   display: flex;
   flex-direction: column;
-  gap: 8px;
+  gap: 10px;
+  position: relative;
+}
+
+.settings-page .theme-preview-sidebar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 28%;
+  border-right: 1px solid var(--color-border-light);
+  opacity: 0.5;
+}
+
+.settings-page .theme-preview-content {
+  margin-left: 32%;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.settings-page .theme-preview-bar {
+  height: 4px;
+  border-radius: 2px;
+  background: var(--color-border-light);
+}
+
+.settings-page .theme-preview-bar.primary {
+  background: var(--color-primary);
+  width: 60%;
 }
 
 .settings-page .theme-preview-row {
   display: flex;
-  gap: 8px;
+  gap: 6px;
   align-items: center;
 }
 
 .settings-page .theme-dot {
-  width: 12px;
-  height: 12px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
 }
 
 .settings-page .theme-name {
-  padding: 12px;
+  padding: 14px 16px;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
+  gap: 8px;
   background: var(--color-bg-secondary);
+  border-top: 1px solid var(--color-border-light);
 }
 
 .settings-page .theme-name-text {

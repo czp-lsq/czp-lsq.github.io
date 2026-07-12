@@ -290,9 +290,12 @@ const CalcEngine = {
             if (!step.config.column) break;
             data = data.filter((row) => {
               const val = row[step.config.column] ?? row.val;
-              const target = step.config.value;
+              let target = step.config.value;
+              if (step.config.valueType === "column" && step.config.compareColumn) {
+                target = row[step.config.compareColumn];
+              }
               const v = val != null ? String(val) : "";
-              const t = String(target ?? "");
+              const t = target != null ? String(target) : "";
               switch (step.config.op) {
                 case "==":
                   return v === t;
@@ -591,6 +594,55 @@ const CalcEngine = {
                 }
                 return row;
               });
+            }
+            break;
+          }
+          case "keepDuplicate": {
+            if (!step.config.column) break;
+            const col = step.config.column;
+            const countMap = {};
+            data.forEach((row) => {
+              const key = String(row[col] ?? row.val ?? "");
+              countMap[key] = (countMap[key] || 0) + 1;
+            });
+            data = data.filter((row) => {
+              const key = String(row[col] ?? row.val ?? "");
+              return countMap[key] > 1;
+            });
+            break;
+          }
+          case "keepUnique": {
+            if (!step.config.column) break;
+            const col = step.config.column;
+            const countMap = {};
+            data.forEach((row) => {
+              const key = String(row[col] ?? row.val ?? "");
+              countMap[key] = (countMap[key] || 0) + 1;
+            });
+            data = data.filter((row) => {
+              const key = String(row[col] ?? row.val ?? "");
+              return countMap[key] === 1;
+            });
+            break;
+          }
+          case "intersect": {
+            let compareRows = null;
+            const cmpTable = tables.find((t) => t.id === step.config.table);
+            if (cmpTable) {
+              compareRows = cmpTable.rows;
+            }
+            if (!compareRows || !step.config.key || !step.config.compareKey) break;
+            const compareSet = new Set(
+              compareRows.map((r) => String(r[step.config.compareKey] ?? ""))
+            );
+            if (step.config.mode === "keepExist") {
+              data = data.filter((row) =>
+                compareSet.has(String(row[step.config.key] ?? ""))
+              );
+            } else if (step.config.mode === "keepNotExist") {
+              data = data.filter(
+                (row) => !compareSet.has(String(row[step.config.key] ?? ""))
+              );
             }
             break;
           }

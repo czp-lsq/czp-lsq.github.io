@@ -601,6 +601,30 @@ const RulesPage = ({ state, currentPlatform }) => {
         bg: "var(--color-info-bg)",
         category: "join",
       },
+      keepDuplicate: {
+        name: "保留重复行",
+        desc: "按列筛选出重复的数据行",
+        icon: /*#__PURE__*/ React.createElement(Icons.Filter, null),
+        color: "var(--color-warning)",
+        bg: "var(--color-warning-bg)",
+        category: "filter",
+      },
+      keepUnique: {
+        name: "保留唯一行",
+        desc: "按列筛选出不重复的数据行",
+        icon: /*#__PURE__*/ React.createElement(Icons.Filter, null),
+        color: "var(--color-success)",
+        bg: "var(--color-success-bg)",
+        category: "filter",
+      },
+      intersect: {
+        name: "两表对比筛选",
+        desc: "与另一表对比，保留匹配/不匹配的行",
+        icon: /*#__PURE__*/ React.createElement(Icons.Layers, null),
+        color: "var(--color-accent)",
+        bg: "var(--color-accent-100)",
+        category: "join",
+      },
     };
     return (
       types[type] || {
@@ -877,6 +901,12 @@ const RulesPage = ({ state, currentPlatform }) => {
         return `比率: ${c.numerator || "val"}/${c.denominator || "?"}${c.percent ? "%" : ""}`;
       case "union":
         return `合并: ${(c.tables || []).length}个表`;
+      case "keepDuplicate":
+        return `保留重复: ${c.column || "val"}列`;
+      case "keepUnique":
+        return `保留唯一: ${c.column || "val"}列`;
+      case "intersect":
+        return `对比筛选: ${c.key || "?"} ${c.mode === "keepExist" ? "存在于" : "不存在于"} ${c.table || "?"}`;
       default:
         return "";
     }
@@ -1784,6 +1814,41 @@ const RulesPage = ({ state, currentPlatform }) => {
               /*#__PURE__*/ React.createElement(
                 "label",
                 { className: "form-label" },
+                "\u8FC7\u6EE4\u5217",
+              ),
+              /*#__PURE__*/ React.createElement(
+                "select",
+                {
+                  className: "select",
+                  value: step.config.column,
+                  onChange: (e) =>
+                    updateStepConfig(step.id, "column", e.target.value),
+                },
+                /*#__PURE__*/ React.createElement(
+                  "option",
+                  { value: "" },
+                  "\u8BF7\u9009\u62E9\u5217",
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "option",
+                  { value: "val" },
+                  "\u5F53\u524D\u503C (val)",
+                ),
+                sourceTableHeaders.map((h) =>
+                  /*#__PURE__*/ React.createElement(
+                    "option",
+                    { key: h, value: h },
+                    h,
+                  ),
+                ),
+              ),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
                 "\u64CD\u4F5C\u7B26",
               ),
               /*#__PURE__*/ React.createElement(
@@ -1867,25 +1932,84 @@ const RulesPage = ({ state, currentPlatform }) => {
               /*#__PURE__*/ React.createElement(
                 "label",
                 { className: "form-label" },
-                "\u5BF9\u6BD4\u503C",
+                "\u5BF9\u6BD4\u503C\u7C7B\u578B",
               ),
-              /*#__PURE__*/ React.createElement("input", {
-                type: "text",
-                className: "input",
-                value: step.config.value,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "value", e.target.value),
-                placeholder: "\u8F93\u5165\u5BF9\u6BD4\u503C\u6216\u4ECE\u4E0B\u62C9\u9009\u62E9",
-                list: `filter-values-${step.id}`,
-              }),
-              getColumnValues(step.config.column).length > 0 && /*#__PURE__*/ React.createElement(
-                "datalist",
-                { id: `filter-values-${step.id}` },
-                getColumnValues(step.config.column).map((v) =>
-                  /*#__PURE__*/ React.createElement("option", { key: v, value: v }, v),
+              /*#__PURE__*/ React.createElement(
+                "select",
+                {
+                  className: "select",
+                  value: step.config.valueType || "fixed",
+                  onChange: (e) =>
+                    updateStepConfig(step.id, "valueType", e.target.value),
+                },
+                /*#__PURE__*/ React.createElement(
+                  "option",
+                  { value: "fixed" },
+                  "\u56FA\u5B9A\u503C",
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "option",
+                  { value: "column" },
+                  "\u5BF9\u6BD4\u5217",
                 ),
               ),
             ),
+            step.config.valueType === "column"
+              ? /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "form-item" },
+                  /*#__PURE__*/ React.createElement(
+                    "label",
+                    { className: "form-label" },
+                    "\u5BF9\u6BD4\u5217",
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "select",
+                    {
+                      className: "select",
+                      value: step.config.compareColumn || "",
+                      onChange: (e) =>
+                        updateStepConfig(step.id, "compareColumn", e.target.value),
+                    },
+                    /*#__PURE__*/ React.createElement(
+                      "option",
+                      { value: "" },
+                      "\u8BF7\u9009\u62E9\u5217",
+                    ),
+                    sourceTableHeaders.map((h) =>
+                      /*#__PURE__*/ React.createElement(
+                        "option",
+                        { key: h, value: h },
+                        h,
+                      ),
+                    ),
+                  ),
+                )
+              : /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "form-item" },
+                  /*#__PURE__*/ React.createElement(
+                    "label",
+                    { className: "form-label" },
+                    "\u5BF9\u6BD4\u503C",
+                  ),
+                  /*#__PURE__*/ React.createElement("input", {
+                    type: "text",
+                    className: "input",
+                    value: step.config.value,
+                    onChange: (e) =>
+                      updateStepConfig(step.id, "value", e.target.value),
+                    placeholder: "\u8F93\u5165\u5BF9\u6BD4\u503C\u6216\u4ECE\u4E0B\u62C9\u9009\u62E9",
+                    list: `filter-values-${step.id}`,
+                  }),
+                  getColumnValues(step.config.column).length > 0 && /*#__PURE__*/ React.createElement(
+                    "datalist",
+                    { id: `filter-values-${step.id}` },
+                    getColumnValues(step.config.column).map((v) =>
+                      /*#__PURE__*/ React.createElement("option", { key: v, value: v }, v),
+                    ),
+                  ),
+                ),
           ),
           /*#__PURE__*/ React.createElement(
             "div",
@@ -4098,6 +4222,187 @@ const RulesPage = ({ state, currentPlatform }) => {
             { className: "step-desc" },
             /*#__PURE__*/ React.createElement(Icons.Info, null),
             " \u5C06\u591A\u4E2A\u6570\u636E\u8868\u7684\u6570\u636E\u8FDB\u884C\u5408\u5E76",
+          ),
+        );
+      case "keepDuplicate":
+      case "keepUnique":
+        return /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "step-config" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-label" },
+              "\u5224\u65AD\u5217",
+            ),
+            /*#__PURE__*/ React.createElement(
+              "select",
+              {
+                className: "select",
+                value: step.config.column || "",
+                onChange: (e) =>
+                  updateStepConfig(step.id, "column", e.target.value),
+              },
+              /*#__PURE__*/ React.createElement(
+                "option",
+                { value: "" },
+                "\u5F53\u524D\u503C (val)",
+              ),
+              sourceTableHeaders.map((h) =>
+                /*#__PURE__*/ React.createElement(
+                  "option",
+                  { key: h, value: h },
+                  h,
+                ),
+              ),
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "step-desc" },
+            /*#__PURE__*/ React.createElement(Icons.Info, null),
+            step.type === "keepDuplicate"
+              ? " \u6309\u6307\u5B9A\u5217\u5224\u65AD\uFF0C\u4EC5\u4FDD\u7559\u51FA\u73B0\u8FC7\u591A\u6B21\u7684\u91CD\u590D\u884C\uFF08\u91CD\u590D\u884C\u4F1A\u5168\u90E8\u4FDD\u7559\uFF09"
+              : " \u6309\u6307\u5B9A\u5217\u5224\u65AD\uFF0C\u4EC5\u4FDD\u7559\u53EA\u51FA\u73B0\u8FC7\u4E00\u6B21\u7684\u552F\u4E00\u884C",
+          ),
+        );
+      case "intersect":
+        return /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "step-config" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-label" },
+              "\u5BF9\u6BD4\u6A21\u5F0F",
+            ),
+            /*#__PURE__*/ React.createElement(
+              "select",
+              {
+                className: "select",
+                value: step.config.mode || "keepExist",
+                onChange: (e) =>
+                  updateStepConfig(step.id, "mode", e.target.value),
+              },
+              /*#__PURE__*/ React.createElement(
+                "option",
+                { value: "keepExist" },
+                "\u4FDD\u7559\u5B58\u5728\u4E8E\u5BF9\u6BD4\u8868\u7684\u884C\uFF08\u4EA4\u96C6\uFF09",
+              ),
+              /*#__PURE__*/ React.createElement(
+                "option",
+                { value: "keepNotExist" },
+                "\u4FDD\u7559\u4E0D\u5B58\u5728\u4E8E\u5BF9\u6BD4\u8868\u7684\u884C\uFF08\u5DEE\u96C6\uFF09",
+              ),
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "grid-2" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u5F53\u524D\u8868\u5173\u8054\u5217",
+              ),
+              /*#__PURE__*/ React.createElement(
+                "select",
+                {
+                  className: "select",
+                  value: step.config.key || "",
+                  onChange: (e) =>
+                    updateStepConfig(step.id, "key", e.target.value),
+                },
+                /*#__PURE__*/ React.createElement(
+                  "option",
+                  { value: "" },
+                  "\u8BF7\u9009\u62E9\u5217",
+                ),
+                sourceTableHeaders.map((h) =>
+                  /*#__PURE__*/ React.createElement(
+                    "option",
+                    { key: h, value: h },
+                    h,
+                  ),
+                ),
+              ),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u5BF9\u6BD4\u6570\u636E\u8868",
+              ),
+              /*#__PURE__*/ React.createElement(
+                "select",
+                {
+                  className: "select",
+                  value: step.config.table || "",
+                  onChange: (e) =>
+                    updateStepConfig(step.id, "table", e.target.value),
+                },
+                /*#__PURE__*/ React.createElement(
+                  "option",
+                  { value: "" },
+                  "\u8BF7\u9009\u62E9\u6570\u636E\u8868",
+                ),
+                sampleTables.map((t) =>
+                  /*#__PURE__*/ React.createElement(
+                    "option",
+                    { key: t.id, value: t.id },
+                    t.name,
+                  ),
+                ),
+              ),
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-label" },
+              "\u5BF9\u6BD4\u8868\u5173\u8054\u5217",
+            ),
+            /*#__PURE__*/ React.createElement(
+              "select",
+              {
+                className: "select",
+                value: step.config.compareKey || "",
+                onChange: (e) =>
+                  updateStepConfig(step.id, "compareKey", e.target.value),
+              },
+              /*#__PURE__*/ React.createElement(
+                "option",
+                { value: "" },
+                "\u8BF7\u9009\u62E9\u5217",
+              ),
+              (() => {
+                const t = sampleTables.find((t) => t.id === step.config.table);
+                const headers = t ? t.headers || Object.keys((t.rows && t.rows[0]) || {}) : [];
+                return headers.map((h) =>
+                  /*#__PURE__*/ React.createElement(
+                    "option",
+                    { key: h, value: h },
+                    h,
+                  ),
+                );
+              })(),
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "step-desc" },
+            /*#__PURE__*/ React.createElement(Icons.Info, null),
+            " \u5C06\u5F53\u524D\u8868\u4E0E\u53E6\u4E00\u8868\u6309\u6307\u5B9A\u5217\u8FDB\u884C\u5BF9\u6BD4\uFF0C\u7B5B\u9009\u51FA\u5339\u914D\u6216\u4E0D\u5339\u914D\u7684\u884C",
           ),
         );
       default:

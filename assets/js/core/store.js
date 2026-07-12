@@ -26,7 +26,43 @@ const StorageEvents = (() => {
 
 const ActivityLogger = (() => {
   const KEY = "profit_calc_activity_v10";
-  const MAX_ENTRIES = 100;
+  const MAX_ENTRIES = 200;
+  const CATEGORIES = {
+    login: { name: "登录登出", icon: "log-in", color: "var(--color-primary)" },
+    data: { name: "数据操作", icon: "database", color: "var(--color-info)" },
+    calc: { name: "计算操作", icon: "calculator", color: "var(--color-success)" },
+    rule: { name: "规则配置", icon: "settings", color: "var(--color-warning)" },
+    setting: { name: "系统设置", icon: "sliders", color: "var(--color-accent)" },
+    account: { name: "账户管理", icon: "users", color: "var(--color-danger)" },
+    export: { name: "导入导出", icon: "download", color: "var(--color-primary)" },
+    system: { name: "系统操作", icon: "info", color: "var(--color-text-tertiary)" },
+  };
+  const ACTION_MAP = {
+    "登录": "login",
+    "退出登录": "login",
+    "导入数据": "data",
+    "删除样本": "data",
+    "批量删除样本": "data",
+    "清空数据": "data",
+    "更新数据": "data",
+    "重命名样本": "data",
+    "计算": "calc",
+    "批量计算": "calc",
+    "新增规则": "rule",
+    "修改规则": "rule",
+    "删除规则": "rule",
+    "添加步骤": "rule",
+    "删除步骤": "rule",
+    "保存设置": "setting",
+    "切换主题": "setting",
+    "添加账户": "account",
+    "修改账户": "account",
+    "删除账户": "account",
+    "导出数据": "export",
+    "导入配置": "export",
+    "备份恢复": "system",
+    "清理数据": "system",
+  };
   const load = () => {
     try {
       return JSON.parse(localStorage.getItem(KEY) || "[]");
@@ -49,23 +85,35 @@ const ActivityLogger = (() => {
       return "系统";
     }
   };
+  const getCategory = (action) => {
+    return ACTION_MAP[action] || "system";
+  };
   return {
-    add(action, detail) {
+    add(action, detail, extra = {}) {
       const entries = load();
       entries.unshift({
-        id: Date.now(),
+        id: Date.now() + Math.random().toString(36).slice(2, 8),
         action,
         detail,
+        category: getCategory(action),
         operator: getCurrentUser(),
         time: new Date().toISOString(),
+        ...extra,
       });
       if (entries.length > MAX_ENTRIES) {
         entries.splice(MAX_ENTRIES);
       }
       save(entries);
     },
-    get() {
-      return load();
+    get(category) {
+      const all = load();
+      if (category) {
+        return all.filter((e) => e.category === category);
+      }
+      return all;
+    },
+    getCategories() {
+      return CATEGORIES;
     },
     clear() {
       localStorage.removeItem(KEY);
