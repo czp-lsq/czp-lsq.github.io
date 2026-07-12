@@ -125,7 +125,7 @@ const ActivityLogger = (() => {
 const Store = (() => {
   const STORAGE_KEY = "profit_calc_system_v10";
   const BACKUP_KEY = "profit_calc_system_v10_backup";
-  const CURRENT_VERSION = "5.2.0";
+  const CURRENT_VERSION = "5.5.0";
   const QUOTA_WARN_THRESHOLD = 0.85; // 85% 配额告警
   const QUOTA_CRITICAL_THRESHOLD = 0.95; // 95% 严重告警
   const MAX_DATA_SIZE = 4 * 1024 * 1024; // 4MB 数据大小告警阈值
@@ -387,12 +387,30 @@ const Store = (() => {
 
   // 页面关闭/刷新前立即保存，防止数据丢失
   if (typeof window !== "undefined") {
-    window.addEventListener("beforeunload", () => {
+    const forceSave = () => {
       if (saveTimeout) {
         clearTimeout(saveTimeout);
         save(state);
+        saveTimeout = null;
+      }
+    };
+    const autoSnapshot = () => {
+      try {
+        Store.autoSnapshot();
+      } catch (e) {}
+    };
+    window.addEventListener("beforeunload", forceSave);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") {
+        forceSave();
+        autoSnapshot();
       }
     });
+    window.addEventListener("pagehide", forceSave);
+    // 每30秒自动保存一次
+    setInterval(forceSave, 30000);
+    // 每5分钟自动快照一次
+    setInterval(autoSnapshot, 5 * 60 * 1000);
   }
   return {
     get: () => state,
@@ -461,6 +479,30 @@ const Store = (() => {
         state = { ...parsed, _version: CURRENT_VERSION, _lastSaved: new Date().toISOString() };
         save(state);
         subs.forEach((s) => s(state));
+        return true;
+      } catch (e) {
+        return false;
+      }
+    },
+    autoSnapshot: () => {
+      try {
+        const key = `snapshot_auto_${Date.now()}`;
+        const data = JSON.stringify(state);
+        localStorage.setItem(key, data);
+        let snapshots = [];
+        try {
+          snapshots = JSON.parse(localStorage.getItem("profit_calc_snapshots") || "[]");
+        } catch (e) {}
+        snapshots = snapshots.filter((s) => !s.key.startsWith("snapshot_auto_"));
+        snapshots.push({ key, time: Date.now(), label: "auto", size: data.length });
+        const autoSnapshots = snapshots.filter((s) => s.key.startsWith("snapshot_auto_"));
+        if (autoSnapshots.length > 5) {
+          autoSnapshots.slice(0, -5).forEach((s) => {
+            localStorage.removeItem(s.key);
+          });
+          snapshots = snapshots.filter((s) => !s.key.startsWith("snapshot_auto_") || autoSnapshots.slice(-5).some((a) => a.key === s.key));
+        }
+        localStorage.setItem("profit_calc_snapshots", JSON.stringify(snapshots.slice(-20)));
         return true;
       } catch (e) {
         return false;

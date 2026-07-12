@@ -158,16 +158,18 @@ const App = () => {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updateInfo, setUpdateInfo] = useState(null);
 
-  const APP_VERSION = "5.4.0";
+  const APP_VERSION = "5.5.0";
   const VERSION_KEY = "app_version_seen";
   const UPDATE_LOG = [
-    { version: "5.4.0", date: "2026-07-12", changes: [
-      "修复刷新后回到登录页面的问题",
-      "完善自动登录功能，无需每次输入账户密码",
-      "修复计算规则步骤收起展开按钮无效",
-      "修复过滤步骤选择列重复显示问题",
+    { version: "5.5.0", date: "2026-07-12", changes: [
+      "优化更新弹窗样式，更美观精致",
+      "修复刷新后数据丢失问题，增强持久化机制",
+      "新增自动快照功能，每5分钟自动备份",
+      "完善自动登录功能，登录成功有Toast提示",
+      "优化计算步骤添加弹窗，信息更清晰",
+      "修复过滤步骤列重复显示问题",
       "对比值改为下拉选择当前列的具体值",
-      "更新弹窗新增刷新按钮",
+      "优化数据保存多重防护机制",
     ]},
     { version: "5.2.0", date: "2026-07-11", changes: [
       "修复刷新页面跳回登录页的问题",
@@ -309,6 +311,7 @@ const App = () => {
         );
         localStorage.setItem("app_accounts", JSON.stringify(updatedAccounts));
         ActivityLogger.add("自动登录", autoUser.username);
+        addToast("success", "自动登录成功", `欢迎回来，${autoUser.name || autoUser.username}！`, 3000);
         
       } catch (e) {
         localStorage.removeItem("app_login_user");
@@ -1176,8 +1179,8 @@ const App = () => {
         /*#__PURE__*/ React.createElement(
           "div",
           { className: "update-modal-body" },
-          /*#__PURE__*/ React.createElement("div", { className: "update-modal-title" }, "✨ 网站已更新"),
-          /*#__PURE__*/ React.createElement("div", { className: "update-modal-subtitle" }, "建议刷新页面以获取最佳体验"),
+          /*#__PURE__*/ React.createElement("div", { className: "update-modal-title" }, "🎉 新功能已上线"),
+          /*#__PURE__*/ React.createElement("div", { className: "update-modal-subtitle" }, "感谢您的使用！本次更新带来了多项功能优化和体验提升，建议刷新页面以获得最佳体验。"),
           /*#__PURE__*/ React.createElement(
             "ul",
             { className: "update-modal-list" },
