@@ -24,3 +24,5 @@ const Button = ({
       }),
     children,
   );
+
+window.Button = Button;

@@ -163,3 +163,7 @@ const AlertModal = ({ title, message, onConfirm, type = "info", confirmText = "æ
     React.createElement("p", { style: { color: "var(--color-text-secondary)", lineHeight: 1.7, whiteSpace: "pre-line" } }, message)
   );
 };
+
+window.Modal = Modal;
+window.ConfirmModal = ConfirmModal;
+window.AlertModal = AlertModal;
