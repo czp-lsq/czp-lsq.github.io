@@ -1201,6 +1201,79 @@ const CalcEngine = {
             data = allData;
             break;
           }
+          case "crossMatch": {
+            const mode = step.config.mode || "keepIntersection";
+            const columns = step.config.columns || ["val"];
+            const makeKey = (row, cols) => cols.map((c) => String(row[c] ?? row.val ?? "")).join("||");
+            if (mode === "removeDuplicates") {
+              const seen = new Set();
+              data = data.filter((row) => {
+                const key = makeKey(row, columns);
+                if (seen.has(key)) return false;
+                seen.add(key);
+                return true;
+              });
+            } else if (mode === "keepDuplicates") {
+              const countMap = {};
+              data.forEach((row) => {
+                const key = makeKey(row, columns);
+                countMap[key] = (countMap[key] || 0) + 1;
+              });
+              data = data.filter((row) => countMap[makeKey(row, columns)] > 1);
+            } else {
+              const cmpTable = tables.find((t) => t.id === step.config.table);
+              const cmpRows = cmpTable ? cmpTable.rows : [];
+              const cmpColumns = step.config.compareColumns && step.config.compareColumns.length > 0
+                ? step.config.compareColumns
+                : columns;
+              const cmpSet = new Set(cmpRows.map((r) => makeKey(r, cmpColumns)));
+              if (mode === "keepIntersection") {
+                data = data.filter((row) => cmpSet.has(makeKey(row, columns)));
+              } else if (mode === "keepDifference") {
+                data = data.filter((row) => !cmpSet.has(makeKey(row, columns)));
+              }
+            }
+            break;
+          }
+          case "runningTotal": {
+            const col = step.config.column || "val";
+            const orderCol = step.config.orderColumn;
+            const dir = step.config.direction || "asc";
+            let rows = [...data];
+            if (orderCol) {
+              rows.sort((a, b) => {
+                const av = a[orderCol], bv = b[orderCol];
+                const an = Number(av), bn = Number(bv);
+                if (!isNaN(an) && !isNaN(bn)) {
+                  return dir === "desc" ? bn - an : an - bn;
+                }
+                return dir === "desc"
+                  ? String(bv).localeCompare(String(av))
+                  : String(av).localeCompare(String(bv));
+              });
+            }
+            let sum = 0;
+            rows = rows.map((row) => {
+              const v = Number(String(row[col] ?? row.val).replace(/[,，]/g, "").replace(/[¥￥$€£]/g, "")) || 0;
+              sum += v;
+              return { ...row, val: sum };
+            });
+            data = rows;
+            break;
+          }
+          case "percentOfTotal": {
+            const col = step.config.column || "val";
+            const values = data.map((row) =>
+              Number(String(row[col] ?? row.val).replace(/[,，]/g, "").replace(/[¥￥$€£]/g, "")) || 0
+            );
+            const total = values.reduce((a, b) => a + b, 0);
+            const asPercent = step.config.asPercent !== false;
+            data = data.map((row, idx) => {
+              const ratio = total !== 0 ? values[idx] / total : 0;
+              return { ...row, val: asPercent ? ratio * 100 : ratio };
+            });
+            break;
+          }
         }
         stepResults.push({
           step: stepIdx,

@@ -162,6 +162,7 @@ const App = () => {
   const notifPanelRef = useRef(null);
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updateInfo, setUpdateInfo] = useState(null);
+  const [updateDetectedAt, setUpdateDetectedAt] = useState(null);
 
   const APP_VERSION = "5.7.0";
   const VERSION_KEY = "app_version_seen";
@@ -212,6 +213,44 @@ const App = () => {
       }
     } catch (e) {}
   }, []);
+
+  useEffect(() => {
+    const parseVersion = (html) => {
+      try {
+        const parser = new DOMParser();
+        const doc = parser.parseFromString(html, "text/html");
+        const meta = doc.querySelector('meta[name="app-version"]');
+        return meta ? meta.getAttribute("content") : null;
+      } catch (e) {
+        return null;
+      }
+    };
+    const checkForUpdate = async () => {
+      try {
+        const res = await fetch(`index.html?_=${Date.now()}`, {
+          cache: "no-store",
+        });
+        if (!res.ok) return;
+        const html = await res.text();
+        const remoteVersion = parseVersion(html);
+        if (remoteVersion && remoteVersion !== APP_VERSION) {
+          const now = new Date();
+          setUpdateInfo({
+            version: remoteVersion,
+            date: now.toLocaleString(),
+            changes: ["检测到新版本，建议刷新页面以获取最新功能。"],
+            detectedAt: now,
+          });
+          setUpdateDetectedAt(now);
+          setShowUpdateModal(true);
+          addToast("info", "发现新版本", `v${remoteVersion} 已发布，请刷新页面`, 5000);
+        }
+      } catch (e) {}
+    };
+    checkForUpdate();
+    const timer = setInterval(checkForUpdate, 3 * 60 * 1000);
+    return () => clearInterval(timer);
+  }, [addToast]);
 
   useEffect(() => {
     if (showNotifications) {
@@ -1206,6 +1245,11 @@ const App = () => {
           ),
           /*#__PURE__*/ React.createElement("div", { className: "update-modal-version" }, `v${updateInfo.version}`),
           /*#__PURE__*/ React.createElement("div", { className: "update-modal-date" }, updateInfo.date),
+          updateDetectedAt && /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "update-modal-detected", style: { fontSize: 12, color: "var(--color-text-muted)", marginTop: 4 } },
+            `检测到更新时间：${updateDetectedAt.toLocaleString()}`,
+          ),
         ),
         /*#__PURE__*/ React.createElement(
           "div",

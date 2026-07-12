@@ -1,6 +1,23 @@
 // RulesPage - 计算规则页面组件
 const RulesPage = ({ state, currentPlatform }) => {
   const { addToast } = useToast();
+  const SearchableSelect = SearchableSelect || ((props) => {
+    const { value, onChange, options, placeholder } = props;
+    return /*#__PURE__*/ React.createElement(
+      "select",
+      {
+        className: "select",
+        value: value || "",
+        onChange: (e) => onChange && onChange(e.target.value),
+      },
+      placeholder && /*#__PURE__*/ React.createElement("option", { value: "" }, placeholder),
+      (options || []).map((o) => {
+        const optValue = typeof o === "object" ? o.value : o;
+        const optLabel = typeof o === "object" ? (o.label || o.value) : String(o);
+        return /*#__PURE__*/ React.createElement("option", { key: optValue, value: optValue }, optLabel);
+      }),
+    );
+  });
   const [activeField, setActiveField] = useState(() => {
     try {
       const saved = localStorage.getItem(`rules_page_active_field_${currentPlatform}`);
@@ -657,6 +674,30 @@ const RulesPage = ({ state, currentPlatform }) => {
         bg: "var(--color-accent-100)",
         category: "join",
       },
+      crossMatch: {
+        name: "跨表重复/交集",
+        desc: "按多列与另一表取交集、差集，或多列去重/保留重复",
+        icon: /*#__PURE__*/ React.createElement(Icons.Layers, null),
+        color: "var(--color-accent)",
+        bg: "var(--color-accent-100)",
+        category: "join",
+      },
+      runningTotal: {
+        name: "累计求和",
+        desc: "按顺序计算累计值",
+        icon: /*#__PURE__*/ React.createElement(Icons.BarChart3, null),
+        color: "var(--color-success)",
+        bg: "var(--color-success-bg)",
+        category: "compute",
+      },
+      percentOfTotal: {
+        name: "占比计算",
+        desc: "计算每个值占总值的百分比或比例",
+        icon: /*#__PURE__*/ React.createElement(Icons.PieChart, null),
+        color: "var(--color-warning)",
+        bg: "var(--color-warning-bg)",
+        category: "compute",
+      },
     };
     return (
       types[type] || {
@@ -763,6 +804,19 @@ const RulesPage = ({ state, currentPlatform }) => {
         return { valid: true, message: "配置完整" };
       case "sort":
         if (!cfg.column) return { valid: false, message: "请选择排序字段" };
+        return { valid: true, message: "配置完整" };
+      case "crossMatch":
+        if (!cfg.columns || cfg.columns.length === 0) return { valid: false, message: "请填写匹配列" };
+        if (cfg.mode === "keepIntersection" || cfg.mode === "keepDifference") {
+          if (!cfg.table) return { valid: false, message: "请选择对比表" };
+          if (!cfg.compareColumns || cfg.compareColumns.length === 0) return { valid: false, message: "请填写对比表匹配列" };
+        }
+        return { valid: true, message: "配置完整" };
+      case "runningTotal":
+        if (!cfg.column) return { valid: false, message: "请选择累计列" };
+        return { valid: true, message: "配置完整" };
+      case "percentOfTotal":
+        if (!cfg.column) return { valid: false, message: "请选择计算列" };
         return { valid: true, message: "配置完整" };
       default:
         return { valid: true, message: "配置完整" };
@@ -939,6 +993,14 @@ const RulesPage = ({ state, currentPlatform }) => {
         return `保留唯一: ${c.column || "val"}列`;
       case "intersect":
         return `对比筛选: ${c.key || "?"} ${c.mode === "keepExist" ? "存在于" : "不存在于"} ${c.table || "?"}`;
+      case "crossMatch": {
+        const modeNames = { keepIntersection: "交集", keepDifference: "差集", removeDuplicates: "去重", keepDuplicates: "保留重复" };
+        return `${modeNames[c.mode] || c.mode}: ${(c.columns || []).join(",")}${c.table ? ` / ${c.table}` : ""}`;
+      }
+      case "runningTotal":
+        return `累计: ${c.column || "val"}${c.orderColumn ? ` 按${c.orderColumn}排序` : ""}`;
+      case "percentOfTotal":
+        return `占比: ${c.column || "val"}${c.asPercent ? "%" : ""}`;
       default:
         return "";
     }
@@ -1100,6 +1162,21 @@ const RulesPage = ({ state, currentPlatform }) => {
           return { ok: false, msg: "「数据合并」前需要有「数据源」" };
         return { ok: true };
       },
+      crossMatch: () => {
+        if (currentSteps.length === 0)
+          return { ok: false, msg: "「跨表重复/交集」前需要有「数据源」" };
+        return { ok: true };
+      },
+      runningTotal: () => {
+        if (currentSteps.length === 0)
+          return { ok: false, msg: "「累计求和」前需要有「数据源」" };
+        return { ok: true };
+      },
+      percentOfTotal: () => {
+        if (currentSteps.length === 0)
+          return { ok: false, msg: "「占比计算」前需要有「数据源」" };
+        return { ok: true };
+      },
     };
     const check = stepLogicChecks[type]
       ? stepLogicChecks[type]()
@@ -1150,6 +1227,9 @@ const RulesPage = ({ state, currentPlatform }) => {
       diff: { column: "", baseColumn: "", percent: false },
       ratio: { numerator: "", denominator: "", percent: true },
       union: { tables: [] },
+      crossMatch: { columns: [""], table: "", compareColumns: [""], mode: "keepIntersection" },
+      runningTotal: { column: "", orderColumn: "", direction: "asc" },
+      percentOfTotal: { column: "", asPercent: true },
     };
     const newStep = {
       id: `step_${Date.now()}`,
@@ -1859,7 +1939,7 @@ const RulesPage = ({ state, currentPlatform }) => {
                 { className: "form-label" },
                 "筛选列",
               ),
-              /*#__PURE__*/ React.createElement(window.SearchableSelect, {
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
                 value: step.config.column,
                 onChange: (val) => updateStepConfig(step.id, "column", val),
                 options: columnOptions,
@@ -1874,7 +1954,7 @@ const RulesPage = ({ state, currentPlatform }) => {
                 { className: "form-label" },
                 "条件",
               ),
-              /*#__PURE__*/ React.createElement(window.SearchableSelect, {
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
                 value: step.config.op,
                 onChange: (val) => updateStepConfig(step.id, "op", val),
                 options: opOptions,
@@ -1895,7 +1975,7 @@ const RulesPage = ({ state, currentPlatform }) => {
                 `（可搜索筛选）`,
               ),
             ),
-            /*#__PURE__*/ React.createElement(window.SearchableSelect, {
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
               value: step.config.value || "",
               onChange: (val) => updateStepConfig(step.id, "value", val),
               options: valueOptions,
@@ -1977,7 +2057,7 @@ const RulesPage = ({ state, currentPlatform }) => {
               { className: "form-label" },
               "筛选列",
             ),
-            /*#__PURE__*/ React.createElement(window.SearchableSelect, {
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
               value: step.config.column,
               onChange: (val) => updateStepConfig(step.id, "column", val),
               options: sourceTableHeaders.map((h) => ({ value: h, label: h })),
@@ -2083,7 +2163,7 @@ const RulesPage = ({ state, currentPlatform }) => {
                 { className: "form-label" },
                 "排序列（可选）",
               ),
-              /*#__PURE__*/ React.createElement(window.SearchableSelect, {
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
                 value: step.config.column || "",
                 onChange: (val) => updateStepConfig(step.id, "column", val),
                 options: [
@@ -2102,7 +2182,7 @@ const RulesPage = ({ state, currentPlatform }) => {
               { className: "form-label" },
               "排序方式",
             ),
-            /*#__PURE__*/ React.createElement(window.SearchableSelect, {
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
               value: step.config.order || "desc",
               onChange: (val) => updateStepConfig(step.id, "order", val),
               options: [
@@ -4506,6 +4586,196 @@ const RulesPage = ({ state, currentPlatform }) => {
             " \u5C06\u5F53\u524D\u8868\u4E0E\u53E6\u4E00\u8868\u6309\u6307\u5B9A\u5217\u8FDB\u884C\u5BF9\u6BD4\uFF0C\u7B5B\u9009\u51FA\u5339\u914D\u6216\u4E0D\u5339\u914D\u7684\u884C",
           ),
         );
+      case "crossMatch":
+        return /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "step-config" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-label" },
+              "\u5904\u7406\u6A21\u5F0F",
+            ),
+            /*#__PURE__*/ React.createElement(
+              "select",
+              {
+                className: "select",
+                value: step.config.mode || "keepIntersection",
+                onChange: (e) => updateStepConfig(step.id, "mode", e.target.value),
+              },
+              /*#__PURE__*/ React.createElement("option", { value: "keepIntersection" }, "\u4FDD\u7559\u4E0E\u5BF9\u6BD4\u8868\u7684\u4EA4\u96C6\u884C"),
+              /*#__PURE__*/ React.createElement("option", { value: "keepDifference" }, "\u4FDD\u7559\u4E0D\u5728\u5BF9\u6BD4\u8868\u7684\u5DEE\u96C6\u884C"),
+              /*#__PURE__*/ React.createElement("option", { value: "removeDuplicates" }, "\u5F53\u524D\u6570\u636E\u591A\u5217\u53BB\u91CD"),
+              /*#__PURE__*/ React.createElement("option", { value: "keepDuplicates" }, "\u5F53\u524D\u6570\u636E\u4FDD\u7559\u91CD\u590D\u884C"),
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-label" },
+              "\u5F53\u524D\u8868\u5339\u914D\u5217\uFF08\u591A\u5217\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694\uFF09",
+            ),
+            /*#__PURE__*/ React.createElement("input", {
+              type: "text",
+              className: "input",
+              value: (step.config.columns || []).join(","),
+              onChange: (e) => updateStepConfig(step.id, "columns", e.target.value.split(",").map((s) => s.trim()).filter(Boolean)),
+              placeholder: "\u4F8B\u5982\uff1a\u5546\u54C1ID,\u89C4\u683C",
+            }),
+          ),
+          (step.config.mode === "keepIntersection" || step.config.mode === "keepDifference") && /*#__PURE__*/ React.createElement(
+            React.Fragment,
+            null,
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u5BF9\u6BD4\u6570\u636E\u8868",
+              ),
+              /*#__PURE__*/ React.createElement(
+                "select",
+                {
+                  className: "select",
+                  value: step.config.table || "",
+                  onChange: (e) => updateStepConfig(step.id, "table", e.target.value),
+                },
+                /*#__PURE__*/ React.createElement("option", { value: "" }, "\u8BF7\u9009\u62E9\u6570\u636E\u8868"),
+                sampleTables.map((t) => /*#__PURE__*/ React.createElement("option", { key: t.id, value: t.id }, t.name)),
+              ),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u5BF9\u6BD4\u8868\u5339\u914D\u5217\uFF08\u591A\u5217\u7528\u82F1\u6587\u9017\u53F7\u5206\u9694\uFF09",
+              ),
+              /*#__PURE__*/ React.createElement("input", {
+                type: "text",
+                className: "input",
+                value: (step.config.compareColumns || []).join(","),
+                onChange: (e) => updateStepConfig(step.id, "compareColumns", e.target.value.split(",").map((s) => s.trim()).filter(Boolean)),
+                placeholder: "\u4F8B\u5982\uff1a\u5546\u54C1ID,\u89C4\u683C",
+              }),
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "step-desc" },
+            /*#__PURE__*/ React.createElement(Icons.Info, null),
+            " \u6309\u591A\u4E2A\u5217\u7EC4\u5408\u8FDB\u884C\u8DE8\u8868\u4EA4\u96C6\u3001\u5DEE\u96C6\u6216\u5F53\u524D\u6570\u636E\u7684\u53BB\u91CD/\u4FDD\u7559\u91CD\u590D\u3002",
+          ),
+        );
+      case "runningTotal":
+        return /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "step-config" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "grid-2" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u7D2F\u8BA1\u5217",
+              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.column || "",
+                onChange: (val) => updateStepConfig(step.id, "column", val),
+                options: [{ value: "", label: "\u5F53\u524D\u503C (val)" }, ...sourceTableHeaders.map((h) => ({ value: h, label: h }))],
+                placeholder: "\u8BF7\u9009\u62E9\u5217",
+              }),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "\u6392\u5E8F\u5217\uFF08\u53EF\u9009\uFF09",
+              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.orderColumn || "",
+                onChange: (val) => updateStepConfig(step.id, "orderColumn", val),
+                options: [{ value: "", label: "\u4FDD\u6301\u539F\u987A\u5E8F" }, ...sourceTableHeaders.map((h) => ({ value: h, label: h }))],
+                placeholder: "\u9009\u62E9\u6392\u5E8F\u5217",
+              }),
+            ),
+          ),
+          step.config.orderColumn && /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-label" },
+              "\u6392\u5E8F\u65B9\u5F0F",
+            ),
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
+              value: step.config.direction || "asc",
+              onChange: (val) => updateStepConfig(step.id, "direction", val),
+              options: [
+                { value: "asc", label: "\u5347\u5E8F\uFF08\u4ECE\u5C0F\u5230\u5927\uFF09" },
+                { value: "desc", label: "\u964D\u5E8F\uFF08\u4ECE\u5927\u5230\u5C0F\uFF09" },
+              ],
+              placeholder: "\u9009\u62E9\u6392\u5E8F\u65B9\u5F0F",
+            }),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "step-desc" },
+            /*#__PURE__*/ React.createElement(Icons.Info, null),
+            " \u6309\u884C\u987A\u5E8F\u8BA1\u7B97\u7D2F\u8BA1\u503C\uFF0C\u53EF\u9009\u6309\u67D0\u5217\u6392\u5E8F\u540E\u7D2F\u8BA1\u3002",
+          ),
+        );
+      case "percentOfTotal":
+        return /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "step-config" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-label" },
+              "\u8BA1\u7B97\u5217",
+            ),
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
+              value: step.config.column || "",
+              onChange: (val) => updateStepConfig(step.id, "column", val),
+              options: [{ value: "", label: "\u5F53\u524D\u503C (val)" }, ...sourceTableHeaders.map((h) => ({ value: h, label: h }))],
+              placeholder: "\u8BF7\u9009\u62E9\u5217",
+            }),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "checkbox-label" },
+              /*#__PURE__*/ React.createElement("input", {
+                type: "checkbox",
+                checked: step.config.asPercent !== false,
+                onChange: (e) => updateStepConfig(step.id, "asPercent", e.target.checked),
+              }),
+              " \u663E\u793A\u4E3A\u767E\u5206\u6BD4",
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "step-desc" },
+            /*#__PURE__*/ React.createElement(Icons.Info, null),
+            " \u8BA1\u7B97\u6BCF\u884C\u503C\u5360\u603B\u548C\u7684\u6BD4\u4F8B\uFF0C\u53EF\u9009\u8F6C\u4E3A\u767E\u5206\u6BD4\u3002",
+          ),
+        );
       default:
         return /*#__PURE__*/ React.createElement(
           "div",
@@ -5856,15 +6126,15 @@ const RulesPage = ({ state, currentPlatform }) => {
             {
               id: "compute",
               title: "\uD83E\uDDEA \u8BA1\u7B97\u805A\u5408",
-              desc: "\u6C42\u548C\u3001\u5E73\u5747\u3001\u516C\u5F0F\u3001\u6392\u540D\u3001\u6BD4\u7387",
-              types: ["aggregate", "group", "formula", "math", "rank", "diff", "ratio"],
+              desc: "\u6C42\u548C\u3001\u5E73\u5747\u3001\u516C\u5F0F\u3001\u6392\u540D\u3001\u6BD4\u7387\u3001\u7D2F\u8BA1\u3001\u5360\u6BD4",
+              types: ["aggregate", "group", "formula", "math", "rank", "diff", "ratio", "runningTotal", "percentOfTotal"],
               color: "var(--color-success)",
             },
             {
               id: "join",
               title: "\uD83D\uDD17 \u8DE8\u8868\u5173\u8054",
-              desc: "\u5173\u8054\u5168\u5C40\u6570\u636E\u8868\u3001\u5408\u5E76\u6570\u636E",
-              types: ["join", "union"],
+              desc: "\u5173\u8054\u5168\u5C40\u6570\u636E\u8868\u3001\u5408\u5E76\u6570\u636E\u3001\u8DE8\u8868\u4EA4\u96C6/\u53BB\u91CD",
+              types: ["join", "union", "crossMatch"],
               color: "var(--color-accent)",
             },
           ].map((group) =>
