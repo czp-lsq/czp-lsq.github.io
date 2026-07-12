@@ -42,9 +42,20 @@ const BatchPage = ({ state, currentPlatform }) => {
   };
   const detectShop = (fileName, fileData) => {
     const baseName = fileName.replace(/\.[^.]+$/, "").toLowerCase();
+    const normalizedBaseName = baseName
+      .replace(/[\s_\-\.]+/g, "")
+      .replace(/利润表|利润|报表|明细|账单|订单|销售|数据/g, "");
     for (const shop of shops) {
       const shopName = shop.name.toLowerCase();
-      if (baseName.includes(shopName) || shopName.includes(baseName)) {
+      const normalizedShopName = shopName.replace(/[\s_\-\.]+/g, "");
+      if (normalizedBaseName.includes(normalizedShopName) || normalizedShopName.includes(normalizedBaseName)) {
+        return shop;
+      }
+      if (baseName === normalizedShopName || normalizedShopName === normalizedBaseName) {
+        return shop;
+      }
+      const shortShopName = normalizedShopName.replace(/(旗舰店|专卖店|专营店|官方店|店铺|店)$/, "");
+      if (shortShopName.length >= 2 && normalizedBaseName.includes(shortShopName)) {
         return shop;
       }
     }
@@ -59,7 +70,7 @@ const BatchPage = ({ state, currentPlatform }) => {
     }
     const firstSheet = Object.values(fileData.sheets || {})[0];
     if (firstSheet?.rows) {
-      for (let i = 0; i < Math.min(5, firstSheet.rows.length); i++) {
+      for (let i = 0; i < Math.min(10, firstSheet.rows.length); i++) {
         const row = firstSheet.rows[i];
         const rowText = Object.values(row)
           .map((v) => String(v || "").toLowerCase())
@@ -68,6 +79,14 @@ const BatchPage = ({ state, currentPlatform }) => {
           if (rowText.includes(shop.name.toLowerCase())) {
             return shop;
           }
+        }
+      }
+    }
+    if (firstSheet?.headers) {
+      const headerText = firstSheet.headers.join(" ").toLowerCase();
+      for (const shop of shops) {
+        if (headerText.includes(shop.name.toLowerCase())) {
+          return shop;
         }
       }
     }

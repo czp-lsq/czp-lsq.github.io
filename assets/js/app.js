@@ -341,6 +341,7 @@ const App = () => {
           onChangeTheme: setTheme,
           onChangeColorTheme: changeColorTheme,
           currentUser: currentUser,
+          onLogout: confirmLogout,
         });
       case "help":
         return /*#__PURE__*/ React.createElement(HelpPage, {});

@@ -1,5 +1,5 @@
 // SettingsPage - 系统设置页面组件
-const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeTheme, onChangeColorTheme, currentUser }) => {
+const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeTheme, onChangeColorTheme, currentUser, onLogout }) => {
   const { addToast } = useToast();
   const isAdmin = currentUser?.role === "admin";
   const [activeSection, setActiveSection] = useState("appearance");
@@ -198,6 +198,8 @@ const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeThe
       addToast("error", "用户名已存在", "请使用不同的用户名");
       return;
     }
+    const isCurrentUser = editingAccount.id === currentUser?.id || editingAccount.username === currentUser?.username;
+    const passwordChanged = !!accountForm.password;
     const updated = accounts.map((a) =>
       a.id === editingAccount.id
         ? {
@@ -212,7 +214,14 @@ const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeThe
         : a,
     );
     saveAccounts(updated);
-    addToast("success", "修改成功", `账户「${accountForm.name || accountForm.username}」已更新`);
+    if (isCurrentUser && passwordChanged) {
+      addToast("success", "密码已修改", "为安全起见，请使用新密码重新登录", 3000);
+      setTimeout(() => {
+        if (onLogout) onLogout();
+      }, 1500);
+    } else {
+      addToast("success", "修改成功", `账户「${accountForm.name || accountForm.username}」已更新`);
+    }
     setAccountForm({ username: "", password: "", name: "", email: "", role: "user", status: "active" });
     setIsEditing(false);
     setEditingAccount(null);
@@ -839,29 +848,28 @@ const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeThe
     "div",
     { className: "settings-page fade-in" },
     React.createElement("div", { className: "settings-layout" },
-      React.createElement("div", { className: "settings-sidebar" },
-        React.createElement("div", { className: "settings-sidebar-header" },
-          React.createElement(Icons.Settings, { style: { width: "24px", height: "24px", color: "var(--color-primary)" } }),
-          React.createElement("span", { className: "settings-sidebar-title" }, "系统设置"),
+      React.createElement("div", { className: "settings-header" },
+        React.createElement("div", { className: "settings-title-row" },
+          React.createElement(Icons.Settings, { style: { width: "28px", height: "28px", color: "var(--color-primary)" } }),
+          React.createElement("span", { className: "settings-title" }, "系统设置"),
         ),
-        React.createElement("div", { className: "settings-menu-items" },
+        React.createElement("div", { className: "settings-nav" },
           sections.map((section) => React.createElement(
             "div",
             {
               key: section.id,
               onClick: () => setActiveSection(section.id),
-              className: `settings-menu-item ${activeSection === section.id ? "active" : ""}`,
+              className: `settings-nav-item ${activeSection === section.id ? "active" : ""}`,
             },
-            React.createElement("span", { className: "nav-icon", style: { width: "20px", height: "20px", display: "inline-flex", alignItems: "center", justifyContent: "center" } },
+            React.createElement("span", { className: "nav-icon", style: { width: "18px", height: "18px", display: "inline-flex", alignItems: "center", justifyContent: "center" } },
               React.createElement(section.icon, null),
             ),
-            React.createElement("span", { className: "settings-menu-name" }, section.name),
-            React.createElement("span", { className: "settings-menu-desc" }, section.desc),
+            React.createElement("span", { className: "settings-nav-name" }, section.name),
           )),
         ),
       ),
       React.createElement("div", { className: "settings-main" },
-        React.createElement("div", { className: "card", style: { minHeight: "600px" } },
+        React.createElement("div", { className: "card", style: { minHeight: "500px" } },
           renderContent(),
         ),
       ),

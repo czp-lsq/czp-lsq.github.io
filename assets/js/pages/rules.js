@@ -167,13 +167,20 @@ const RulesPage = ({ state, currentPlatform }) => {
       currentRule.steps.length > 0
     ) {
       const samples = state.samples[currentPlatform] || [];
-      const tables = samples.map((s, i) => ({
+      const sampleTablesArr = samples.map((s, i) => ({
         id: s.id || `sample_${i}`,
         name: s.alias || s.fileName,
         originalName: s.fileName,
         headers: s.sheets[Object.keys(s.sheets)[0]]?.headers || [],
         rows: s.sheets[Object.keys(s.sheets)[0]]?.rows || [],
       }));
+      const extTablesArr = (state.externals || []).map((e) => ({
+        id: e.id || e.sheetKey,
+        name: e.name || e.sheetKey,
+        headers: e.headers || (e.allData && e.allData.length > 0 ? Object.keys(e.allData[0]) : []),
+        rows: e.allData || e.data || [],
+      }));
+      const tables = [...sampleTablesArr, ...extTablesArr];
       try {
         const savedFieldValues = getSavedFieldValues();
         const result = CalcEngine.exec(currentRule, tables, {
@@ -344,13 +351,20 @@ const RulesPage = ({ state, currentPlatform }) => {
     const savedValues = {};
     const allRules = state.rules[currentPlatform] || {};
     const samples = state.samples[currentPlatform] || [];
-    const tables = samples.map((s, i) => ({
+    const sampleTablesArr = samples.map((s, i) => ({
       id: s.id || `sample_${i}`,
       name: s.alias || s.fileName,
       originalName: s.fileName,
       headers: s.sheets[Object.keys(s.sheets)[0]]?.headers || [],
       rows: s.sheets[Object.keys(s.sheets)[0]]?.rows || [],
     }));
+    const extTablesArr = (state.externals || []).map((e) => ({
+      id: e.id || e.sheetKey,
+      name: e.name || e.sheetKey,
+      headers: e.headers || (e.allData && e.allData.length > 0 ? Object.keys(e.allData[0]) : []),
+      rows: e.allData || e.data || [],
+    }));
+    const tables = [...sampleTablesArr, ...extTablesArr];
     const computedFields = new Set();
     const computeFieldValue = (fieldId, path = []) => {
       if (computedFields.has(fieldId)) return;
@@ -1186,7 +1200,30 @@ const RulesPage = ({ state, currentPlatform }) => {
       name: s.alias || s.fileName,
       originalName: s.fileName,
       headers: s.sheets[Object.keys(s.sheets)[0]]?.headers || [],
+      source: "sample",
     }));
+    const externalTables = (state.externals || []).map((e) => ({
+      id: e.id || e.sheetKey,
+      name: e.name || e.sheetKey,
+      headers: e.headers || (e.allData && e.allData.length > 0 ? Object.keys(e.allData[0]) : []),
+      source: "external",
+      externalId: e.id || e.sheetKey,
+    }));
+    const allTables = [...sampleTables, ...externalTables];
+    const getColumnValues = (columnName) => {
+      if (!columnName) return [];
+      const values = new Set();
+      allTables.forEach((table) => {
+        const rows = table.rows || [];
+        rows.forEach((row) => {
+          const val = row[columnName];
+          if (val !== undefined && val !== null && val !== "") {
+            values.add(String(val));
+          }
+        });
+      });
+      return Array.from(values).slice(0, 50);
+    };
     const sourceStep = currentRule?.steps?.find((s) => s.type === "source");
     const sourceTableId = sourceStep?.config?.table;
     const sourceTableIds = sourceStep?.config?.tables || [];
@@ -1194,12 +1231,12 @@ const RulesPage = ({ state, currentPlatform }) => {
       if (sourceTableIds.length > 0) {
         const allHeaders = new Set();
         sourceTableIds.forEach((tid) => {
-          const table = sampleTables.find((t) => t.id === tid);
+          const table = allTables.find((t) => t.id === tid);
           table?.headers?.forEach((h) => allHeaders.add(h));
         });
         return Array.from(allHeaders);
       }
-      return sampleTables.find((t) => t.id === sourceTableId)?.headers || [];
+      return allTables.find((t) => t.id === sourceTableId)?.headers || [];
     })();
     switch (step.type) {
       case "fill": {
@@ -1586,22 +1623,58 @@ const RulesPage = ({ state, currentPlatform }) => {
             /*#__PURE__*/ React.createElement(
               "div",
               { style: { display: "flex", flexDirection: "column", gap: 8 } },
-              sampleTables.map((t) =>
+              sampleTables.length > 0 && /*#__PURE__*/ React.createElement(
+                "div",
+                null,
                 /*#__PURE__*/ React.createElement(
-                  "label",
-                  { key: t.id, className: "checkbox-label" },
-                  /*#__PURE__*/ React.createElement("input", {
-                    type: "checkbox",
-                    checked: selectedTables.includes(t.id),
-                    onChange: (e) => {
-                      const newTables = e.target.checked
-                        ? [...selectedTables, t.id]
-                        : selectedTables.filter((id) => id !== t.id);
-                      updateStepConfig(step.id, "tables", newTables);
-                    },
-                  }),
-                  " ",
-                  t.name,
+                  "div",
+                  { className: "form-sub-label" },
+                  "\u6837\u8868\u6570\u636E",
+                ),
+                sampleTables.map((t) =>
+                  /*#__PURE__*/ React.createElement(
+                    "label",
+                    { key: t.id, className: "checkbox-label" },
+                    /*#__PURE__*/ React.createElement("input", {
+                      type: "checkbox",
+                      checked: selectedTables.includes(t.id),
+                      onChange: (e) => {
+                        const newTables = e.target.checked
+                          ? [...selectedTables, t.id]
+                          : selectedTables.filter((id) => id !== t.id);
+                        updateStepConfig(step.id, "tables", newTables);
+                      },
+                    }),
+                    " ",
+                    t.name,
+                  ),
+                ),
+              ),
+              externalTables.length > 0 && /*#__PURE__*/ React.createElement(
+                "div",
+                null,
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "form-sub-label" },
+                  "\u5168\u5C40\u6570\u636E\u8868",
+                ),
+                externalTables.map((t) =>
+                  /*#__PURE__*/ React.createElement(
+                    "label",
+                    { key: t.id, className: "checkbox-label" },
+                    /*#__PURE__*/ React.createElement("input", {
+                      type: "checkbox",
+                      checked: selectedTables.includes(t.id),
+                      onChange: (e) => {
+                        const newTables = e.target.checked
+                          ? [...selectedTables, t.id]
+                          : selectedTables.filter((id) => id !== t.id);
+                        updateStepConfig(step.id, "tables", newTables);
+                      },
+                    }),
+                    " ",
+                    t.name,
+                  ),
                 ),
               ),
             ),
@@ -1628,7 +1701,7 @@ const RulesPage = ({ state, currentPlatform }) => {
                 "\u5168\u90E8\u5217",
               ),
               selectedTables.length > 0
-                ? sampleTables
+                ? allTables
                     .find((t) => t.id === selectedTables[0])
                     ?.headers.map((h) =>
                       /*#__PURE__*/ React.createElement(
@@ -1638,7 +1711,7 @@ const RulesPage = ({ state, currentPlatform }) => {
                       ),
                     )
                 : step.config.table
-                ? sampleTables
+                ? allTables
                     .find((t) => t.id === step.config.table)
                     ?.headers.map((h) =>
                       /*#__PURE__*/ React.createElement(
@@ -1797,8 +1870,16 @@ const RulesPage = ({ state, currentPlatform }) => {
                 value: step.config.value,
                 onChange: (e) =>
                   updateStepConfig(step.id, "value", e.target.value),
-                placeholder: "\u8F93\u5165\u5BF9\u6BD4\u503C",
+                placeholder: "\u8F93\u5165\u5BF9\u6BD4\u503C\u6216\u4ECE\u4E0B\u62C9\u9009\u62E9",
+                list: `filter-values-${step.id}`,
               }),
+              getColumnValues(step.config.column).length > 0 && /*#__PURE__*/ React.createElement(
+                "datalist",
+                { id: `filter-values-${step.id}` },
+                getColumnValues(step.config.column).map((v) =>
+                  /*#__PURE__*/ React.createElement("option", { key: v, value: v }, v),
+                ),
+              ),
             ),
           ),
           /*#__PURE__*/ React.createElement(
@@ -2354,7 +2435,7 @@ const RulesPage = ({ state, currentPlatform }) => {
           ),
         );
       case "join": {
-        const joinTable = sampleTables.find((t) => t.id === step.config.table);
+        const joinTable = allTables.find((t) => t.id === step.config.table);
         const joinHeaders = joinTable?.headers || [];
         return /*#__PURE__*/ React.createElement(
           "div",
@@ -2373,7 +2454,10 @@ const RulesPage = ({ state, currentPlatform }) => {
                 className: "select",
                 value: step.config.table,
                 onChange: (e) => {
-                  updateStepConfig(step.id, "table", e.target.value);
+                  const tableId = e.target.value;
+                  const tbl = allTables.find((t) => t.id === tableId);
+                  updateStepConfig(step.id, "table", tableId);
+                  updateStepConfig(step.id, "externalId", tbl?.externalId || "");
                   updateStepConfig(step.id, "fk", "");
                   updateStepConfig(step.id, "col", "");
                 },
@@ -2383,11 +2467,26 @@ const RulesPage = ({ state, currentPlatform }) => {
                 { value: "" },
                 "\u8BF7\u9009\u62E9\u6570\u636E\u8868",
               ),
-              sampleTables.map((t) =>
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { key: t.id, value: t.id },
-                  t.name,
+              sampleTables.length > 0 && /*#__PURE__*/ React.createElement(
+                "optgroup",
+                { label: "样表数据" },
+                sampleTables.map((t) =>
+                  /*#__PURE__*/ React.createElement(
+                    "option",
+                    { key: t.id, value: t.id },
+                    t.name,
+                  ),
+                ),
+              ),
+              externalTables.length > 0 && /*#__PURE__*/ React.createElement(
+                "optgroup",
+                { label: "全局数据表" },
+                externalTables.map((t) =>
+                  /*#__PURE__*/ React.createElement(
+                    "option",
+                    { key: t.id, value: t.id },
+                    t.name,
+                  ),
                 ),
               ),
             ),
@@ -2917,14 +3016,27 @@ const RulesPage = ({ state, currentPlatform }) => {
               { className: "form-label" },
               "\u67E5\u627E\u5217",
             ),
-            /*#__PURE__*/ React.createElement("input", {
-              type: "text",
-              className: "input",
-              value: step.config.column,
-              onChange: (e) =>
-                updateStepConfig(step.id, "column", e.target.value),
-              placeholder: "\u9ED8\u8BA4\u4F7F\u7528\u5F53\u524D\u503C(val)",
-            }),
+            /*#__PURE__*/ React.createElement(
+              "select",
+              {
+                className: "select",
+                value: step.config.column || "",
+                onChange: (e) =>
+                  updateStepConfig(step.id, "column", e.target.value),
+              },
+              /*#__PURE__*/ React.createElement(
+                "option",
+                { value: "" },
+                "\u9ED8\u8BA4\u4F7F\u7528\u5F53\u524D\u503C(val)",
+              ),
+              (sourceTableHeaders || []).map((h) =>
+                /*#__PURE__*/ React.createElement(
+                  "option",
+                  { key: h, value: h },
+                  h,
+                ),
+              ),
+            ),
           ),
           /*#__PURE__*/ React.createElement(
             "div",

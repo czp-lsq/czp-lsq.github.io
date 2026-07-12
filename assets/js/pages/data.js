@@ -22,6 +22,33 @@ const DataPage = ({ state, currentPlatform }) => {
   const platform = state.platforms.find((p) => p.id === currentPlatform);
   const samples = state.samples[currentPlatform] || [];
   const calcHistory = state.calcHistory || [];
+  const externals = state.externals || [];
+  const filteredSamples = samples.filter((s) => {
+    if (!searchQuery.trim()) return true;
+    const q = searchQuery.toLowerCase();
+    return (
+      (s.alias || "").toLowerCase().includes(q) ||
+      (s.fileName || "").toLowerCase().includes(q)
+    );
+  });
+  const totalRows = samples.reduce((sum, s) => {
+    return sum + Object.values(s.sheets || {}).reduce((s2, sh) => s2 + (sh.rows?.length || 0), 0);
+  }, 0);
+  const totalSheets = samples.reduce((sum, s) => sum + Object.keys(s.sheets || {}).length, 0);
+  const filteredIndices = samples.reduce((acc, s, idx) => {
+    if (!searchQuery.trim()) {
+      acc.push(idx);
+    } else {
+      const q = searchQuery.toLowerCase();
+      if (
+        (s.alias || "").toLowerCase().includes(q) ||
+        (s.fileName || "").toLowerCase().includes(q)
+      ) {
+        acc.push(idx);
+      }
+    }
+    return acc;
+  }, []);
 
   useEffect(() => {
     localStorage.setItem("data_page_active_tab", activeTab);
@@ -46,6 +73,7 @@ const DataPage = ({ state, currentPlatform }) => {
   const [previewSheet, setPreviewSheet] = useState("");
   const [previewColumns, setPreviewColumns] = useState([]);
   const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
   const columnDropdownRef = useRef(null);
 
   useEffect(() => {
@@ -214,10 +242,15 @@ const DataPage = ({ state, currentPlatform }) => {
     setSelectedItems(newSet);
   };
   const toggleSelectAll = () => {
-    if (selectedItems.size === samples.length) {
-      setSelectedItems(new Set());
+    const allFilteredSelected = filteredIndices.every((i) => selectedItems.has(i));
+    if (allFilteredSelected && filteredIndices.length > 0) {
+      const newSet = new Set(selectedItems);
+      filteredIndices.forEach((i) => newSet.delete(i));
+      setSelectedItems(newSet);
     } else {
-      setSelectedItems(new Set(samples.map((_, i) => i)));
+      const newSet = new Set(selectedItems);
+      filteredIndices.forEach((i) => newSet.add(i));
+      setSelectedItems(newSet);
     }
   };
   const formatTime = (isoString) => {
@@ -255,29 +288,156 @@ const DataPage = ({ state, currentPlatform }) => {
           { className: "card-body" },
           /*#__PURE__*/ React.createElement(
             "div",
-            { className: "action-bar" },
+            { className: "stats-grid" },
             /*#__PURE__*/ React.createElement(
               "div",
-              { className: "action-left" },
+              { className: "stat-card" },
               /*#__PURE__*/ React.createElement(
-                "span",
-                { style: { fontSize: 14, fontWeight: 600, color: "var(--color-text-primary)" } },
-                "\u6837\u8868\u6570\u636E",
+                "div",
+                { className: "stat-icon stat-icon-primary" },
+                /*#__PURE__*/ React.createElement(Icons.FileSpreadsheet, null),
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "stat-content" },
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "stat-value" },
+                  samples.length,
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "stat-label" },
+                  "样表数量",
+                ),
               ),
             ),
             /*#__PURE__*/ React.createElement(
               "div",
-              { className: "action-right" },
+              { className: "stat-card" },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "stat-icon stat-icon-success" },
+                /*#__PURE__*/ React.createElement(Icons.Layers, null),
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "stat-content" },
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "stat-value" },
+                  totalSheets,
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "stat-label" },
+                  "工作表总数",
+                ),
+              ),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "stat-card" },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "stat-icon stat-icon-warning" },
+                /*#__PURE__*/ React.createElement(Icons.Table, null),
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "stat-content" },
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "stat-value" },
+                  totalRows.toLocaleString(),
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "stat-label" },
+                  "数据行数",
+                ),
+              ),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "stat-card" },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "stat-icon stat-icon-info" },
+                /*#__PURE__*/ React.createElement(Icons.Search, null),
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "stat-content" },
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "stat-value" },
+                  filteredSamples.length,
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "stat-label" },
+                  "当前显示",
+                ),
+              ),
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "data-toolbar" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "data-toolbar-left" },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "search-box" },
+                /*#__PURE__*/ React.createElement(Icons.Search, null),
+                /*#__PURE__*/ React.createElement("input", {
+                  type: "text",
+                  className: "search-input",
+                  placeholder: "搜索样表备注名或文件名...",
+                  value: searchQuery,
+                  onChange: (e) => setSearchQuery(e.target.value),
+                }),
+                searchQuery && /*#__PURE__*/ React.createElement(
+                  "button",
+                  {
+                    className: "search-clear",
+                    onClick: () => setSearchQuery(""),
+                  },
+                  "×",
+                ),
+              ),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "data-toolbar-right" },
+              selectedItems.size > 0 && /*#__PURE__*/ React.createElement(
+                Button,
+                { type: "danger", size: "sm", onClick: deleteSelected },
+                /*#__PURE__*/ React.createElement(Icons.Trash, null),
+                " 批量删除 (",
+                selectedItems.size,
+                ")",
+              ),
+              selectedItems.size > 0 && /*#__PURE__*/ React.createElement(
+                "span",
+                { style: { fontSize: 13, color: "var(--color-text-secondary)" } },
+                " 已选择 ",
+                selectedItems.size,
+                " / ",
+                samples.length,
+                " 项",
+              ),
               /*#__PURE__*/ React.createElement(
                 Button,
                 {
                   type: "primary",
                   onClick: () => fileInputRef.current?.click(),
                   loading: isUploading,
-                  style: { minWidth: 120 },
                 },
                 !isUploading && /*#__PURE__*/ React.createElement(Icons.Upload, null),
-                isUploading ? "\u4E0A\u4F20\u4E2D..." : "\u4E0A\u4F20\u6837\u8868",
+                isUploading ? "上传中..." : "上传样表",
               ),
             ),
           ),
@@ -424,8 +584,8 @@ const DataPage = ({ state, currentPlatform }) => {
                     /*#__PURE__*/ React.createElement("input", {
                       type: "checkbox",
                       checked:
-                        selectedItems.size === samples.length &&
-                        samples.length > 0,
+                        filteredIndices.length > 0 &&
+                        filteredIndices.every((i) => selectedItems.has(i)),
                       onChange: toggleSelectAll,
                     }),
                   ),
@@ -459,7 +619,7 @@ const DataPage = ({ state, currentPlatform }) => {
               /*#__PURE__*/ React.createElement(
                 "tbody",
                 null,
-                samples.length === 0
+                filteredIndices.length === 0
                   ? /*#__PURE__*/ React.createElement(
                       "tr",
                       null,
@@ -475,23 +635,29 @@ const DataPage = ({ state, currentPlatform }) => {
                           /*#__PURE__*/ React.createElement(
                             "div",
                             { className: "empty-icon" },
-                            "\uD83D\uDCC1",
+                            samples.length === 0 ? "📁" : "🔍",
                           ),
                           /*#__PURE__*/ React.createElement(
                             "div",
                             { className: "empty-text" },
-                            "\u6682\u65E0\u6837\u8868\u6587\u4EF6",
+                            samples.length === 0
+                              ? "暂无样表文件"
+                              : "未找到匹配的样表",
                           ),
                           /*#__PURE__*/ React.createElement(
                             "div",
                             { className: "empty-desc" },
-                            "\u4E0A\u4F20\u6837\u8868\u6587\u4EF6\u4EE5\u914D\u7F6E\u8BA1\u7B97\u89C4\u5219",
+                            samples.length === 0
+                              ? "上传样表文件以配置计算规则"
+                              : "试试其他搜索关键词",
                           ),
                         ),
                       ),
                     )
-                  : samples.map((sample, idx) =>
-                      /*#__PURE__*/ React.createElement(
+                  : filteredIndices.map((originalIdx) => {
+                      const sample = samples[originalIdx];
+                      const idx = originalIdx;
+                      return /*#__PURE__*/ React.createElement(
                         "tr",
                         {
                           key: idx,
@@ -637,8 +803,8 @@ const DataPage = ({ state, currentPlatform }) => {
                             ),
                           ),
                         ),
-                      ),
-                    ),
+                      );
+                    }),
               ),
             ),
           ),
