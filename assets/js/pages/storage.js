@@ -6,7 +6,6 @@ const StoragePage = ({ state, setState }) => {
   const [selectedType, setSelectedType] = useState("all");
   const [importMode, setImportMode] = useState("merge");
   const [confirmDialog, setConfirmDialog] = useState(null);
-  const [activityLogs, setActivityLogs] = useState([]);
   const [syncCode, setSyncCode] = useState("");
   const [syncCodeInput, setSyncCodeInput] = useState("");
   const [syncCodeType, setSyncCodeType] = useState("config");
@@ -386,55 +385,6 @@ const StoragePage = ({ state, setState }) => {
                 );
               }),
             ),
-          ),
-        ),
-      ),
-    ),
-    React.createElement("div", { className: "storage-grid-row" },
-      React.createElement("div", { className: "storage-grid-col-full" },
-        React.createElement("div", { className: "card" },
-          React.createElement("div", { className: "card-header" },
-            React.createElement("div", { className: "card-header-flex" },
-              React.createElement("div", null,
-                React.createElement("h3", null, "最近操作记录"),
-                React.createElement("p", { className: "card-desc" }, "最近 10 条数据操作日志"),
-              ),
-              React.createElement("Button", { variant: "outline", size: "sm", onClick: () => setActivityLogs(ActivityLogger.get().slice(0, 10)) },
-                React.createElement(Icons.RefreshCw, null), " 刷新",
-              ),
-            ),
-          ),
-          React.createElement("div", { className: "card-body" },
-            activityLogs.length === 0
-              ? React.createElement("div", { className: "empty", style: { padding: "40px 24px" } },
-                  React.createElement("div", { className: "empty-icon" }, "📋"),
-                  React.createElement("div", { className: "empty-text" }, "暂无操作记录"),
-                  React.createElement("div", { className: "empty-desc" }, "导出、导入、清理数据后将在此显示"),
-                )
-              : React.createElement("div", { className: "activity-log-table" },
-                  React.createElement("table", { className: "table" },
-                    React.createElement("thead", null,
-                      React.createElement("tr", null,
-                        React.createElement("th", { style: { width: 60 } }, "序号"),
-                        React.createElement("th", null, "操作类型"),
-                        React.createElement("th", null, "操作详情"),
-                        React.createElement("th", { style: { width: 140 } }, "操作时间"),
-                      ),
-                    ),
-                    React.createElement("tbody", null,
-                      activityLogs.map((log, idx) => React.createElement("tr", { key: idx },
-                        React.createElement("td", null, idx + 1),
-                        React.createElement("td", null,
-                          React.createElement("span", { className: "activity-log-badge" }, log.action),
-                        ),
-                        React.createElement("td", null, log.detail || "-"),
-                        React.createElement("td", null,
-                          new Date(log.time).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit" }),
-                        ),
-                      )),
-                    ),
-                  ),
-                ),
           ),
         ),
       ),

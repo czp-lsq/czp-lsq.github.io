@@ -7,7 +7,7 @@
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border-light);
   overflow: hidden;
-  transition: all var(--transition-slow) cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--duration-slow) var(--ease-smooth);
   position: relative;
 }
 
@@ -159,7 +159,7 @@
   font-weight: 600;
   cursor: pointer;
   border: none;
-  transition: all var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--duration-normal) var(--ease-smooth);
   text-decoration: none;
   white-space: nowrap;
   position: relative;
@@ -314,7 +314,7 @@
   font-size: 14px;
   color: var(--color-text-primary);
   background: var(--color-bg-secondary);
-  transition: all var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--duration-normal) var(--ease-smooth);
   outline: none;
   font-family: inherit;
   box-sizing: border-box;
@@ -322,7 +322,7 @@
 
 .input:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 4px var(--color-primary-50), 0 0 20px rgba(30, 58, 95, 0.1);
+  box-shadow: 0 0 0 4px var(--color-primary-50);
 }
 
 .input:disabled {
@@ -369,7 +369,7 @@
   background: var(--color-bg-secondary);
   cursor: pointer;
   outline: none;
-  transition: all var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--duration-normal) var(--ease-smooth);
   font-family: inherit;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
@@ -387,7 +387,7 @@
 
 .select:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 4px var(--color-primary-50), 0 0 20px rgba(30, 58, 95, 0.1);
+  box-shadow: 0 0 0 4px var(--color-primary-50);
 }
 
 .select:disabled {
@@ -1051,7 +1051,7 @@ body.dark .table-highlight-row {
   z-index: var(--z-modal);
   backdrop-filter: blur(4px);
   -webkit-backdrop-filter: blur(4px);
-  animation: modalFadeIn 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: modalFadeIn var(--duration-normal) var(--ease-smooth);
   padding: 24px;
   box-sizing: border-box;
 }
@@ -1429,12 +1429,13 @@ body.dark .table-highlight-row {
 
 /* 更新弹窗 */
 .update-modal {
-  max-width: 640px;
+  width: 480px;
+  max-width: calc(100vw - 48px);
   padding: 0;
   overflow: hidden;
-  border-radius: 24px;
-  animation: updateModalIn 0.4s cubic-bezier(0.34, 1.56, 0.64, 1);
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.25), 0 0 0 1px var(--color-border-light);
+  border-radius: var(--radius-xl);
+  animation: updateModalIn var(--duration-slow) var(--ease-bounce);
+  box-shadow: var(--shadow-modal), 0 0 0 1px var(--color-border-light);
 }
 
 @keyframes updateModalIn {
@@ -1453,8 +1454,8 @@ body.dark .table-highlight-row {
   flex-direction: column;
   align-items: flex-start;
   gap: 14px;
-  padding: 48px 48px 36px;
-  background: linear-gradient(135deg, var(--color-primary-gradient) 0%, rgba(59, 130, 246, 0.2) 100%);
+  padding: 40px 40px 32px;
+  background: var(--color-primary-gradient);
   position: relative;
   overflow: hidden;
 }
@@ -1497,7 +1498,7 @@ body.dark .table-highlight-row {
 .update-modal-icon {
   width: 72px;
   height: 72px;
-  border-radius: 24px;
+  border-radius: var(--radius-xl);
   background: rgba(255, 255, 255, 0.25);
   backdrop-filter: blur(16px);
   -webkit-backdrop-filter: blur(16px);
@@ -1506,10 +1507,10 @@ body.dark .table-highlight-row {
   justify-content: center;
   color: white;
   flex-shrink: 0;
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.18);
+  box-shadow: var(--shadow-lg);
   position: relative;
   z-index: 1;
-  animation: iconBounce 0.6s ease-out 0.2s both;
+  animation: iconBounce var(--duration-slower) var(--ease-smooth-out) 0.2s both;
 }
 
 @keyframes iconBounce {
@@ -1538,7 +1539,7 @@ body.dark .table-highlight-row {
   letter-spacing: -1.5px;
   position: relative;
   z-index: 1;
-  animation: slideDown 0.5s ease-out 0.15s both;
+  animation: slideDown var(--duration-slow) var(--ease-smooth-out) 0.15s both;
 }
 
 @keyframes slideDown {
@@ -1557,7 +1558,7 @@ body.dark .table-highlight-row {
   color: rgba(255, 255, 255, 0.9);
   background: rgba(255, 255, 255, 0.18);
   padding: 7px 18px;
-  border-radius: 24px;
+  border-radius: var(--radius-full);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   position: relative;
@@ -1570,7 +1571,7 @@ body.dark .table-highlight-row {
   color: rgba(255, 255, 255, 0.92);
   background: rgba(255, 255, 255, 0.12);
   padding: 10px 22px;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   backdrop-filter: blur(12px);
   -webkit-backdrop-filter: blur(12px);
   position: relative;
@@ -1590,7 +1591,7 @@ body.dark .table-highlight-row {
 }
 
 .update-modal-body {
-  padding: 36px 48px;
+  padding: 32px 40px;
   max-height: 420px;
   overflow-y: auto;
 }
@@ -1632,6 +1633,8 @@ body.dark .table-highlight-row {
 
 .update-modal-section {
   margin-bottom: 24px;
+  padding-left: 16px;
+  border-left: 3px solid var(--color-border);
 }
 
 .update-modal-section:last-child {
@@ -1660,7 +1663,7 @@ body.dark .table-highlight-row {
   padding: 0;
   margin: 0;
   background: var(--color-bg-secondary);
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   border: 1px solid var(--color-border-light);
   overflow: hidden;
 }
@@ -1674,7 +1677,7 @@ body.dark .table-highlight-row {
   gap: 14px;
   line-height: 1.6;
   border-bottom: 1px solid var(--color-border-light);
-  transition: var(--transition-fast);
+  transition: background-color var(--duration-fast) var(--ease-smooth);
 }
 
 .update-modal-list li:hover {
@@ -1688,14 +1691,14 @@ body.dark .table-highlight-row {
 .update-change-icon {
   width: 26px;
   height: 26px;
-  border-radius: 10px;
+  border-radius: var(--radius-md);
   display: inline-flex;
   align-items: center;
   justify-content: center;
   flex-shrink: 0;
   font-size: 15px;
   margin-top: 1px;
-  transition: var(--transition-fast);
+  transition: transform var(--duration-fast) var(--ease-smooth);
 }
 
 .update-modal-list li:hover .update-change-icon {
@@ -1703,17 +1706,17 @@ body.dark .table-highlight-row {
 }
 
 .update-change-icon.feature {
-  background: linear-gradient(135deg, var(--color-success-bg) 0%, rgba(16, 185, 129, 0.15) 100%);
+  background: var(--color-success-bg);
   color: var(--color-success);
 }
 
 .update-change-icon.optimize {
-  background: linear-gradient(135deg, var(--color-warning-bg) 0%, rgba(245, 158, 11, 0.15) 100%);
+  background: var(--color-warning-bg);
   color: var(--color-warning);
 }
 
 .update-change-icon.bugfix {
-  background: linear-gradient(135deg, var(--color-info-bg) 0%, rgba(59, 130, 246, 0.15) 100%);
+  background: var(--color-info-bg);
   color: var(--color-info);
 }
 
@@ -1733,7 +1736,7 @@ body.dark .table-highlight-row {
 }
 
 .update-modal-footer {
-  padding: 0 48px 36px;
+  padding: 0 40px 32px;
   display: flex;
   gap: 16px;
   justify-content: space-between;
@@ -1747,23 +1750,23 @@ body.dark .table-highlight-row {
 
 .update-modal-footer .btn {
   padding: 13px 28px;
-  border-radius: 14px;
+  border-radius: var(--radius-lg);
   font-weight: 600;
   font-size: 14px;
   height: auto;
   min-height: 48px;
-  transition: all var(--transition-base);
+  transition: all var(--duration-normal) var(--ease-smooth);
 }
 
 .update-modal-footer .btn-primary {
   background: var(--color-primary-gradient);
   color: white;
-  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.35);
+  box-shadow: var(--shadow-md);
 }
 
 .update-modal-footer .btn-primary:hover {
   transform: translateY(-2px);
-  box-shadow: 0 6px 20px rgba(59, 130, 246, 0.45);
+  box-shadow: var(--shadow-lg);
 }
 
 .update-modal-footer .btn-secondary {

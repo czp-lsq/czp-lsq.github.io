@@ -1,6 +1,7 @@
 .app {
   display: flex;
   min-height: 100vh;
+  contain: layout;
 }
 
 .sidebar {
@@ -10,10 +11,11 @@
   flex-shrink: 0;
   display: flex;
   flex-direction: column;
-  transition: width 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: width var(--duration-slow) var(--ease-smooth), transform var(--duration-slow) var(--ease-smooth);
   overflow: hidden;
   position: relative;
   height: 100vh;
+  contain: layout;
 }
 
 /* 侧边栏展开动画优化 */
@@ -21,14 +23,14 @@
 .sidebar:not(.collapsed) .nav-group-title-text,
 .sidebar:not(.collapsed) .nav-badge,
 .sidebar:not(.collapsed) .nav-group-arrow {
-  animation: slideInLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideInLeft var(--duration-normal) var(--ease-smooth) forwards;
 }
 
 .sidebar.collapsed .nav-text,
 .sidebar.collapsed .nav-group-title-text,
 .sidebar.collapsed .nav-badge,
 .sidebar.collapsed .nav-group-arrow {
-  animation: slideOutLeft 0.3s cubic-bezier(0.4, 0, 0.2, 1) forwards;
+  animation: slideOutLeft var(--duration-normal) var(--ease-smooth) forwards;
 }
 
 @keyframes slideInLeft {
@@ -160,7 +162,7 @@
   padding: 10px 14px;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all 0.2s ease;
+  transition: all var(--duration-normal) var(--ease-smooth);
   color: var(--color-text-secondary);
   font-size: 13px;
   font-weight: 600;
@@ -203,7 +205,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: transform 0.2s ease;
+  transition: transform var(--duration-normal) var(--ease-smooth);
   flex-shrink: 0;
   color: var(--color-text-muted);
 }
@@ -225,7 +227,7 @@
   display: flex;
   flex-direction: column;
   gap: 2px;
-  animation: slideDown 0.2s ease;
+  animation: slideDown var(--duration-normal) var(--ease-smooth);
 }
 
 @keyframes slideDown {
@@ -340,7 +342,7 @@
   height: 0;
   padding: 0;
   overflow: hidden;
-  transition: opacity 0.2s ease, height 0.2s ease;
+  transition: opacity var(--duration-normal) var(--ease-smooth), height var(--duration-normal) var(--ease-smooth);
 }
 
 .nav-highlight {
@@ -429,6 +431,9 @@
   background: var(--color-bg-secondary);
   position: relative;
   z-index: 2;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
 }
 
 .sidebar.collapsed .sidebar-footer .nav-item span:not(.nav-icon) {
@@ -442,6 +447,76 @@
 .sidebar.collapsed .sidebar-footer .nav-item {
   justify-content: center;
   padding: 0;
+}
+
+.sidebar.collapsed .sidebar-footer .sidebar-version-badge {
+  padding: 4px 8px;
+  justify-content: center;
+}
+
+.sidebar.collapsed .sidebar-footer .sidebar-version-text,
+.sidebar.collapsed .sidebar-footer .sidebar-version-time {
+  display: none;
+}
+
+/* 版本号显示徽章 */
+.sidebar-version-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 10px;
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  cursor: pointer;
+  transition: all var(--duration-normal) var(--ease-smooth);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+}
+
+.sidebar-version-badge:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-border-medium);
+  color: var(--color-text-primary);
+}
+
+.sidebar-version-text {
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  font-family: var(--font-mono);
+  letter-spacing: 0.2px;
+}
+
+.sidebar-version-badge:hover .sidebar-version-text {
+  color: var(--color-primary);
+}
+
+.sidebar-version-time {
+  font-size: 10px;
+  color: var(--color-text-muted);
+  margin-left: auto;
+  font-variant-numeric: tabular-nums;
+}
+
+/* 退出登录按钮 - 固定在底部 */
+.sidebar-footer .sidebar-logout-btn {
+  margin-top: auto;
+  color: var(--color-text-secondary);
+  border-radius: var(--radius-md);
+}
+
+.sidebar-footer .sidebar-logout-btn:hover {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.sidebar-footer .sidebar-logout-btn .nav-icon {
+  color: var(--color-text-muted);
+  transition: color var(--duration-normal) var(--ease-smooth);
+}
+
+.sidebar-footer .sidebar-logout-btn:hover .nav-icon {
+  color: var(--color-danger);
 }
 
 .nav-section-title {
@@ -463,13 +538,14 @@
 
 .nav-item {
   height: 44px;
-  border-radius: 8px;
+  min-height: 44px;
+  border-radius: var(--radius-md);
   margin-bottom: 4px;
   display: flex;
   align-items: center;
   padding: 0 16px;
   cursor: pointer;
-  transition: var(--transition-base);
+  transition: all var(--duration-normal) var(--ease-smooth);
   color: var(--color-text-secondary);
   white-space: nowrap;
   position: relative;
@@ -530,12 +606,12 @@
 .sidebar.collapsed .nav-item {
   justify-content: center;
   padding: 0;
-  transition: padding 0.3s ease;
+  transition: padding var(--duration-slow) var(--ease-smooth);
 }
 
 .sidebar.collapsed .nav-icon {
   margin-right: 0;
-  transition: margin-right 0.3s ease;
+  transition: margin-right var(--duration-slow) var(--ease-smooth);
 }
 
 .sidebar.collapsed .nav-indent {
@@ -565,7 +641,7 @@
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
+  transition: opacity var(--duration-normal) var(--ease-smooth), visibility var(--duration-normal) var(--ease-smooth);
   z-index: var(--z-tooltip);
 }
 
@@ -579,8 +655,11 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
+  overflow-y: auto;
   min-width: 0;
+  min-height: 0;
   height: 100vh;
+  contain: layout;
 }
 
 .main-header {
@@ -600,11 +679,13 @@
   padding: 24px;
   background: var(--color-bg-primary);
   min-height: 0;
+  contain: layout;
 }
 
 /* 页面切换过渡效果 */
 .main-content > * {
-  animation: pageEnter 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  animation: pageEnter var(--duration-slow) var(--ease-smooth);
+  min-height: calc(100vh - 64px - 48px);
 }
 
 @keyframes pageEnter {
@@ -627,7 +708,7 @@
 .page-transition-enter-active {
   opacity: 1;
   transform: translateY(0);
-  transition: opacity 0.35s cubic-bezier(0.4, 0, 0.2, 1), transform 0.35s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity var(--duration-slow) var(--ease-smooth), transform var(--duration-slow) var(--ease-smooth);
 }
 
 .page-transition-exit {
@@ -638,7 +719,7 @@
 .page-transition-exit-active {
   opacity: 0;
   transform: translateY(-8px);
-  transition: opacity 0.25s cubic-bezier(0.4, 0, 0.2, 1), transform 0.25s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: opacity var(--duration-normal) var(--ease-smooth), transform var(--duration-normal) var(--ease-smooth);
 }
 
 .header-platform-switcher {
@@ -656,7 +737,7 @@
   padding: 8px 14px;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: var(--transition-base);
+  transition: all var(--duration-normal) var(--ease-smooth);
   color: var(--color-text-secondary);
   font-size: 13px;
   font-weight: 500;
@@ -728,7 +809,11 @@
   align-items: center;
   gap: 4px;
   flex: 1;
+  height: 48px;
+  min-height: 48px;
+  max-height: 48px;
   overflow-x: auto;
+  overflow-y: hidden;
   padding: 0 16px;
   scrollbar-width: none;
 }
@@ -744,7 +829,7 @@
   padding: 8px 14px;
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: all var(--duration-fast) var(--ease-smooth);
   color: var(--color-text-secondary);
   font-size: 13px;
   font-weight: 500;
@@ -777,7 +862,7 @@
   height: 18px;
   border-radius: var(--radius-xs);
   opacity: 0.6;
-  transition: var(--transition-fast);
+  transition: all var(--duration-fast) var(--ease-smooth);
 }
 
 .page-tab-close:hover {
@@ -817,13 +902,13 @@
 .header-icon-btn {
   width: 36px;
   height: 36px;
-  border-radius: 8px;
+  border-radius: var(--radius-md);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
   position: relative;
-  transition: var(--transition-base);
+  transition: all var(--duration-normal) var(--ease-smooth);
   color: var(--color-text-secondary);
 }
 
@@ -885,7 +970,7 @@
   display: flex;
   flex-direction: column;
   overflow: hidden;
-  animation: panelFadeIn 0.2s ease;
+  animation: panelFadeIn var(--duration-normal) var(--ease-smooth);
 }
 
 @keyframes panelFadeIn {
@@ -940,7 +1025,7 @@
   cursor: pointer;
   padding: 4px 8px;
   border-radius: var(--radius-sm);
-  transition: var(--transition-fast);
+  transition: all var(--duration-fast) var(--ease-smooth);
 }
 
 .notification-action-btn:hover {
@@ -984,7 +1069,7 @@
   gap: 12px;
   padding: 12px 16px;
   cursor: pointer;
-  transition: var(--transition-fast);
+  transition: all var(--duration-fast) var(--ease-smooth);
   border-bottom: 1px solid var(--color-border-light);
   position: relative;
 }
@@ -1086,8 +1171,8 @@
   gap: 12px;
   cursor: pointer;
   padding: 4px 8px 4px 4px;
-  border-radius: 8px;
-  transition: var(--transition-base);
+  border-radius: var(--radius-md);
+  transition: all var(--duration-normal) var(--ease-smooth);
 }
 
 .user-profile:hover {
@@ -1146,7 +1231,7 @@
   border-radius: var(--radius-md);
   border: none;
   background: transparent;
-  transition: var(--transition-base);
+  transition: all var(--duration-normal) var(--ease-smooth);
   white-space: nowrap;
   display: flex;
   align-items: center;
@@ -1214,7 +1299,7 @@
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--duration-slow) var(--ease-smooth);
   color: var(--color-text-secondary);
   flex-shrink: 0;
   position: relative;
@@ -1234,7 +1319,7 @@
 .layout-toggle-btn svg {
   width: 18px;
   height: 18px;
-  transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  transition: transform var(--duration-slow) var(--ease-smooth);
 }
 
 .layout-toggle-btn:hover svg {
@@ -1263,7 +1348,7 @@
   opacity: 0;
   visibility: hidden;
   pointer-events: none;
-  transition: opacity 0.2s ease, visibility 0.2s ease;
+  transition: opacity var(--duration-normal) var(--ease-smooth), visibility var(--duration-normal) var(--ease-smooth);
   z-index: 100;
 }
 
@@ -1337,7 +1422,7 @@
     bottom: 0;
     z-index: var(--z-dropdown);
     transform: translateX(-100%);
-    transition: transform 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+    transition: transform var(--duration-slow) var(--ease-smooth);
     width: 240px;
     box-shadow: var(--shadow-xl);
   }
@@ -1353,11 +1438,11 @@
   .sidebar-overlay {
     position: fixed;
     inset: 0;
-    background: rgba(0, 0, 0, 0.4);
+    background: var(--color-bg-overlay);
     z-index: calc(var(--z-dropdown) - 1);
     opacity: 0;
     visibility: hidden;
-    transition: opacity 0.3s ease, visibility 0.3s ease;
+    transition: opacity var(--duration-slow) var(--ease-smooth), visibility var(--duration-slow) var(--ease-smooth);
     backdrop-filter: blur(4px);
   }
 

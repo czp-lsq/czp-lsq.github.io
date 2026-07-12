@@ -275,7 +275,7 @@ const App = () => {
         return JSON.parse(saved);
       } catch (e) {}
     }
-    return { config: true, calc: true, system: true };
+    return { config: true, calc: true, system: true, info: true };
   });
   const [showLogoutConfirm, setShowLogoutConfirm] = useState(false);
   const [showNotifications, setShowNotifications] = useState(false);
@@ -291,67 +291,108 @@ const App = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const loadingRef = useRef(null);
 
-  const APP_VERSION = "5.8.0";
+  const APP_VERSION = "1.7.0";
   const VERSION_KEY = "app_version_seen";
   const VERSION_HISTORY_KEY = "app_version_history";
   const UPDATE_LOG = [
-    { version: "5.8.0", date: "2026-07-12", 
-      summary: "下拉框组件全面升级，版本管理体验优化",
+    { version: "1.7.0", date: "2026-07-13 10:00:00",
+      summary: "导航栏重构与页面体验全面优化",
       changes: [
-        { type: "feature", text: "下拉框支持拼音首字母搜索，输入更快更智能" },
-        { type: "feature", text: "新增键盘快捷导航（↑↓选择，Enter确认，Esc关闭）" },
-        { type: "feature", text: "大量选项自动启用虚拟滚动，性能提升10倍" },
-        { type: "feature", text: "下拉框支持分组显示，选项归类更清晰" },
-        { type: "feature", text: "搜索框添加防抖处理，减少不必要的渲染" },
-        { type: "feature", text: "版本更新弹窗全面优化，新增详细日志分类" },
-        { type: "feature", text: "新增「查看完整更新日志」按钮" },
-        { type: "optimize", text: "记录用户已查看的版本号，避免重复提示" },
-        { type: "optimize", text: "更新弹窗新增动画效果和分类标签" },
-        { type: "optimize", text: "优化版本检测逻辑，减少网络请求频率" },
+        { type: "feature", text: "重构导航栏分类布局，新增「帮助信息」独立分组" },
+        { type: "feature", text: "更新日志重构为 V1.0.0 起版本体系，时间精确到秒" },
+        { type: "feature", text: "使用帮助页面以最新版本全面重构" },
+        { type: "optimize", text: "侧边栏底部布局优化，退出登录固定于左下角" },
+        { type: "optimize", text: "版本检测指示器移至侧边栏底部，交互更合理" },
+        { type: "optimize", text: "更新提示弹窗样式与文案专业化" },
+        { type: "optimize", text: "页面跳动优化，CSS 过渡动画统一" },
+        { type: "optimize", text: "全局主题变量统一，线条与样式和谐性提升" },
+        { type: "optimize", text: "删除数据管理页面冗余「最近操作」模块" },
+        { type: "optimize", text: "操作日志页面布局优化" },
+        { type: "bugfix", text: "修复页面切换时的布局跳动问题" },
       ],
-      bugfixes: [
-        "修复下拉框选项过多时滚动卡顿问题",
-        "修复搜索框无法清除的问题",
-        "修复键盘导航与鼠标点击冲突",
-      ],
+      bugfixes: [],
     },
-    { version: "5.7.0", date: "2026-07-12", 
-      summary: "筛选功能重构，数据管理更便捷",
+    { version: "1.6.0", date: "2026-07-12 16:50:16",
+      summary: "计算规则引擎增强与数据保存机制重构",
       changes: [
-        { type: "feature", text: "全新可搜索下拉组件，支持搜索和快速选择" },
-        { type: "feature", text: "过滤步骤升级为「筛选」，与Excel体验一致" },
-        { type: "feature", text: "新增等于筛选、包含筛选、范围筛选、前N行筛选" },
-        { type: "feature", text: "筛选值支持下拉选择+搜索+快捷标签" },
-        { type: "feature", text: "新增Store.flush方法，上传数据后立即保存" },
-        { type: "optimize", text: "完善自动登录，登录页自动填充账号密码" },
-        { type: "optimize", text: "优化筛选步骤UI，更清晰直观" },
+        { type: "feature", text: "新增17种计算步骤类型（累计、窗口、排名、日期等）" },
+        { type: "feature", text: "计算步骤弹窗分组优化，选择更便捷" },
+        { type: "feature", text: "调试信息默认展开，每步结果显示值、列、行" },
+        { type: "optimize", text: "跨表步骤列名自动识别生成下拉选项" },
+        { type: "optimize", text: "筛选步骤对比值自动识别数据下拉" },
+        { type: "optimize", text: "数据保存机制重构，刷新后无需重新上传" },
+        { type: "bugfix", text: "修复点击「添加步骤」按钮页面报错（React #130）" },
       ],
-      bugfixes: [
-        "修复模板/配置中心上传后刷新数据丢失",
-        "修复筛选步骤删除后无法恢复",
-      ],
+      bugfixes: [],
     },
-    { version: "5.2.0", date: "2026-07-11", 
-      summary: "修复关键问题，优化用户体验",
+    { version: "1.5.0", date: "2026-07-12 14:15:19",
+      summary: "全面优化升级：界面、交互与功能提升",
+      changes: [
+        { type: "feature", text: "深色模式配色优化，4种主题全面适配" },
+        { type: "feature", text: "导航栏新增更新日志与操作日志入口" },
+        { type: "feature", text: "上传样本支持文件夹选择" },
+        { type: "optimize", text: "数据管理页面布局一致性优化" },
+        { type: "optimize", text: "下拉框实时搜索与虚拟滚动" },
+        { type: "optimize", text: "导航栏收起后二级菜单展示修复" },
+      ],
+      bugfixes: [],
+    },
+    { version: "1.4.0", date: "2026-07-12 12:24:54",
+      summary: "可搜索下拉组件与筛选步骤全面升级",
+      changes: [
+        { type: "feature", text: "全新可搜索下拉组件，支持拼音首字母搜索" },
+        { type: "feature", text: "下拉框支持虚拟滚动，性能提升10倍" },
+        { type: "feature", text: "下拉框支持分组显示与键盘导航" },
+        { type: "feature", text: "筛选步骤升级，新增等于/包含/范围/前N行筛选" },
+        { type: "optimize", text: "版本更新弹窗全面优化" },
+      ],
+      bugfixes: [],
+    },
+    { version: "1.3.0", date: "2026-07-12 11:41:48",
+      summary: "数据持久化增强与自动快照功能",
+      changes: [
+        { type: "feature", text: "数据持久化增强，LZString压缩存储" },
+        { type: "feature", text: "自动快照功能，数据安全保障" },
+        { type: "feature", text: "更新弹窗提示机制" },
+        { type: "optimize", text: "自动登录完善与提示优化" },
+      ],
+      bugfixes: [],
+    },
+    { version: "1.2.0", date: "2026-07-12 10:36:11",
+      summary: "计算引擎扩展与操作日志系统",
+      changes: [
+        { type: "feature", text: "新增3种计算步骤类型" },
+        { type: "feature", text: "过滤列对比功能" },
+        { type: "feature", text: "跨设备同步码功能" },
+        { type: "feature", text: "操作日志分类系统" },
+        { type: "optimize", text: "主题UI优化" },
+      ],
+      bugfixes: [],
+    },
+    { version: "1.1.0", date: "2026-07-12 10:18:58",
+      summary: "系统稳定性增强与存储优化",
       changes: [
         { type: "feature", text: "新增音效开关设置" },
-        { type: "feature", text: "完善数据存储机制（快照功能）" },
-        { type: "optimize", text: "优化系统设置模块布局" },
-        { type: "optimize", text: "优化计算规则下拉框样式" },
+        { type: "feature", text: "存储快照功能" },
+        { type: "optimize", text: "系统设置模块布局优化" },
+        { type: "optimize", text: "组件样式优化（渐变背景、光效动画）" },
       ],
       bugfixes: [
         "修复刷新页面跳回登录页的问题",
         "修复计算规则只识别500行数据的限制",
+        "修复配置中心错误",
       ],
     },
-    { version: "5.1.0", date: "2026-07-10", 
-      summary: "界面美化升级，交互体验提升",
+    { version: "1.0.0", date: "2026-07-12 08:50:41",
+      summary: "店数智平台初始版本发布",
       changes: [
-        { type: "feature", text: "新增自动登录功能" },
-        { type: "feature", text: "新增Toast声音通知" },
-        { type: "feature", text: "设置页改为侧边栏分类布局" },
-        { type: "feature", text: "存储页新增数据统计卡片" },
-        { type: "optimize", text: "优化组件样式（渐变背景、光效动画）" },
+        { type: "feature", text: "店铺数据智能分析与报表平台上线" },
+        { type: "feature", text: "支持拼多多、淘宝、抖音三大平台" },
+        { type: "feature", text: "模板配置中心，自动识别占位符" },
+        { type: "feature", text: "计算规则引擎，支持多种数据来源" },
+        { type: "feature", text: "批量计算，一键生成利润报表" },
+        { type: "feature", text: "数据导出与导入功能" },
+        { type: "feature", text: "4种配色主题 + 深色/浅色模式" },
       ],
       bugfixes: [],
     },
@@ -836,14 +877,22 @@ const App = () => {
           icon: /*#__PURE__*/ React.createElement(Icons.Settings, null),
         },
         {
-          id: "changelog",
-          name: "更新日志",
-          icon: /*#__PURE__*/ React.createElement(Icons.GitCommit, null),
-        },
-        {
           id: "auditlog",
           name: "操作日志",
           icon: /*#__PURE__*/ React.createElement(Icons.Shield, null),
+        },
+      ],
+    },
+    {
+      id: "info",
+      type: "group",
+      title: "帮助信息",
+      icon: /*#__PURE__*/ React.createElement(Icons.HelpCircle, null),
+      items: [
+        {
+          id: "changelog",
+          name: "更新日志",
+          icon: /*#__PURE__*/ React.createElement(Icons.GitCommit, null),
         },
         {
           id: "help",
@@ -1242,7 +1291,22 @@ const App = () => {
           /*#__PURE__*/ React.createElement(
             "div",
             {
-              className: "nav-item",
+              className: "sidebar-version-badge",
+              onClick: () => {
+                setUpdateInfo(UPDATE_LOG[0]);
+                setShowUpdateModal(true);
+              },
+              title: "点击查看更新日志",
+            },
+            /*#__PURE__*/ React.createElement("span", { className: "sidebar-version-text" }, `v${APP_VERSION}`),
+            updateDetectedAt
+              ? /*#__PURE__*/ React.createElement("span", { className: "sidebar-version-time" }, updateDetectedAt.toLocaleTimeString())
+              : null,
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            {
+              className: "nav-item sidebar-logout-btn",
               onClick: handleLogout,
               "data-tooltip": "\u9000\u51FA\u767B\u5F55",
             },
@@ -1256,33 +1320,6 @@ const App = () => {
               { className: "nav-text" },
               "\u9000\u51FA\u767B\u5F55",
             ),
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            {
-              className: "sidebar-version",
-              style: {
-                padding: "8px 16px",
-                fontSize: "11px",
-                color: "var(--color-text-muted)",
-                borderTop: "1px solid var(--color-border)",
-                marginTop: "8px",
-                cursor: "pointer",
-              },
-              onClick: () => {
-                setUpdateInfo(UPDATE_LOG[0]);
-                setShowUpdateModal(true);
-              },
-              title: "\u70B9\u51FB\u67E5\u770B\u66F4\u65B0\u65E5\u5FD7",
-            },
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { style: { fontWeight: 600, marginBottom: 2 } },
-              `v${APP_VERSION}`,
-            ),
-            updateDetectedAt
-              ? `\u6700\u65B0\u68C0\u6D4B: ${updateDetectedAt.toLocaleTimeString()}`
-              : "\u6B63\u5728\u68C0\u6D4B\u66F4\u65B0...",
           ),
         ),
     ),
@@ -1601,9 +1638,9 @@ const App = () => {
         /*#__PURE__*/ React.createElement(
           "div",
           { className: "update-modal-body" },
-          /*#__PURE__*/ React.createElement("div", { className: "update-modal-title" }, "🎉 新功能已上线"),
-          /*#__PURE__*/ React.createElement("div", { className: "update-modal-subtitle" }, "感谢您的使用！本次更新带来了多项功能优化和体验提升，建议刷新页面以获得最佳体验。"),
-          
+          /*#__PURE__*/ React.createElement("div", { className: "update-modal-title" }, "版本更新提示"),
+          /*#__PURE__*/ React.createElement("div", { className: "update-modal-subtitle" }, "本次更新包含以下内容，建议刷新页面以获取最新体验。"),
+
           // 新增功能
           updateInfo.changes && updateInfo.changes.filter(c => c.type === 'feature').length > 0 && /*#__PURE__*/ React.createElement(
             "div",
@@ -1621,7 +1658,7 @@ const App = () => {
               ))
             )
           ),
-          
+
           // 优化项
           updateInfo.changes && updateInfo.changes.filter(c => c.type === 'optimize').length > 0 && /*#__PURE__*/ React.createElement(
             "div",
@@ -1639,33 +1676,29 @@ const App = () => {
               ))
             )
           ),
-          
-          // Bug修复
-          updateInfo.bugfixes && updateInfo.bugfixes.length > 0 && /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "update-modal-section" },
-            /*#__PURE__*/ React.createElement("div", { className: "update-modal-section-header" },
-              /*#__PURE__*/ React.createElement(Icons.CheckCircle, null),
-              "问题修复"
-            ),
-            /*#__PURE__*/ React.createElement(
-              "ul",
-              { className: "update-modal-list bugfix-list" },
-              updateInfo.bugfixes.map((fix, idx) => /*#__PURE__*/ React.createElement("li", { key: idx },
-                /*#__PURE__*/ React.createElement("span", { className: "update-change-icon bugfix" }, "🔧"),
-                fix
-              ))
-            )
-          ),
-          
-          // 兼容旧格式
-          (!updateInfo.changes || updateInfo.changes.length === 0) && updateInfo.changes && /*#__PURE__*/ React.createElement(
-            "ul",
-            { className: "update-modal-list" },
-            updateInfo.changes.map((change, idx) => /*#__PURE__*/ React.createElement("li", { key: idx },
-              typeof change === 'string' ? change : change.text
-            ))
-          ),
+
+          // Bug修复 - 合并 changes 中 type==="bugfix" 的项和 bugfixes 数组
+          (() => {
+            const bugfixChanges = (updateInfo.changes || []).filter(c => c.type === 'bugfix').map(c => c.text);
+            const bugfixes = [...bugfixChanges, ...(updateInfo.bugfixes || [])];
+            if (bugfixes.length === 0) return null;
+            return /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "update-modal-section" },
+              /*#__PURE__*/ React.createElement("div", { className: "update-modal-section-header" },
+                /*#__PURE__*/ React.createElement(Icons.CheckCircle, null),
+                "问题修复"
+              ),
+              /*#__PURE__*/ React.createElement(
+                "ul",
+                { className: "update-modal-list bugfix-list" },
+                bugfixes.map((fix, idx) => /*#__PURE__*/ React.createElement("li", { key: idx },
+                  /*#__PURE__*/ React.createElement("span", { className: "update-change-icon bugfix" }, "🔧"),
+                  fix
+                ))
+              )
+            );
+          })(),
         ),
         /*#__PURE__*/ React.createElement(
           "div",

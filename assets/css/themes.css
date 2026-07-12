@@ -1143,6 +1143,49 @@ body.dark .sidebar-footer .nav-item.active {
   background: var(--color-primary-100);
 }
 
+/* 版本号徽章深色模式 - 提升边框可见度 */
+body.dark .sidebar-version-badge {
+  background: var(--color-bg-tertiary);
+  border-color: var(--color-border-medium);
+  color: var(--color-text-secondary);
+}
+
+body.dark .sidebar-version-badge:hover {
+  background: var(--color-bg-hover);
+  border-color: var(--color-primary);
+  color: var(--color-text-primary);
+}
+
+body.dark .sidebar-version-text {
+  color: var(--color-text-secondary);
+}
+
+body.dark .sidebar-version-badge:hover .sidebar-version-text {
+  color: var(--color-primary);
+}
+
+body.dark .sidebar-version-time {
+  color: var(--color-text-muted);
+}
+
+/* 退出登录按钮深色模式 */
+body.dark .sidebar-footer .sidebar-logout-btn {
+  color: var(--color-text-secondary);
+}
+
+body.dark .sidebar-footer .sidebar-logout-btn:hover {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+body.dark .sidebar-footer .sidebar-logout-btn .nav-icon {
+  color: var(--color-text-muted);
+}
+
+body.dark .sidebar-footer .sidebar-logout-btn:hover .nav-icon {
+  color: var(--color-danger);
+}
+
 /* --- 2. 导航项 .nav-item.active 深色模式视觉区分增强 --- */
 body.dark .nav-item.active {
   background: var(--color-primary-100);
@@ -1182,6 +1225,10 @@ body.dark .update-modal-section-header {
 
 body.dark .update-modal-subtitle {
   color: var(--color-text-tertiary);
+}
+
+body.dark .update-modal-section {
+  border-left-color: var(--color-border-medium);
 }
 
 body.dark .update-modal-list {

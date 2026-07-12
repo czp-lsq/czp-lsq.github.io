@@ -250,6 +250,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
+  min-height: 120px;
 }
 
 .dashboard-page .guide-step {
@@ -832,6 +833,11 @@
 .template-page .empty {
   text-align: center;
   padding: 40px 20px;
+  min-height: 200px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
 }
 
 .template-page .empty-text {
@@ -1865,7 +1871,7 @@
   background: var(--color-bg-secondary);
   border: 2px solid var(--color-border-medium);
   border-radius: var(--radius-lg);
-  transition: all var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--duration-normal) var(--ease-smooth);
   font-family: inherit;
 }
 
@@ -1886,7 +1892,7 @@
 .rules-page .textarea:focus {
   outline: none;
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 4px var(--color-primary-50), 0 0 20px rgba(30, 58, 95, 0.1);
+  box-shadow: 0 0 0 4px var(--color-primary-50);
 }
 
 .rules-page .select {
@@ -1929,7 +1935,7 @@
   border: 2px solid var(--color-border-medium);
   border-radius: var(--radius-md);
   cursor: pointer;
-  transition: all var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--duration-normal) var(--ease-smooth);
   margin-bottom: 6px;
 }
 
@@ -2492,6 +2498,7 @@
   justify-content: center;
   text-align: center;
   padding: 40px 20px;
+  min-height: 240px;
 }
 
 .rules-page .empty-text {
@@ -2989,6 +2996,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 20px;
+  min-height: 200px;
 }
 
 .shops-page .shop-card {
@@ -3391,7 +3399,7 @@
   border: 2px solid var(--color-border-medium);
   border-radius: var(--radius-xl);
   overflow: hidden;
-  transition: all var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
+  transition: all var(--duration-normal) var(--ease-smooth);
   position: relative;
 }
 
@@ -3993,6 +4001,7 @@
   display: grid;
   grid-template-columns: repeat(3, 1fr);
   gap: 16px;
+  min-height: 120px;
 }
 
 .storage-page .stat-card {
@@ -5228,6 +5237,7 @@
 .changelog-timeline {
   position: relative;
   padding-left: 24px;
+  min-height: 200px;
 }
 
 .changelog-item {
@@ -5275,7 +5285,7 @@
 
 .changelog-dot-current {
   background: var(--color-primary);
-  box-shadow: 0 0 0 4px var(--color-primary-50, rgba(59, 130, 246, 0.15));
+  box-shadow: 0 0 0 4px var(--color-primary-50);
 }
 
 .changelog-item-card {
@@ -5284,8 +5294,8 @@
 }
 
 .changelog-current .changelog-item-card {
-  border-color: var(--color-primary-200, var(--color-primary));
-  box-shadow: 0 0 0 1px var(--color-primary-100, rgba(59, 130, 246, 0.1));
+  border-color: var(--color-primary-200);
+  box-shadow: 0 0 0 1px var(--color-primary-100);
 }
 
 .changelog-item-header {
@@ -5324,7 +5334,7 @@
   font-size: 11px;
   font-weight: 600;
   border-radius: var(--radius-full);
-  background: var(--color-success-bg, rgba(34, 197, 94, 0.1));
+  background: var(--color-success-bg);
   color: var(--color-success);
 }
 
