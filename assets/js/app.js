@@ -28,12 +28,100 @@ const App = () => {
   const { addToast } = useToast();
   const [state, setState] = useState(Store.get());
   const [isLoggedIn, setIsLoggedIn] = useState(() => {
-    const saved = localStorage.getItem("app_login_user");
-    return !!saved;
+    try {
+      const saved = localStorage.getItem("app_login_user");
+      if (!saved) return false;
+      const userData = JSON.parse(saved);
+      if (!userData || !userData.username || !userData.encryptedPassword) return false;
+      
+      const savedAccounts = localStorage.getItem("app_accounts");
+      let accounts = [];
+      if (savedAccounts) {
+        accounts = JSON.parse(savedAccounts);
+      }
+      if (accounts.length === 0) {
+        accounts = [{
+          id: "admin_001",
+          username: "刘思琦",
+          password: "520lsq",
+          name: "刘思琦",
+          role: "admin",
+          status: "active",
+        }];
+      }
+      
+      const matchedAccount = accounts.find(
+        (a) => a.username === userData.username && a.status === "active"
+      );
+      if (!matchedAccount) return false;
+      
+      const storedHash = decryptPassword(userData.encryptedPassword);
+      const accountPassword = matchedAccount.password || "";
+      const isAccountHashed = accountPassword.length === 8 && /^[a-f0-9]+$/i.test(accountPassword);
+      
+      let passwordMatch = false;
+      if (isAccountHashed) {
+        passwordMatch = accountPassword === storedHash;
+      } else {
+        const accountHash = hashPassword(accountPassword);
+        passwordMatch = accountHash === storedHash;
+      }
+      
+      return passwordMatch;
+    } catch (e) {
+      return false;
+    }
   });
   const [currentUser, setCurrentUser] = useState(() => {
     try {
-      return JSON.parse(localStorage.getItem("app_login_user") || "null");
+      const saved = localStorage.getItem("app_login_user");
+      if (!saved) return null;
+      const userData = JSON.parse(saved);
+      if (!userData || !userData.username) return null;
+      
+      const savedAccounts = localStorage.getItem("app_accounts");
+      let accounts = [];
+      if (savedAccounts) {
+        accounts = JSON.parse(savedAccounts);
+      }
+      if (accounts.length === 0) {
+        accounts = [{
+          id: "admin_001",
+          username: "刘思琦",
+          password: "520lsq",
+          name: "刘思琦",
+          role: "admin",
+          status: "active",
+        }];
+      }
+      
+      const matchedAccount = accounts.find(
+        (a) => a.username === userData.username && a.status === "active"
+      );
+      if (!matchedAccount) return null;
+      
+      const storedHash = decryptPassword(userData.encryptedPassword || "");
+      const accountPassword = matchedAccount.password || "";
+      const isAccountHashed = accountPassword.length === 8 && /^[a-f0-9]+$/i.test(accountPassword);
+      
+      let passwordMatch = false;
+      if (isAccountHashed) {
+        passwordMatch = accountPassword === storedHash;
+      } else {
+        const accountHash = hashPassword(accountPassword);
+        passwordMatch = accountHash === storedHash;
+      }
+      
+      if (!passwordMatch) return null;
+      
+      return {
+        id: matchedAccount.id,
+        username: matchedAccount.username,
+        name: matchedAccount.name || matchedAccount.username,
+        role: matchedAccount.role || "user",
+        email: matchedAccount.email,
+        remember: true,
+      };
     } catch (e) {
       return null;
     }

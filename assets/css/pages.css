@@ -1898,6 +1898,14 @@
   background-size: 16px;
   padding-right: 38px;
   color: var(--color-text-primary);
+  max-height: 300px;
+}
+
+.rules-page select option {
+  padding: 10px 12px;
+  font-size: 14px;
+  background: var(--color-bg-secondary);
+  color: var(--color-text-primary);
 }
 
 .rules-page .select:disabled {
@@ -3157,24 +3165,29 @@
 }
 
 .settings-page .settings-section {
-  padding: 28px 32px;
+  padding: 24px 28px;
+  transition: background-color var(--transition-base);
 }
 
 .settings-page .settings-section + .settings-section {
   border-top: 1px solid var(--color-border-light);
 }
 
+.settings-page .settings-section:hover {
+  background-color: var(--color-bg-tertiary);
+}
+
 .settings-page .settings-section-title {
-  font-size: 17px;
+  font-size: 15px;
   font-weight: 600;
   color: var(--color-text-primary);
-  margin-bottom: 8px;
+  margin-bottom: 6px;
 }
 
 .settings-page .settings-section-desc {
   font-size: 13px;
   color: var(--color-text-tertiary);
-  margin-bottom: 24px;
+  margin-bottom: 20px;
 }
 
 .settings-page .form-row {

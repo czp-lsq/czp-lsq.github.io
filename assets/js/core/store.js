@@ -81,6 +81,10 @@ const Store = (() => {
   const QUOTA_WARN_THRESHOLD = 0.85; // 85% 配额告警
   const QUOTA_CRITICAL_THRESHOLD = 0.95; // 95% 严重告警
   const MAX_DATA_SIZE = 4 * 1024 * 1024; // 4MB 数据大小告警阈值
+  const SAVE_DEBOUNCE_MS = 200; // 保存防抖延迟
+  
+  let _saveTimer = null;
+  let _pendingState = null;
 
   const migrations = {
     "1.0.0": (state) => state,
@@ -210,18 +214,13 @@ const Store = (() => {
             Object.keys(sample.sheets).forEach((name) => {
               delete sample.sheets[name].worksheet;
               delete sample.sheets[name].aoaFormatted;
-              if (sample.sheets[name].rows && sample.sheets[name].rows.length > 500) {
-                sample.sheets[name].rows = sample.sheets[name].rows.slice(0, 500);
-                sample.sheets[name].truncated = true;
-              }
             });
           }
         });
       });
     }
-    // 截断计算历史最多保留 50 条
-    if (Array.isArray(lite.calcHistory) && lite.calcHistory.length > 50) {
-      lite.calcHistory = lite.calcHistory.slice(0, 50);
+    if (Array.isArray(lite.calcHistory) && lite.calcHistory.length > 200) {
+      lite.calcHistory = lite.calcHistory.slice(0, 200);
     }
     return lite;
   };
@@ -370,6 +369,10 @@ const Store = (() => {
     getVersion: () => CURRENT_VERSION,
     getStorageInfo,
     exportData: () => JSON.stringify(state, null, 2),
+    exportDataLite: () => {
+      const lite = liteState(state);
+      return JSON.stringify(lite, null, 2);
+    },
     importData: (data) => {
       const parsed = typeof data === "string" ? JSON.parse(data) : data;
       if (!parsed.platforms) throw new Error("无效的配置文件");
@@ -377,6 +380,43 @@ const Store = (() => {
       state = { ...parsed, _version: CURRENT_VERSION, _lastSaved: new Date().toISOString() };
       save(state);
       subs.forEach((s) => s(state));
+    },
+    createSnapshot: (label) => {
+      try {
+        const key = `snapshot_${Date.now()}_${label || "manual"}`;
+        const data = JSON.stringify(state);
+        localStorage.setItem(key, data);
+        let snapshots = [];
+        try {
+          snapshots = JSON.parse(localStorage.getItem("profit_calc_snapshots") || "[]");
+        } catch (e) {}
+        snapshots.push({ key, time: Date.now(), label: label || "manual", size: data.length });
+        localStorage.setItem("profit_calc_snapshots", JSON.stringify(snapshots.slice(-10)));
+        return true;
+      } catch (e) {
+        return false;
+      }
+    },
+    getSnapshots: () => {
+      try {
+        return JSON.parse(localStorage.getItem("profit_calc_snapshots") || "[]");
+      } catch (e) {
+        return [];
+      }
+    },
+    restoreSnapshot: (key) => {
+      try {
+        const data = localStorage.getItem(key);
+        if (!data) return false;
+        const parsed = JSON.parse(data);
+        if (!parsed.platforms) return false;
+        state = { ...parsed, _version: CURRENT_VERSION, _lastSaved: new Date().toISOString() };
+        save(state);
+        subs.forEach((s) => s(state));
+        return true;
+      } catch (e) {
+        return false;
+      }
     },
   };
 })();

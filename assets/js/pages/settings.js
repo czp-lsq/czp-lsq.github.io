@@ -585,12 +585,22 @@ const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeThe
       React.createElement("div", { className: "settings-section-desc" }, "自定义您的通知偏好，关闭后将不再显示对应通知"),
     ),
     React.createElement("div", { className: "settings-section" },
-      React.createElement("div", { className: "settings-section-title", style: { fontSize: "14px", marginBottom: "16px" } }, "总开关"),
+      React.createElement("div", { className: "settings-section-title", style: { fontSize: "14px", marginBottom: "16px" } }, "通用设置"),
       Toggle({
         checked: notificationSettings.masterEnabled,
         onChange: (v) => setNotificationSettings({ ...notificationSettings, masterEnabled: v }),
         label: "启用通知",
         desc: "关闭后将屏蔽所有非错误的提示通知（错误通知仍会显示）",
+      }),
+      Toggle({
+        checked: typeof SoundManager !== "undefined" ? SoundManager.isEnabled() : true,
+        onChange: (v) => {
+          if (typeof SoundManager !== "undefined") {
+            SoundManager.setEnabled(v);
+          }
+        },
+        label: "音效提示",
+        desc: "开启后通知会伴有音效提示",
       }),
     ),
     React.createElement("div", { className: `settings-section ${notificationSettings.masterEnabled === false ? "settings-disabled" : ""}` },

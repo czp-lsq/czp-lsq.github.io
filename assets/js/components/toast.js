@@ -2,6 +2,16 @@
 const SoundManager = {
   _audioContext: null,
   _enabled: true,
+  STORAGE_KEY: "app_sound_enabled",
+  
+  init() {
+    try {
+      const saved = localStorage.getItem(this.STORAGE_KEY);
+      if (saved !== null) {
+        this._enabled = saved === "true";
+      }
+    } catch (e) {}
+  },
   
   getAudioContext() {
     if (!this._audioContext) {
@@ -10,8 +20,15 @@ const SoundManager = {
     return this._audioContext;
   },
   
+  isEnabled() {
+    return this._enabled;
+  },
+  
   setEnabled(enabled) {
     this._enabled = enabled;
+    try {
+      localStorage.setItem(this.STORAGE_KEY, enabled ? "true" : "false");
+    } catch (e) {}
   },
   
   playSuccess() {
@@ -338,3 +355,8 @@ const useToast = () => {
 };
 
 // 模态框
+
+// 初始化音效管理器
+if (typeof SoundManager !== "undefined" && SoundManager.init) {
+  SoundManager.init();
+}
