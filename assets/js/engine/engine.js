@@ -334,6 +334,50 @@ const CalcEngine = {
             });
             break;
           }
+          case "filterEqual":
+          case "filterContain": {
+            if (!step.config.column) break;
+            const fOp = step.type === "filterEqual" ? "==" : "contains";
+            data = data.filter((row) => {
+              const val = row[step.config.column] ?? row.val;
+              const target = step.config.value;
+              const v = val != null ? String(val) : "";
+              const t = target != null ? String(target) : "";
+              switch (fOp) {
+                case "==":
+                  return v === t;
+                case "contains":
+                  return v.includes(t);
+                default:
+                  return true;
+              }
+            });
+            break;
+          }
+          case "filterRange": {
+            if (!step.config.column) break;
+            const minVal = step.config.min !== "" && step.config.min != null ? Number(step.config.min) : -Infinity;
+            const maxVal = step.config.max !== "" && step.config.max != null ? Number(step.config.max) : Infinity;
+            data = data.filter((row) => {
+              const val = Number(row[step.config.column] ?? row.val);
+              return val >= minVal && val <= maxVal;
+            });
+            break;
+          }
+          case "topN": {
+            const count = Number(step.config.count) || 10;
+            if (step.config.column) {
+              const sorted = [...data].sort((a, b) => {
+                const av = Number(a[step.config.column] ?? a.val);
+                const bv = Number(b[step.config.column] ?? b.val);
+                return step.config.order === "asc" ? av - bv : bv - av;
+              });
+              data = sorted.slice(0, count);
+            } else {
+              data = data.slice(0, count);
+            }
+            break;
+          }
           case "virtual": {
             if (!step.config.source || !step.config.target) break;
             data = data.map((row) => {

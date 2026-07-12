@@ -434,9 +434,41 @@ const RulesPage = ({ state, currentPlatform }) => {
         category: "input",
       },
       filter: {
-        name: "过滤",
+        name: "筛选",
         desc: "按条件筛选数据行",
         icon: /*#__PURE__*/ React.createElement(Icons.Filter, null),
+        color: "var(--color-warning)",
+        bg: "var(--color-warning-bg)",
+        category: "filter",
+      },
+      filterEqual: {
+        name: "等于筛选",
+        desc: "筛选出等于指定值的行",
+        icon: /*#__PURE__*/ React.createElement(Icons.Filter, null),
+        color: "var(--color-warning)",
+        bg: "var(--color-warning-bg)",
+        category: "filter",
+      },
+      filterContain: {
+        name: "包含筛选",
+        desc: "筛选出包含指定文本的行",
+        icon: /*#__PURE__*/ React.createElement(Icons.Search, null),
+        color: "var(--color-warning)",
+        bg: "var(--color-warning-bg)",
+        category: "filter",
+      },
+      filterRange: {
+        name: "范围筛选",
+        desc: "筛选数值在指定范围内的行",
+        icon: /*#__PURE__*/ React.createElement(Icons.BarChart3, null),
+        color: "var(--color-warning)",
+        bg: "var(--color-warning-bg)",
+        category: "filter",
+      },
+      topN: {
+        name: "前N行筛选",
+        desc: "只保留前N条数据",
+        icon: /*#__PURE__*/ React.createElement(Icons.FileText, null),
         color: "var(--color-warning)",
         bg: "var(--color-warning-bg)",
         category: "filter",
@@ -1086,6 +1118,10 @@ const RulesPage = ({ state, currentPlatform }) => {
         groupIndex: 0,
       },
       filter: { column: "", op: "==", value: "" },
+      filterEqual: { column: "", op: "==", value: "" },
+      filterContain: { column: "", op: "contains", value: "" },
+      filterRange: { column: "", min: "", max: "" },
+      topN: { count: 10, column: "", order: "desc" },
       virtual: { source: "", target: "", rule: "copy" },
       join: { table: "", key: "", fk: "", col: "" },
       aggregate: { column: "", func: "sum" },
@@ -1766,11 +1802,52 @@ const RulesPage = ({ state, currentPlatform }) => {
           ),
         );
       }
+      case "filterEqual":
+      case "filterContain":
       case "filter":
         const filterValues = getColumnValues(step.config.column);
+        const columnOptions = [
+          { value: "val", label: "当前值 (val)" },
+          ...sourceTableHeaders.map((h) => ({ value: h, label: h })),
+        ];
+        const opOptions = [
+          { value: "==", label: "等于" },
+          { value: "!=", label: "不等于" },
+          { value: ">", label: "大于" },
+          { value: "<", label: "小于" },
+          { value: ">=", label: "大于等于" },
+          { value: "<=", label: "小于等于" },
+          { value: "contains", label: "包含" },
+          { value: "notContains", label: "不包含" },
+          { value: "startsWith", label: "开头是" },
+          { value: "endsWith", label: "结尾是" },
+          { value: "isEmpty", label: "为空" },
+          { value: "notEmpty", label: "不为空" },
+          { value: "regex", label: "正则匹配" },
+        ];
+        const valueOptions = filterValues.map((v) => ({ value: v, label: v }));
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "filter-header-bar" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "filter-header-title" },
+              /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "filter-header-icon" },
+                "🔍",
+              ),
+              "筛选条件",
+            ),
+            filterValues.length > 0 && /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "filter-header-count" },
+              `该列共 ${filterValues.length} 个不同值`,
+            ),
+          ),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "grid-2" },
@@ -1780,34 +1857,14 @@ const RulesPage = ({ state, currentPlatform }) => {
               /*#__PURE__*/ React.createElement(
                 "label",
                 { className: "form-label" },
-                "\u8FC7\u6EE4\u5217",
+                "筛选列",
               ),
-              /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.column,
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "column", e.target.value),
-                },
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "" },
-                  "\u8BF7\u9009\u62E9\u5217",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "val" },
-                  "\u5F53\u524D\u503C (val)",
-                ),
-                sourceTableHeaders.map((h) =>
-                  /*#__PURE__*/ React.createElement(
-                    "option",
-                    { key: h, value: h },
-                    h,
-                  ),
-                ),
-              ),
+              /*#__PURE__*/ React.createElement(window.SearchableSelect, {
+                value: step.config.column,
+                onChange: (val) => updateStepConfig(step.id, "column", val),
+                options: columnOptions,
+                placeholder: "请选择列",
+              }),
             ),
             /*#__PURE__*/ React.createElement(
               "div",
@@ -1815,82 +1872,14 @@ const RulesPage = ({ state, currentPlatform }) => {
               /*#__PURE__*/ React.createElement(
                 "label",
                 { className: "form-label" },
-                "\u64CD\u4F5C\u7B26",
+                "条件",
               ),
-              /*#__PURE__*/ React.createElement(
-                "select",
-                {
-                  className: "select",
-                  value: step.config.op,
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "op", e.target.value),
-                },
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "==" },
-                  "\u7B49\u4E8E",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "!=" },
-                  "\u4E0D\u7B49\u4E8E",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: ">" },
-                  "\u5927\u4E8E",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "<" },
-                  "\u5C0F\u4E8E",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: ">=" },
-                  "\u5927\u4E8E\u7B49\u4E8E",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "<=" },
-                  "\u5C0F\u4E8E\u7B49\u4E8E",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "contains" },
-                  "\u5305\u542B",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "notContains" },
-                  "\u4E0D\u5305\u542B",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "startsWith" },
-                  "\u5F00\u5934\u662F",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "endsWith" },
-                  "\u7ED3\u5C3E\u662F",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "isEmpty" },
-                  "\u4E3A\u7A7A",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "notEmpty" },
-                  "\u4E0D\u4E3A\u7A7A",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "option",
-                  { value: "regex" },
-                  "\u6B63\u5219\u5339\u914D",
-                ),
-              ),
+              /*#__PURE__*/ React.createElement(window.SearchableSelect, {
+                value: step.config.op,
+                onChange: (val) => updateStepConfig(step.id, "op", val),
+                options: opOptions,
+                placeholder: "请选择条件",
+              }),
             ),
           ),
           (step.config.op !== "isEmpty" && step.config.op !== "notEmpty") && /*#__PURE__*/ React.createElement(
@@ -1899,34 +1888,33 @@ const RulesPage = ({ state, currentPlatform }) => {
             /*#__PURE__*/ React.createElement(
               "label",
               { className: "form-label" },
-              "\u5BF9\u6BD4\u503C",
-              " ",
+              "筛选值",
               filterValues.length > 0 && /*#__PURE__*/ React.createElement(
                 "span",
-                { style: { color: "var(--color-text-muted)", fontWeight: 400, fontSize: 12 } },
-                `\uFF08\u5171 ${filterValues.length} \u4E2A\u503C\u53EF\u9009\uFF09`,
+                { style: { color: "var(--color-text-muted)", fontWeight: 400, fontSize: 12, marginLeft: 6 } },
+                `（可搜索筛选）`,
               ),
             ),
-            /*#__PURE__*/ React.createElement("input", {
-              type: "text",
-              className: "input",
+            /*#__PURE__*/ React.createElement(window.SearchableSelect, {
               value: step.config.value || "",
-              onChange: (e) =>
-                updateStepConfig(step.id, "value", e.target.value),
-              placeholder: "\u70B9\u51FB\u4E0B\u62C9\u9009\u62E9\u6216\u624B\u52A8\u8F93\u5165",
-              list: `filter-datalist-${step.id}`,
+              onChange: (val) => updateStepConfig(step.id, "value", val),
+              options: valueOptions,
+              placeholder: "选择或输入筛选值",
+              allowCreate: true,
             }),
-            filterValues.length > 0 && /*#__PURE__*/ React.createElement(
-              "datalist",
-              { id: `filter-datalist-${step.id}` },
-              filterValues.map((v) =>
-                /*#__PURE__*/ React.createElement("option", { key: v, value: v }, v),
-              ),
+          ),
+          filterValues.length > 0 && (step.config.op !== "isEmpty" && step.config.op !== "notEmpty") && /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "filter-quick-select" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "filter-quick-label" },
+              "快捷选择：",
             ),
-            filterValues.length > 0 && /*#__PURE__*/ React.createElement(
+            /*#__PURE__*/ React.createElement(
               "div",
               { className: "filter-value-tags" },
-              filterValues.slice(0, 8).map((v) =>
+              filterValues.slice(0, 10).map((v) =>
                 /*#__PURE__*/ React.createElement(
                   "span",
                   {
@@ -1942,10 +1930,10 @@ const RulesPage = ({ state, currentPlatform }) => {
                   v,
                 ),
               ),
-              filterValues.length > 8 && /*#__PURE__*/ React.createElement(
+              filterValues.length > 10 && /*#__PURE__*/ React.createElement(
                 "span",
                 { className: "filter-value-tag filter-value-more" },
-                `+${filterValues.length - 8}`,
+                `+${filterValues.length - 10}`,
               ),
             ),
           ),
@@ -1953,9 +1941,184 @@ const RulesPage = ({ state, currentPlatform }) => {
             "div",
             { className: "step-desc" },
             /*#__PURE__*/ React.createElement(Icons.Info, null),
-            " \uD83C\uDFAF ",
-            /*#__PURE__*/ React.createElement("strong", null, "\u8FC7\u6EE4"),
-            '\uFF1A\u7B5B\u9009\u7B26\u5408\u6761\u4EF6\u7684\u6570\u636E\u884C\uFF0C\u4E0D\u7B26\u5408\u6761\u4EF6\u7684\u884C\u4F1A\u88AB\u4E22\u5F03\u3002\u503C\u4E0B\u62C9\u5217\u8868\u81EA\u52A8\u8BC6\u522B\u5217\u4E2D\u6240\u6709\u503C\uFF0C\u540CExcel\u7B5B\u9009\u4F53\u9A8C',
+            " 🎯 ",
+            /*#__PURE__*/ React.createElement("strong", null, "筛选"),
+            "：从数据中挑出符合条件的行，不符合条件的行会被隐藏。下拉列表自动识别列中所有值，与Excel筛选体验一致。",
+          ),
+        );
+      case "filterRange":
+        return /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "step-config" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "filter-header-bar" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "filter-header-title" },
+              /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "filter-header-icon" },
+                "📊",
+              ),
+              "范围筛选",
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "filter-header-count" },
+              "筛选数值在指定范围内的数据",
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-label" },
+              "筛选列",
+            ),
+            /*#__PURE__*/ React.createElement(window.SearchableSelect, {
+              value: step.config.column,
+              onChange: (val) => updateStepConfig(step.id, "column", val),
+              options: sourceTableHeaders.map((h) => ({ value: h, label: h })),
+              placeholder: "请选择列",
+            }),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "grid-2" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "最小值",
+              ),
+              /*#__PURE__*/ React.createElement("input", {
+                type: "number",
+                className: "input",
+                value: step.config.min ?? "",
+                onChange: (e) =>
+                  updateStepConfig(step.id, "min", e.target.value),
+                placeholder: "输入最小值",
+              }),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "最大值",
+              ),
+              /*#__PURE__*/ React.createElement("input", {
+                type: "number",
+                className: "input",
+                value: step.config.max ?? "",
+                onChange: (e) =>
+                  updateStepConfig(step.id, "max", e.target.value),
+                placeholder: "输入最大值",
+              }),
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "step-desc" },
+            /*#__PURE__*/ React.createElement(Icons.Info, null),
+            " 📊 ",
+            /*#__PURE__*/ React.createElement("strong", null, "范围筛选"),
+            "：筛选出数值在最小值和最大值之间的数据行，两端都包含。",
+          ),
+        );
+      case "topN":
+        return /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "step-config" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "filter-header-bar" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "filter-header-title" },
+              /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "filter-header-icon" },
+                "🏆",
+              ),
+              "前N行筛选",
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "filter-header-count" },
+              "只保留排名靠前的行",
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "grid-2" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "保留行数",
+              ),
+              /*#__PURE__*/ React.createElement("input", {
+                type: "number",
+                className: "input",
+                value: step.config.count ?? 10,
+                onChange: (e) =>
+                  updateStepConfig(step.id, "count", Number(e.target.value)),
+                placeholder: "输入行数",
+                min: 1,
+              }),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "排序列（可选）",
+              ),
+              /*#__PURE__*/ React.createElement(window.SearchableSelect, {
+                value: step.config.column || "",
+                onChange: (val) => updateStepConfig(step.id, "column", val),
+                options: [
+                  { value: "", label: "保持原顺序" },
+                  ...sourceTableHeaders.map((h) => ({ value: h, label: h })),
+                ],
+                placeholder: "选择排序列",
+              }),
+            ),
+          ),
+          step.config.column && /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-label" },
+              "排序方式",
+            ),
+            /*#__PURE__*/ React.createElement(window.SearchableSelect, {
+              value: step.config.order || "desc",
+              onChange: (val) => updateStepConfig(step.id, "order", val),
+              options: [
+                { value: "desc", label: "降序（从大到小）" },
+                { value: "asc", label: "升序（从小到大）" },
+              ],
+              placeholder: "选择排序方式",
+            }),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "step-desc" },
+            /*#__PURE__*/ React.createElement(Icons.Info, null),
+            " 🏆 ",
+            /*#__PURE__*/ React.createElement("strong", null, "前N行筛选"),
+            "：只保留前N条数据，可指定按某列排序后取前N行。",
           ),
         );
       case "aggregate":

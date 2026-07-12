@@ -163,17 +163,18 @@ const App = () => {
   const [showUpdateModal, setShowUpdateModal] = useState(false);
   const [updateInfo, setUpdateInfo] = useState(null);
 
-  const APP_VERSION = "5.6.0";
+  const APP_VERSION = "5.7.0";
   const VERSION_KEY = "app_version_seen";
   const UPDATE_LOG = [
-    { version: "5.6.0", date: "2026-07-12", changes: [
-      "优化过滤步骤，移除对比值类型，自动识别列值",
-      "过滤值支持下拉选择+手动输入，同Excel筛选体验",
-      "新增过滤值快捷标签，点击快速选择",
+    { version: "5.7.0", date: "2026-07-12", changes: [
+      "全新可搜索下拉组件，支持搜索和快速选择",
+      "过滤步骤升级为「筛选」，与Excel体验一致",
+      "新增等于筛选、包含筛选、范围筛选、前N行筛选",
+      "筛选值支持下拉选择+搜索+快捷标签",
+      "新增Store.flush方法，上传数据后立即保存",
       "修复模板/配置中心上传后刷新数据丢失",
-      "上传数据后立即强制保存，避免数据丢失",
-      "完善自动登录功能，登录页自动填充账号密码",
-      "新增Store.flush方法，支持立即保存",
+      "完善自动登录，登录页自动填充账号密码",
+      "优化筛选步骤UI，更清晰直观",
     ]},
     { version: "5.2.0", date: "2026-07-11", changes: [
       "修复刷新页面跳回登录页的问题",
