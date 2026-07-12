@@ -19,6 +19,7 @@ const DataPage = ({ state, currentPlatform }) => {
   const [isUploading, setIsUploading] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const fileInputRef = useRef(null);
+  const [searchQuery, setSearchQuery] = useState("");
   const platform = state.platforms.find((p) => p.id === currentPlatform);
   const samples = state.samples[currentPlatform] || [];
   const calcHistory = state.calcHistory || [];
@@ -73,7 +74,6 @@ const DataPage = ({ state, currentPlatform }) => {
   const [previewSheet, setPreviewSheet] = useState("");
   const [previewColumns, setPreviewColumns] = useState([]);
   const [columnDropdownOpen, setColumnDropdownOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState("");
   const columnDropdownRef = useRef(null);
 
   useEffect(() => {

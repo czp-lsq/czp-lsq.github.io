@@ -1,5 +1,18 @@
+const hashPassword = (password) => {
+  let hash = 0;
+  const salt = "ShopData_2026_Salt";
+  const str = salt + password + salt;
+  for (let i = 0; i < str.length; i++) {
+    const char = str.charCodeAt(i);
+    hash = ((hash << 5) - hash) + char;
+    hash = hash & hash;
+  }
+  return hash.toString(16);
+};
+
 const encryptPassword = (password) => {
-  return btoa(unescape(encodeURIComponent(password)));
+  const hash = hashPassword(password);
+  return btoa(unescape(encodeURIComponent(hash)));
 };
 
 const decryptPassword = (encrypted) => {
@@ -132,8 +145,19 @@ const App = () => {
           return;
         }
         
-        const decryptedPassword = decryptPassword(userData.encryptedPassword);
-        if (matchedAccount.password && matchedAccount.password !== decryptedPassword) {
+        const storedHash = decryptPassword(userData.encryptedPassword);
+        const accountPassword = matchedAccount.password || "";
+        const isAccountHashed = accountPassword.length === 8 && /^[a-f0-9]+$/i.test(accountPassword);
+        
+        let passwordMatch = false;
+        if (isAccountHashed) {
+          passwordMatch = accountPassword === storedHash;
+        } else {
+          const accountHash = hashPassword(accountPassword);
+          passwordMatch = accountHash === storedHash;
+        }
+        
+        if (!passwordMatch) {
           localStorage.removeItem("app_login_user");
           return;
         }
@@ -465,7 +489,25 @@ const App = () => {
       }
       return;
     }
-    if (matchedAccount.password && userInfo.password && matchedAccount.password !== userInfo.password) {
+    
+    const inputHash = hashPassword(userInfo.password);
+    const storedPassword = matchedAccount.password || "";
+    const isHashed = storedPassword.length === 8 && /^[a-f0-9]+$/i.test(storedPassword);
+    
+    let passwordMatch = false;
+    if (isHashed) {
+      passwordMatch = storedPassword === inputHash;
+    } else {
+      passwordMatch = storedPassword === userInfo.password;
+      if (passwordMatch && storedPassword) {
+        const updatedAccounts = accounts.map((a) =>
+          a.id === matchedAccount.id ? { ...a, password: inputHash } : a
+        );
+        localStorage.setItem("app_accounts", JSON.stringify(updatedAccounts));
+      }
+    }
+    
+    if (!passwordMatch) {
       if (typeof userInfo.onError === "function") {
         userInfo.onError("用户名或密码错误");
       }
