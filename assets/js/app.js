@@ -1,3 +1,15 @@
+const encryptPassword = (password) => {
+  return btoa(unescape(encodeURIComponent(password)));
+};
+
+const decryptPassword = (encrypted) => {
+  try {
+    return decodeURIComponent(escape(atob(encrypted)));
+  } catch (e) {
+    return "";
+  }
+};
+
 // app.js - 主应用入口 (App / Root / 路由 / 布局)
 const App = () => {
   const { addToast } = useToast();
@@ -13,6 +25,7 @@ const App = () => {
       return null;
     }
   });
+  const [autoLoginLoading, setAutoLoginLoading] = useState(false);
   const [openTabs, setOpenTabs] = useState([{ id: "dashboard", page: "dashboard" }]);
   const [currentPage, setCurrentPage] = useState("dashboard");
   const [currentPlatform, setCurrentPlatform] = useState(() => {
@@ -80,6 +93,77 @@ const App = () => {
       setState({ ...newState });
     });
     return unsub;
+  }, []);
+
+  useEffect(() => {
+    const tryAutoLogin = async () => {
+      const savedUser = localStorage.getItem("app_login_user");
+      if (!savedUser) return;
+      
+      try {
+        const userData = JSON.parse(savedUser);
+        if (!userData || !userData.username || !userData.encryptedPassword) {
+          return;
+        }
+        
+        const savedAccounts = localStorage.getItem("app_accounts");
+        let accounts = [];
+        if (savedAccounts) {
+          accounts = JSON.parse(savedAccounts);
+        }
+        
+        if (accounts.length === 0) {
+          accounts = [{
+            id: "admin_001",
+            username: "刘思琦",
+            password: "520lsq",
+            name: "刘思琦",
+            role: "admin",
+            status: "active",
+          }];
+        }
+        
+        const matchedAccount = accounts.find(
+          (a) => a.username === userData.username && a.status === "active"
+        );
+        
+        if (!matchedAccount) {
+          localStorage.removeItem("app_login_user");
+          return;
+        }
+        
+        const decryptedPassword = decryptPassword(userData.encryptedPassword);
+        if (matchedAccount.password && matchedAccount.password !== decryptedPassword) {
+          localStorage.removeItem("app_login_user");
+          return;
+        }
+        
+        const autoUser = {
+          id: matchedAccount.id,
+          username: matchedAccount.username,
+          name: matchedAccount.name || matchedAccount.username,
+          role: matchedAccount.role || "user",
+          email: matchedAccount.email,
+          remember: true,
+        };
+        
+        setIsLoggedIn(true);
+        setCurrentUser(autoUser);
+        
+        const updatedAccounts = accounts.map((a) =>
+          a.id === matchedAccount.id
+            ? { ...a, lastLogin: new Date().toISOString() }
+            : a
+        );
+        localStorage.setItem("app_accounts", JSON.stringify(updatedAccounts));
+        ActivityLogger.add("自动登录", autoUser.username);
+        
+      } catch (e) {
+        localStorage.removeItem("app_login_user");
+      }
+    };
+    
+    tryAutoLogin();
   }, []);
 
   // 订阅存储事件，将存储异常/告警以 Toast 形式通知用户
@@ -398,7 +482,10 @@ const App = () => {
     setIsLoggedIn(true);
     setCurrentUser(userData);
     if (userInfo.remember) {
-      localStorage.setItem("app_login_user", JSON.stringify({ username: userData.username }));
+      localStorage.setItem("app_login_user", JSON.stringify({ 
+        username: userData.username, 
+        encryptedPassword: encryptPassword(userInfo.password) 
+      }));
     } else {
       localStorage.removeItem("app_login_user");
     }

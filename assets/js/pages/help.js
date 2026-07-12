@@ -1,17 +1,20 @@
 const HelpPage = () => {
   const [activeSection, setActiveSection] = useState("intro");
+  const [expandedFAQ, setExpandedFAQ] = useState(null);
 
   const sections = [
-    { id: "intro", name: "系统介绍", icon: Icons.Info },
-    { id: "quickstart", name: "快速上手", icon: Icons.Zap },
-    { id: "template", name: "模板配置", icon: Icons.FileSpreadsheet },
-    { id: "rules", name: "计算规则", icon: Icons.Calculator },
-    { id: "data", name: "数据管理", icon: Icons.Database },
-    { id: "batch", name: "批量计算", icon: Icons.GitBranch },
-    { id: "settings", name: "系统设置", icon: Icons.Settings },
-    { id: "sync", name: "数据同步", icon: Icons.RefreshCw },
-    { id: "faq", name: "常见问题", icon: Icons.HelpCircle },
+    { id: "intro", name: "系统介绍", icon: Icons.Info, category: "基础" },
+    { id: "quickstart", name: "快速上手", icon: Icons.Zap, category: "基础" },
+    { id: "template", name: "模板配置", icon: Icons.FileSpreadsheet, category: "配置" },
+    { id: "rules", name: "计算规则", icon: Icons.Calculator, category: "配置" },
+    { id: "data", name: "数据管理", icon: Icons.Database, category: "数据" },
+    { id: "batch", name: "批量计算", icon: Icons.GitBranch, category: "数据" },
+    { id: "sync", name: "数据同步", icon: Icons.RefreshCw, category: "数据" },
+    { id: "settings", name: "系统设置", icon: Icons.Settings, category: "系统" },
+    { id: "faq", name: "常见问题", icon: Icons.HelpCircle, category: "系统" },
   ];
+
+  const categories = ["基础", "配置", "数据", "系统"];
 
   const renderIntro = () => React.createElement(
     "div",
@@ -545,53 +548,84 @@ const HelpPage = () => {
     ),
   );
 
+  const faqItems = [
+    {
+      q: "模板中的占位符不被识别怎么办？",
+      a: "请确保占位符使用标准的X字符（如 xxxx、xx年xx月），不要使用其他特殊字符。如果仍无法识别，可以在字段配置中手动设置字段类型。",
+      tag: "模板配置",
+    },
+    {
+      q: "计算结果不正确怎么办？",
+      a: "请检查计算规则配置是否正确，确保数据源字段选择正确，过滤条件设置合理。可以使用「预览」功能查看中间计算结果。",
+      tag: "计算规则",
+    },
+    {
+      q: "样表上传失败怎么办？",
+      a: "请检查文件格式是否正确（支持 .xlsx、.xls、.csv），文件大小是否超过限制。建议将大数据量文件拆分成多个小文件上传。",
+      tag: "数据管理",
+    },
+    {
+      q: "数据存储在哪里？",
+      a: "数据存储在浏览器本地存储（localStorage）中，容量约 5MB，不会上传到服务器。请定期导出数据备份，清除浏览器缓存会导致数据丢失。",
+      tag: "数据管理",
+    },
+    {
+      q: "如何切换平台？",
+      a: "在顶部导航栏点击平台图标（拼多多/淘宝/抖音）即可切换。每个平台有独立的模板和数据。",
+      tag: "基础操作",
+    },
+    {
+      q: "如何在不同设备间同步数据？",
+      a: "请参考「数据同步」章节，通过导出全部数据为 JSON 文件，在另一设备导入即可实现同步。",
+      tag: "数据同步",
+    },
+    {
+      q: "跨表关联时字段名怎么选？",
+      a: "跨表关联的主表关联键、关联表外键、取关联表列均已改为下拉自动选择，无需手动输入。只需先选择关联数据表，即可从下拉列表中选择对应字段。",
+      tag: "计算规则",
+    },
+    {
+      q: "如何将文本描述转为数字？",
+      a: "使用「查找替换」步骤，选择匹配模式（精确/包含/前缀/后缀/正则），添加映射规则（如「6条装」→「6」），未匹配时可设置默认值。",
+      tag: "计算规则",
+    },
+    {
+      q: "通知设置不生效？",
+      a: "请检查系统设置中的通知总开关是否开启。总开关关闭后所有非错误通知将被屏蔽。子开关在总开关关闭时自动禁用。",
+      tag: "系统设置",
+    },
+    {
+      q: "忘记登录密码怎么办？",
+      a: "默认管理员账户为 admin/admin123。如需重置，可在浏览器控制台执行 localStorage.removeItem('app_accounts') 然后刷新页面，系统将恢复默认账户。",
+      tag: "系统设置",
+    },
+  ];
+
   const renderFAQ = () => React.createElement(
     "div",
     { className: "help-content" },
     React.createElement("div", { className: "help-section" },
       React.createElement("h2", { className: "help-section-title" }, "常见问题"),
+      React.createElement("p", { className: "help-section-text" },
+        "遇到问题？这里收集了最常见的疑问和解答。点击问题展开查看详细答案。",
+      ),
     ),
-    React.createElement("div", { className: "help-faq" },
-      React.createElement("div", { className: "help-faq-item" },
-        React.createElement("h3", { className: "help-faq-title" }, "Q: 模板中的占位符不被识别怎么办？"),
-        React.createElement("p", { className: "help-faq-answer" }, "A: 请确保占位符使用标准的X字符（如 xxxx、xx年xx月），不要使用其他特殊字符。如果仍无法识别，可以在字段配置中手动设置字段类型。"),
-      ),
-      React.createElement("div", { className: "help-faq-item" },
-        React.createElement("h3", { className: "help-faq-title" }, "Q: 计算结果不正确怎么办？"),
-        React.createElement("p", { className: "help-faq-answer" }, "A: 请检查计算规则配置是否正确，确保数据源字段选择正确，过滤条件设置合理。可以使用「预览」功能查看中间计算结果。"),
-      ),
-      React.createElement("div", { className: "help-faq-item" },
-        React.createElement("h3", { className: "help-faq-title" }, "Q: 样表上传失败怎么办？"),
-        React.createElement("p", { className: "help-faq-answer" }, "A: 请检查文件格式是否正确（支持 .xlsx、.xls、.csv），文件大小是否超过限制。建议将大数据量文件拆分成多个小文件上传。"),
-      ),
-      React.createElement("div", { className: "help-faq-item" },
-        React.createElement("h3", { className: "help-faq-title" }, "Q: 数据存储在哪里？"),
-        React.createElement("p", { className: "help-faq-answer" }, "A: 数据存储在浏览器本地存储（localStorage）中，容量约 5MB，不会上传到服务器。请定期导出数据备份，清除浏览器缓存会导致数据丢失。"),
-      ),
-      React.createElement("div", { className: "help-faq-item" },
-        React.createElement("h3", { className: "help-faq-title" }, "Q: 如何切换平台？"),
-        React.createElement("p", { className: "help-faq-answer" }, "A: 在顶部导航栏点击平台图标（拼多多/淘宝/抖音）即可切换。每个平台有独立的模板和数据。"),
-      ),
-      React.createElement("div", { className: "help-faq-item" },
-        React.createElement("h3", { className: "help-faq-title" }, "Q: 如何在不同设备间同步数据？"),
-        React.createElement("p", { className: "help-faq-answer" }, "A: 请参考「数据同步」章节，通过导出全部数据为 JSON 文件，在另一设备导入即可实现同步。"),
-      ),
-      React.createElement("div", { className: "help-faq-item" },
-        React.createElement("h3", { className: "help-faq-title" }, "Q: 跨表关联时字段名怎么选？"),
-        React.createElement("p", { className: "help-faq-answer" }, "A: 跨表关联的主表关联键、关联表外键、取关联表列均已改为下拉自动选择，无需手动输入。只需先选择关联数据表，即可从下拉列表中选择对应字段。"),
-      ),
-      React.createElement("div", { className: "help-faq-item" },
-        React.createElement("h3", { className: "help-faq-title" }, "Q: 如何将文本描述转为数字？"),
-        React.createElement("p", { className: "help-faq-answer" }, "A: 使用「查找替换」步骤，选择匹配模式（精确/包含/前缀/后缀/正则），添加映射规则（如「6条装」→「6」），未匹配时可设置默认值。"),
-      ),
-      React.createElement("div", { className: "help-faq-item" },
-        React.createElement("h3", { className: "help-faq-title" }, "Q: 通知设置不生效？"),
-        React.createElement("p", { className: "help-faq-answer" }, "A: 请检查系统设置中的通知总开关是否开启。总开关关闭后所有非错误通知将被屏蔽。子开关在总开关关闭时自动禁用。"),
-      ),
-      React.createElement("div", { className: "help-faq-item" },
-        React.createElement("h3", { className: "help-faq-title" }, "Q: 忘记登录密码怎么办？"),
-        React.createElement("p", { className: "help-faq-answer" }, "A: 默认管理员账户为 admin/admin123。如需重置，可在浏览器控制台执行 localStorage.removeItem('app_accounts') 然后刷新页面，系统将恢复默认账户。"),
-      ),
+    React.createElement("div", { className: "help-faq-grid" },
+      faqItems.map((faq, idx) => React.createElement(
+        "div",
+        { key: idx, className: "help-faq-card" },
+        React.createElement(Tag, { type: "info", size: "sm" }, faq.tag),
+        React.createElement("button", {
+          className: "help-faq-header",
+          onClick: () => setExpandedFAQ(expandedFAQ === idx ? null : idx),
+        },
+          React.createElement("span", { className: "help-faq-q" }, faq.q),
+          React.createElement("span", { className: `help-faq-arrow ${expandedFAQ === idx ? "expanded" : ""}` }, "\u25BC"),
+        ),
+        React.createElement("div", { className: `help-faq-body ${expandedFAQ === idx ? "expanded" : ""}` },
+          React.createElement("p", { className: "help-faq-a" }, faq.a),
+        ),
+      )),
     ),
   );
 
@@ -614,26 +648,32 @@ const HelpPage = () => {
     "div",
     { className: "help-page fade-in" },
     React.createElement("div", { className: "help-layout" },
-      React.createElement("div", { className: "help-header" },
-        React.createElement("div", { className: "help-title-row" },
+      React.createElement("div", { className: "help-sidebar" },
+        React.createElement("div", { className: "help-sidebar-header" },
           React.createElement(Icons.HelpCircle, { style: { width: "28px", height: "28px", color: "var(--color-primary)" } }),
-          React.createElement("span", { className: "help-title" }, "使用帮助"),
+          React.createElement("span", { className: "help-sidebar-title" }, "使用帮助"),
         ),
-        React.createElement("div", { className: "help-nav" },
-          sections.map((section) => React.createElement(
-            "div",
-            {
-              key: section.id,
-              className: `help-nav-item ${activeSection === section.id ? "active" : ""}`,
-              onClick: () => setActiveSection(section.id),
-            },
-            React.createElement(section.icon, null),
-            React.createElement("span", null, section.name),
-          )),
+        React.createElement("div", { className: "help-sidebar-nav" },
+          categories.map((category) => {
+            const categorySections = sections.filter((s) => s.category === category);
+            return React.createElement("div", { key: category, className: "help-sidebar-group" },
+              React.createElement("div", { className: "help-sidebar-group-title" }, category),
+              categorySections.map((section) => React.createElement(
+                "button",
+                {
+                  key: section.id,
+                  className: `help-sidebar-item ${activeSection === section.id ? "active" : ""}`,
+                  onClick: () => setActiveSection(section.id),
+                },
+                React.createElement(section.icon, null),
+                React.createElement("span", null, section.name),
+              )),
+            );
+          }),
         ),
       ),
       React.createElement("div", { className: "help-main" },
-        React.createElement("div", { className: "card" },
+        React.createElement("div", { className: "card help-card-wrapper" },
           renderContent(),
         ),
       ),

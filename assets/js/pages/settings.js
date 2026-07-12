@@ -154,13 +154,15 @@ const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeThe
   };
 
   const sections = [
-    { id: "appearance", name: "外观设置", icon: Icons.Sparkles, desc: "主题与显示模式" },
-    { id: "profile", name: "个人信息", icon: Icons.User, desc: "管理您的个人资料" },
-    { id: "app", name: "应用设置", icon: Icons.Settings, desc: "配置应用行为" },
-    { id: "notification", name: "通知设置", icon: Icons.Bell, desc: "自定义通知偏好" },
-    ...(isAdmin ? [{ id: "accounts", name: "账户管理", icon: Icons.Users, desc: "添加和管理账户" }] : []),
-    { id: "about", name: "关于系统", icon: Icons.Info, desc: "系统信息与操作" },
+    { id: "appearance", name: "外观设置", icon: Icons.Sparkles, desc: "主题与显示模式", category: "个性化" },
+    { id: "profile", name: "个人信息", icon: Icons.User, desc: "管理您的个人资料", category: "个性化" },
+    { id: "app", name: "应用设置", icon: Icons.Settings, desc: "配置应用行为", category: "系统" },
+    { id: "notification", name: "通知设置", icon: Icons.Bell, desc: "自定义通知偏好", category: "系统" },
+    ...(isAdmin ? [{ id: "accounts", name: "账户管理", icon: Icons.Users, desc: "添加和管理账户", category: "系统" }] : []),
+    { id: "about", name: "关于系统", icon: Icons.Info, desc: "系统信息与操作", category: "系统" },
   ];
+
+  const categories = ["个性化", "系统"];
 
   const saveAccounts = (newAccounts) => {
     setAccounts(newAccounts);
@@ -848,28 +850,33 @@ const SettingsPage = ({ state, onNavigate, currentTheme, colorTheme, onChangeThe
     "div",
     { className: "settings-page fade-in" },
     React.createElement("div", { className: "settings-layout" },
-      React.createElement("div", { className: "settings-header" },
-        React.createElement("div", { className: "settings-title-row" },
+      React.createElement("div", { className: "settings-sidebar" },
+        React.createElement("div", { className: "settings-sidebar-header" },
           React.createElement(Icons.Settings, { style: { width: "28px", height: "28px", color: "var(--color-primary)" } }),
-          React.createElement("span", { className: "settings-title" }, "系统设置"),
+          React.createElement("span", { className: "settings-sidebar-title" }, "系统设置"),
         ),
-        React.createElement("div", { className: "settings-nav" },
-          sections.map((section) => React.createElement(
-            "div",
-            {
-              key: section.id,
-              onClick: () => setActiveSection(section.id),
-              className: `settings-nav-item ${activeSection === section.id ? "active" : ""}`,
-            },
-            React.createElement("span", { className: "nav-icon", style: { width: "18px", height: "18px", display: "inline-flex", alignItems: "center", justifyContent: "center" } },
-              React.createElement(section.icon, null),
-            ),
-            React.createElement("span", { className: "settings-nav-name" }, section.name),
-          )),
+        React.createElement("div", { className: "settings-sidebar-nav" },
+          categories.map((category) => {
+            const categorySections = sections.filter((s) => s.category === category);
+            return React.createElement("div", { key: category, className: "settings-sidebar-group" },
+              React.createElement("div", { className: "settings-sidebar-group-title" }, category),
+              categorySections.map((section) => React.createElement(
+                "button",
+                {
+                  key: section.id,
+                  className: `settings-sidebar-item ${activeSection === section.id ? "active" : ""}`,
+                  onClick: () => setActiveSection(section.id),
+                },
+                React.createElement(section.icon, null),
+                React.createElement("span", { className: "settings-sidebar-item-name" }, section.name),
+                React.createElement("span", { className: "settings-sidebar-item-desc" }, section.desc),
+              )),
+            );
+          }),
         ),
       ),
       React.createElement("div", { className: "settings-main" },
-        React.createElement("div", { className: "card", style: { minHeight: "500px" } },
+        React.createElement("div", { className: "card settings-card-wrapper" },
           renderContent(),
         ),
       ),

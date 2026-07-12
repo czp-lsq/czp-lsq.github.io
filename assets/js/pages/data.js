@@ -211,9 +211,10 @@ const DataPage = ({ state, currentPlatform }) => {
     });
   };
   const deleteSelected = () => {
+    const deleteCount = selectedItems.size;
     setConfirmDialog({
       title: "确认批量删除",
-      message: `确认删除选中的${selectedItems.size} 个样表？此操作不可撤销。`,
+      message: `确认删除选中的${deleteCount} 个样表？此操作不可撤销。`,
       type: "danger",
       onConfirm: () => {
         Store.set((s) => ({
@@ -226,7 +227,7 @@ const DataPage = ({ state, currentPlatform }) => {
           },
         }));
         setSelectedItems(new Set());
-        addToast("success", "批量删除", `已删除${selectedItems.size} 个文件`);
+        addToast("success", "批量删除", `已删除${deleteCount} 个文件`);
         setConfirmDialog(null);
       },
       onCancel: () => setConfirmDialog(null),

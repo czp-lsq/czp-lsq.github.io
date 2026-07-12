@@ -1,4 +1,96 @@
 // toast - Toast通知系统组件与Hook
+const SoundManager = {
+  _audioContext: null,
+  _enabled: true,
+  
+  getAudioContext() {
+    if (!this._audioContext) {
+      this._audioContext = new (window.AudioContext || window.webkitAudioContext)();
+    }
+    return this._audioContext;
+  },
+  
+  setEnabled(enabled) {
+    this._enabled = enabled;
+  },
+  
+  playSuccess() {
+    if (!this._enabled) return;
+    try {
+      const ctx = this.getAudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(523.25, ctx.currentTime);
+      oscillator.frequency.setValueAtTime(659.25, ctx.currentTime + 0.1);
+      oscillator.frequency.setValueAtTime(783.99, ctx.currentTime + 0.2);
+      gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.3);
+    } catch (e) {}
+  },
+  
+  playError() {
+    if (!this._enabled) return;
+    try {
+      const ctx = this.getAudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      oscillator.type = "sawtooth";
+      oscillator.frequency.setValueAtTime(300, ctx.currentTime);
+      oscillator.frequency.setValueAtTime(200, ctx.currentTime + 0.1);
+      oscillator.frequency.setValueAtTime(150, ctx.currentTime + 0.2);
+      gainNode.gain.setValueAtTime(0.15, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.3);
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.3);
+    } catch (e) {}
+  },
+  
+  playWarning() {
+    if (!this._enabled) return;
+    try {
+      const ctx = this.getAudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      oscillator.type = "triangle";
+      oscillator.frequency.setValueAtTime(440, ctx.currentTime);
+      oscillator.frequency.setValueAtTime(440, ctx.currentTime + 0.1);
+      oscillator.frequency.setValueAtTime(392, ctx.currentTime + 0.2);
+      oscillator.frequency.setValueAtTime(392, ctx.currentTime + 0.3);
+      gainNode.gain.setValueAtTime(0.1, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.4);
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.4);
+    } catch (e) {}
+  },
+  
+  playInfo() {
+    if (!this._enabled) return;
+    try {
+      const ctx = this.getAudioContext();
+      const oscillator = ctx.createOscillator();
+      const gainNode = ctx.createGain();
+      oscillator.connect(gainNode);
+      gainNode.connect(ctx.destination);
+      oscillator.type = "sine";
+      oscillator.frequency.setValueAtTime(440, ctx.currentTime);
+      oscillator.frequency.setValueAtTime(523.25, ctx.currentTime + 0.1);
+      gainNode.gain.setValueAtTime(0.08, ctx.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, ctx.currentTime + 0.2);
+      oscillator.start(ctx.currentTime);
+      oscillator.stop(ctx.currentTime + 0.2);
+    } catch (e) {}
+  },
+};
+
 const NotificationCenter = {
   _listeners: [],
   _notifications: [],
@@ -186,7 +278,7 @@ const AppSettings = {
 const ToastProvider = ({ children }) => {
   const [toasts, setToasts] = useState([]);
   const addToast = useCallback((type, title, message, duration = 3000, options = {}) => {
-    const { notificationType, saveToHistory = true, forceShow = false } = options;
+    const { notificationType, saveToHistory = true, forceShow = false, sound = true } = options;
     const settings = NotificationCenter.getSettings();
     if (settings.masterEnabled === false && !forceShow && type !== "error") {
       return;
@@ -199,6 +291,12 @@ const ToastProvider = ({ children }) => {
     setTimeout(() => {
       setToasts(prev => prev.filter(t => t.id !== id));
     }, duration);
+    if (sound) {
+      if (type === "success") SoundManager.playSuccess();
+      else if (type === "error") SoundManager.playError();
+      else if (type === "warning") SoundManager.playWarning();
+      else SoundManager.playInfo();
+    }
     if (saveToHistory && notificationType && NotificationCenter.isEnabled(notificationType)) {
       NotificationCenter.addNotification({
         type,
@@ -235,8 +333,8 @@ const ToastProvider = ({ children }) => {
 
 const useToast = () => {
   const ctx = useContext(ToastContext);
-  if (!ctx) return { addToast: () => {}, NotificationCenter };
-  return { ...ctx, NotificationCenter };
+  if (!ctx) return { addToast: () => {}, NotificationCenter, SoundManager };
+  return { ...ctx, NotificationCenter, SoundManager };
 };
 
 // 模态框

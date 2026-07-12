@@ -3,11 +3,11 @@
    ======================================== */
 .card {
   background: var(--color-bg-secondary);
-  border-radius: var(--radius-lg);
+  border-radius: var(--radius-xl);
   box-shadow: var(--shadow-sm);
   border: 1px solid var(--color-border-light);
   overflow: hidden;
-  transition: var(--transition-base);
+  transition: all var(--transition-slow) cubic-bezier(0.4, 0, 0.2, 1);
   position: relative;
 }
 
@@ -23,13 +23,30 @@
   transition: opacity var(--transition-fast);
 }
 
+.card::after {
+  content: '';
+  position: absolute;
+  top: -50%;
+  left: -50%;
+  width: 200%;
+  height: 200%;
+  background: radial-gradient(circle, var(--color-primary-50) 0%, transparent 70%);
+  opacity: 0;
+  transition: opacity var(--transition-slow);
+  pointer-events: none;
+}
+
 .card:hover::before {
   opacity: 1;
 }
 
+.card:hover::after {
+  opacity: 0.3;
+}
+
 .card:hover {
   box-shadow: var(--shadow-card-hover), var(--theme-glow);
-  transform: translateY(-2px);
+  transform: translateY(-4px) scale(1.002);
 }
 
 .card-header {
@@ -136,15 +153,32 @@
   align-items: center;
   justify-content: center;
   gap: 8px;
-  padding: 10px 20px;
-  border-radius: var(--radius-md);
+  padding: 11px 22px;
+  border-radius: var(--radius-lg);
   font-size: 14px;
-  font-weight: 500;
+  font-weight: 600;
   cursor: pointer;
   border: none;
-  transition: var(--transition-base);
+  transition: all var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
   text-decoration: none;
   white-space: nowrap;
+  position: relative;
+  overflow: hidden;
+}
+
+.btn::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.1), transparent);
+  transition: left var(--transition-slow);
+}
+
+.btn:hover::before {
+  left: 100%;
 }
 
 .btn-primary {
@@ -154,12 +188,12 @@
 }
 
 .btn-primary:hover {
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-md);
+  transform: translateY(-2px) scale(1.02);
+  box-shadow: var(--shadow-lg);
 }
 
 .btn-primary:active {
-  transform: translateY(0);
+  transform: translateY(0) scale(0.98);
 }
 
 .btn-secondary {
@@ -170,39 +204,41 @@
 
 .btn-secondary:hover {
   background: var(--color-bg-hover);
+  transform: translateY(-1px);
+  box-shadow: var(--shadow-md);
 }
 
 .btn-success {
-  background: var(--color-success);
+  background: linear-gradient(135deg, var(--color-success) 0%, var(--color-success-light) 100%);
   color: white;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-success:hover {
-  background: var(--color-success-light);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 .btn-warning {
-  background: var(--color-warning);
+  background: linear-gradient(135deg, var(--color-warning) 0%, var(--color-warning-light) 100%);
   color: white;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-warning:hover {
-  background: var(--color-warning-light);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 .btn-danger {
-  background: var(--color-danger);
+  background: linear-gradient(135deg, var(--color-danger) 0%, var(--color-danger-light) 100%);
   color: white;
+  box-shadow: var(--shadow-sm);
 }
 
 .btn-danger:hover {
-  background: var(--color-danger-light);
-  transform: translateY(-1px);
-  box-shadow: var(--shadow-sm);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-lg);
 }
 
 .btn-ghost {
@@ -272,13 +308,13 @@
 
 .input {
   width: 100%;
-  padding: 10px 14px;
-  border: 1px solid var(--color-border-medium);
-  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  border: 2px solid var(--color-border-medium);
+  border-radius: var(--radius-lg);
   font-size: 14px;
   color: var(--color-text-primary);
   background: var(--color-bg-secondary);
-  transition: var(--transition-base);
+  transition: all var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
   font-family: inherit;
   box-sizing: border-box;
@@ -286,7 +322,7 @@
 
 .input:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-50);
+  box-shadow: 0 0 0 4px var(--color-primary-50), 0 0 20px rgba(30, 58, 95, 0.1);
 }
 
 .input:disabled {
@@ -325,28 +361,28 @@
 
 .select {
   width: 100%;
-  padding: 10px 14px;
-  border: 1px solid var(--color-border-medium);
-  border-radius: var(--radius-md);
+  padding: 12px 16px;
+  border: 2px solid var(--color-border-medium);
+  border-radius: var(--radius-lg);
   font-size: 14px;
   color: var(--color-text-primary);
   background: var(--color-bg-secondary);
   cursor: pointer;
   outline: none;
-  transition: var(--transition-base);
+  transition: all var(--transition-base) cubic-bezier(0.4, 0, 0.2, 1);
   font-family: inherit;
   appearance: none;
   background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%23666' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpolyline points='6 9 12 15 18 9'%3E%3C/polyline%3E%3C/svg%3E");
   background-repeat: no-repeat;
-  background-position: right 12px center;
+  background-position: right 14px center;
   background-size: 16px;
-  padding-right: 36px;
+  padding-right: 40px;
   box-sizing: border-box;
 }
 
 .select:focus {
   border-color: var(--color-primary);
-  box-shadow: 0 0 0 3px var(--color-primary-50);
+  box-shadow: 0 0 0 4px var(--color-primary-50), 0 0 20px rgba(30, 58, 95, 0.1);
 }
 
 /* ========================================

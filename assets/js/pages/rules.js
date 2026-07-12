@@ -1112,20 +1112,25 @@ const RulesPage = ({ state, currentPlatform }) => {
     );
   };
   const updateStepConfig = (stepId, key, value) => {
-    if (!activeField || !currentRule) return;
-    const newSteps = currentRule.steps.map((s) =>
-      s.id === stepId ? { ...s, config: { ...s.config, [key]: value } } : s,
-    );
-    Store.set((s) => ({
-      ...s,
-      rules: {
-        ...s.rules,
-        [currentPlatform]: {
-          ...savedRules,
-          [activeField.id]: { ...savedRules[activeField.id], steps: newSteps },
+    if (!activeField) return;
+    Store.set((s) => {
+      const currentSavedRules = s.rules[currentPlatform] || {};
+      const currentRuleData = currentSavedRules[activeField.id];
+      if (!currentRuleData || !currentRuleData.steps) return s;
+      const newSteps = currentRuleData.steps.map((step) =>
+        step.id === stepId ? { ...step, config: { ...step.config, [key]: value } } : step,
+      );
+      return {
+        ...s,
+        rules: {
+          ...s.rules,
+          [currentPlatform]: {
+            ...currentSavedRules,
+            [activeField.id]: { ...currentRuleData, steps: newSteps },
+          },
         },
-      },
-    }));
+      };
+    });
   };
   const deleteStep = (stepId) => {
     if (!activeField || !currentRule) return;
