@@ -1,4 +1,4 @@
-const APP_VERSION = "czp-1.21.0";
+const APP_VERSION = "czp-1.22.0";
 const DATA_VERSION = "8.0.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
@@ -11,6 +11,17 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-1.22.0", date: "2026-07-13 06:00:00",
+    summary: "计算规则页面滚动修复",
+    changes: [
+      { type: "optimize", text: "计算规则页面高度设为固定视口高度，强制内部滚动" },
+      { type: "optimize", text: "覆盖main-content的overflow和padding，避免外层滚动干扰" },
+      { type: "optimize", text: "移除card-scroll的flex布局，防止子元素撑开容器" },
+    ],
+    bugfixes: [
+      { text: "修复计算操作配置工作区不能上下滑动的问题" },
+    ],
+  },
   { version: "czp-1.21.0", date: "2026-07-13 05:30:00",
     summary: "页面滚动修复与布局优化",
     changes: [
