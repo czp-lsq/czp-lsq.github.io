@@ -230,11 +230,39 @@ const SearchableSelect = ({
 
   const displayValue = useMemo(() => {
     if (value === "" || value == null) return "";
-    const opt = options.find(
-      (o) => (typeof o === "object" ? o.value : o) === value,
-    );
+    
+    const findOption = (opts) => {
+      for (const o of opts) {
+        const optValue = typeof o === "object" ? o.value : o;
+        if (optValue === value) {
+          return o;
+        }
+      }
+      return null;
+    };
+    
+    let opt = findOption(options);
+    
+    if (!opt && groups) {
+      for (const group of groups) {
+        if (group.options) {
+          opt = findOption(group.options);
+          if (opt) break;
+        }
+      }
+    }
+    
+    if (!opt && processedGroups) {
+      for (const group of processedGroups) {
+        if (group.options) {
+          opt = findOption(group.options);
+          if (opt) break;
+        }
+      }
+    }
+    
     return opt ? (typeof opt === "object" ? opt.label : opt) : value;
-  }, [value, options]);
+  }, [value, options, groups, processedGroups]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {

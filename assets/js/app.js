@@ -291,10 +291,10 @@ const App = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const loadingRef = useRef(null);
 
-  const APP_VERSION = "czp-1.11.0";
-  const VERSION_KEY = "app_version_seen";
-  const VERSION_HISTORY_KEY = "app_version_history";
-  const UPDATE_LOG = [
+  const APP_VERSION = window.AppVersion || "czp-1.12.0";
+  const VERSION_KEY = window.VersionKey || "app_version_seen";
+  const VERSION_HISTORY_KEY = window.VersionHistoryKey || "app_version_history";
+  const UPDATE_LOG = window.UpdateLog || [
     { version: "czp-1.11.0", date: "2026-07-13 19:30:00",
       summary: "样式优化与交互体验提升",
       changes: [
@@ -1638,10 +1638,49 @@ const App = () => {
                   if (!file) return;
                   const text = await file.text();
                   try {
-                    Store.importData(text);
-                    ActivityLogger.add("导入配置", file.name);
+                    const parsed = JSON.parse(text);
+                    const hasData = Object.keys(parsed.data || parsed).length > 0;
+                    
+                    if (hasData && !parsed.data) {
+                      setConfirmDialog({
+                        title: "导入数据",
+                        message: "检测到旧格式配置文件，将直接覆盖当前数据。确定要继续吗？",
+                        type: "warning",
+                        onConfirm: () => {
+                          Store.importData(text, false);
+                          ActivityLogger.add("导入配置", file.name);
+                          setConfirmDialog(null);
+                          addToastRef.current("success", "导入成功", "配置数据已导入");
+                        },
+                        onCancel: () => setConfirmDialog(null),
+                      });
+                    } else if (hasData) {
+                      setConfirmDialog({
+                        title: "导入数据",
+                        message: `发现配置文件（版本: ${parsed._appVersion || "未知"}，导出时间: ${parsed._exportTime || "未知"}）。\n\n选择「覆盖」将替换所有当前数据；选择「合并」将追加新数据到现有数据中（适用于跨设备数据同步）。`,
+                        type: "warning",
+                        confirmText: "覆盖",
+                        cancelText: "合并",
+                        onConfirm: () => {
+                          Store.importData(text, false);
+                          ActivityLogger.add("导入配置（覆盖）", file.name);
+                          setConfirmDialog(null);
+                          addToastRef.current("success", "导入成功", "配置数据已覆盖");
+                        },
+                        onCancel: () => {
+                          Store.importData(text, true);
+                          ActivityLogger.add("导入配置（合并）", file.name);
+                          setConfirmDialog(null);
+                          addToastRef.current("success", "导入成功", "配置数据已合并");
+                        },
+                      });
+                    } else {
+                      Store.importData(text, false);
+                      ActivityLogger.add("导入配置", file.name);
+                      addToastRef.current("success", "导入成功", "配置数据已导入");
+                    }
                   } catch (err) {
-                    alert("导入失败: " + err.message);
+                    addToastRef.current("error", "导入失败", err.message);
                   }
                 };
                 input.click();

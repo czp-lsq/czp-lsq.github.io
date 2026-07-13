@@ -669,7 +669,7 @@ const Store = (() => {
   const STORAGE_KEY = "profit_calc_system_v10";
   const BACKUP_KEY = "profit_calc_system_v10_backup";
   const COMPRESSED_MARKER = "__COMPRESSED__:";
-  const CURRENT_VERSION = "6.0.0"; // 升级版本以触发迁移
+  const CURRENT_VERSION = window.DataVersion || "6.0.0";
   const QUOTA_WARN_THRESHOLD = 0.85; // 85% 配额告警
   const QUOTA_CRITICAL_THRESHOLD = 0.95; // 95% 严重告警
   const MAX_DATA_SIZE = 4 * 1024 * 1024; // 4MB 数据大小告警阈值
@@ -1172,23 +1172,83 @@ const Store = (() => {
     },
     getVersion: () => CURRENT_VERSION,
     getStorageInfo,
-    exportData: () => JSON.stringify(state, null, 2),
-    exportDataLite: () => {
-      const lite = liteState(state);
-      return JSON.stringify(lite, null, 2);
-    },
-    importData: (data) => {
-      const parsed = typeof data === "string" ? JSON.parse(data) : data;
-      if (!parsed.platforms) throw new Error("无效的配置文件");
-      if (!validate(parsed)) throw new Error("配置文件数据不完整或格式错误");
-      state = { 
-        ...parsed, 
-        _version: CURRENT_VERSION, 
-        _lastSaved: new Date().toISOString(),
-        _compressed: true,
+    exportData: (includeAll = true) => {
+      const exportObj = {
+        _exportVersion: CURRENT_VERSION,
+        _exportTime: new Date().toISOString(),
+        _appVersion: window.AppVersion || "unknown",
+        data: includeAll ? state : liteState(state),
       };
+      return JSON.stringify(exportObj, null, 2);
+    },
+    exportDataLite: () => {
+      return JSON.stringify({
+        _exportVersion: CURRENT_VERSION,
+        _exportTime: new Date().toISOString(),
+        _appVersion: window.AppVersion || "unknown",
+        data: liteState(state),
+      }, null, 2);
+    },
+    importData: (data, merge = false) => {
+      const parsed = typeof data === "string" ? JSON.parse(data) : data;
+      let importData = parsed;
+      
+      if (parsed.data) {
+        importData = parsed.data;
+      }
+      
+      if (!importData.platforms) throw new Error("无效的配置文件");
+      if (!validate(importData)) throw new Error("配置文件数据不完整或格式错误");
+      
+      if (merge) {
+        const newState = { ...state };
+        
+        if (importData.platforms) {
+          newState.platforms = [...new Set([...state.platforms, ...importData.platforms])];
+        }
+        
+        if (importData.templates) {
+          newState.templates = { ...state.templates, ...importData.templates };
+        }
+        
+        if (importData.rules) {
+          newState.rules = { ...state.rules };
+          Object.keys(importData.rules).forEach((platformId) => {
+            newState.rules[platformId] = { ...newState.rules[platformId], ...importData.rules[platformId] };
+          });
+        }
+        
+        if (importData.externals) {
+          newState.externals = { ...state.externals, ...importData.externals };
+        }
+        
+        if (importData.shops) {
+          newState.shops = [...new Set([...state.shops, ...importData.shops])];
+        }
+        
+        state = {
+          ...newState,
+          _version: CURRENT_VERSION,
+          _lastSaved: new Date().toISOString(),
+          _compressed: true,
+        };
+      } else {
+        state = { 
+          ...importData, 
+          _version: CURRENT_VERSION, 
+          _lastSaved: new Date().toISOString(),
+          _compressed: true,
+        };
+      }
+      
       save(state, true);
       subs.forEach((s) => s(state));
+      
+      return {
+        merged: merge,
+        exportVersion: parsed._exportVersion || "unknown",
+        exportTime: parsed._exportTime || "unknown",
+      };
     },
     createSnapshot: (label) => {
       try {

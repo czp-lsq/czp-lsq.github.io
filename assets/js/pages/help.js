@@ -965,7 +965,7 @@ const ChangelogPage = ({ updateLog, appVersion }) => {
       React.createElement("div", { style: headerStatsStyle },
         React.createElement("div", { style: statBoxStyle },
           React.createElement("span", { style: statLabelStyle }, "当前版本"),
-          React.createElement("span", { style: Object.assign({}, statValueBase, { color: "var(--color-primary)" }) }, "V" + currentVersion),
+          React.createElement("span", { style: Object.assign({}, statValueBase, { color: "var(--color-primary)" }) }, currentVersion),
         ),
         React.createElement("div", { style: Object.assign({}, statBoxStyle, { borderLeft: "1px solid var(--color-border-light)", paddingLeft: 24 }) },
           React.createElement("span", { style: statLabelStyle }, "累计更新"),
@@ -987,7 +987,7 @@ const ChangelogPage = ({ updateLog, appVersion }) => {
           React.createElement("div", { className: "card changelog-item-card" },
             React.createElement("div", { className: "changelog-item-header" },
               React.createElement("div", { className: "changelog-version-row" },
-                React.createElement("span", { className: "changelog-version-tag" + (isCurrent ? " changelog-version-tag-current" : "") }, "v" + entry.version),
+                React.createElement("span", { className: "changelog-version-tag" + (isCurrent ? " changelog-version-tag-current" : "") }, entry.version),
                 isCurrent && React.createElement("span", { className: "changelog-current-badge" }, "当前版本"),
                 React.createElement("span", { className: "changelog-date" }, entry.date)
               ),
