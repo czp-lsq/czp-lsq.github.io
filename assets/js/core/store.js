@@ -890,6 +890,29 @@ const Store = (() => {
     }
   };
 
+  // 彻底清理所有损坏的数据
+  const clearAllCorruptedData = () => {
+    try {
+      localStorage.removeItem(STORAGE_KEY);
+      localStorage.removeItem(BACKUP_KEY);
+      localStorage.removeItem("store_snapshots");
+      localStorage.removeItem("store_version");
+      const snapshotKeys = Object.keys(localStorage).filter(key => key.startsWith("store_snapshot_"));
+      snapshotKeys.forEach(key => localStorage.removeItem(key));
+      console.log("Cleaned all corrupted localStorage data");
+    } catch (e) {
+      console.error("Failed to clear localStorage:", e);
+    }
+    
+    try {
+      const request = indexedDB.deleteDatabase("ShopDataDB");
+      request.onsuccess = () => console.log("IndexedDB database deleted successfully");
+      request.onerror = (e) => console.error("Failed to delete IndexedDB:", e);
+    } catch (e) {
+      console.error("Failed to delete IndexedDB:", e);
+    }
+  };
+
   // 安全加载：检测并清理损坏的数据
   const safeLoadState = () => {
     try {
@@ -916,8 +939,8 @@ const Store = (() => {
             console.log("Successfully restored from snapshot");
             return snapshot;
           }
-          console.warn("No backup available, cleaning up corrupted data");
-          localStorage.removeItem(STORAGE_KEY);
+          console.warn("No backup available, cleaning up all corrupted data");
+          clearAllCorruptedData();
           return null;
         }
       }
@@ -935,8 +958,8 @@ const Store = (() => {
         console.log("Successfully restored from snapshot");
         return snapshot;
       }
-      console.warn("No backup available, cleaning up corrupted data");
-      localStorage.removeItem(STORAGE_KEY);
+      console.warn("No backup available, cleaning up all corrupted data");
+      clearAllCorruptedData();
       return null;
     }
   };

@@ -5205,12 +5205,41 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   return /*#__PURE__*/ React.createElement(
     "div",
     { className: "fade-in rules-page" },
-    /*#__PURE__*/ React.createElement(
-      "div",
-      { className: "workspace" },
-      /*#__PURE__*/ React.createElement(
-        "div",
-        { className: "workspace-left" },
+    fields.length === 0
+      ? /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "rules-empty-full" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "rules-empty-icon" },
+            /*#__PURE__*/ React.createElement(Icons.FileSpreadsheet, null),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "rules-empty-title" },
+            "暂无模板配置",
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "rules-empty-desc" },
+            "请先在模板中心上传利润表模板，系统将自动识别占位符并生成可配置字段",
+          ),
+          /*#__PURE__*/ React.createElement(
+            Button,
+            {
+              type: "primary",
+              onClick: () => onNavigate && onNavigate("template"),
+            },
+            /*#__PURE__*/ React.createElement(Icons.ArrowRight, null),
+            " 前往模板中心",
+          ),
+        )
+      : /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "workspace" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "workspace-left" },
         /*#__PURE__*/ React.createElement(
           "div",
           { className: "card" },
@@ -6508,7 +6537,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
         Modal,
         {
           title: "\u6DFB\u52A0\u8BA1\u7B97\u6B65\u9AA4",
-          width: "720px",
+          width: "800px",
           onClose: () => setShowAddStepModal(false),
           footer: /*#__PURE__*/ React.createElement(
             Button,

@@ -1,4 +1,4 @@
-const APP_VERSION = "czp-1.18.0";
+const APP_VERSION = "czp-1.19.0";
 const DATA_VERSION = "8.0.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
@@ -11,18 +11,18 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
-  { version: "czp-1.18.0", date: "2026-07-13 04:50:00",
-    summary: "数据恢复增强与版本时间优化",
+  { version: "czp-1.19.0", date: "2026-07-13 05:00:00",
+    summary: "页面布局优化与数据修复增强",
     changes: [
-      { type: "feature", text: "压缩数据损坏时自动从备份/快照恢复，提升数据安全性" },
-      { type: "feature", text: "版本更新时间统一为检测到更新时间，确保时间准确性" },
-      { type: "feature", text: "计算规则页面调试模式支持折叠，降低对操作区的影响" },
-      { type: "feature", text: "修复计算规则模块语法错误导致的页面打不开问题" },
+      { type: "feature", text: "计算规则页面未配置模板时全屏显示统一提示，避免左右分区重复提示" },
+      { type: "feature", text: "计算步骤弹窗优化，增加宽度和高度，卡片改为3列布局更清晰" },
+      { type: "feature", text: "关于系统页面付费联系改为测试支持lsq.811，删除数据版本提示" },
+      { type: "feature", text: "压缩数据损坏时彻底清理所有存储，防止重复报错" },
     ],
     bugfixes: [
-      { text: "修复压缩数据损坏导致的数据丢失问题" },
-      { text: "修复计算规则模块语法错误导致的页面打不开问题" },
-      { text: "修复版本更新时间显示不一致的问题" },
+      { text: "修复计算规则页面未配置模板时左右分区重复提示问题" },
+      { text: "修复计算步骤弹窗卡片展示不清晰问题" },
+      { text: "修复压缩数据损坏导致的重复报错问题" },
     ],
   },
   { version: "czp-1.16.0", date: "2026-07-13 04:37:39",
