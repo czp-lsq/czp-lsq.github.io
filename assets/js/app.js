@@ -475,11 +475,9 @@ const App = () => {
 
   const checkForUpdate = useCallback(async (showToast = false) => {
     try {
-      // 检测是否为 file:// 协议，本地文件无法 fetch 更新
       if (window.location.protocol === "file:") {
         return;
       }
-      // 仅在 HTTP/HTTPS 下检测更新
       if (!navigator.onLine) {
         return;
       }
@@ -492,13 +490,17 @@ const App = () => {
       const doc = parser.parseFromString(html, "text/html");
       const meta = doc.querySelector('meta[name="app-version"]');
       const remoteVersion = meta ? meta.getAttribute("content") : null;
+      const buildTimeMeta = doc.querySelector('meta[name="app-build-time"]');
+      const remoteBuildTime = buildTimeMeta ? buildTimeMeta.getAttribute("content") : null;
       const now = new Date();
       setUpdateDetectedAt(now);
 
       if (remoteVersion && remoteVersion !== APP_VERSION) {
+        const displayDate = remoteBuildTime || now.toLocaleString();
         setUpdateInfo({
           version: remoteVersion,
-          date: now.toLocaleString(),
+          date: displayDate,
+          buildTime: remoteBuildTime,
           detectedAt: now,
           summary: "发现新版本",
           changes: [
@@ -511,7 +513,6 @@ const App = () => {
         }
       }
     } catch (e) {
-      // 静默失败（file:// 协议等情况下）
     }
   }, []);
 
@@ -520,10 +521,27 @@ const App = () => {
   }, [checkForUpdate]);
 
   useEffect(() => {
-    // 只在 HTTP/HTTPS 协议下启动定时检查
     if (window.location.protocol === "file:") return;
-    const timer = setInterval(() => checkForUpdate(true), 3 * 60 * 1000);
+    const timer = setInterval(() => checkForUpdate(true), 60 * 1000);
     return () => clearInterval(timer);
+  }, [checkForUpdate]);
+
+  useEffect(() => {
+    if (window.location.protocol === "file:") return;
+    const handleVisibility = () => {
+      if (document.visibilityState === "visible") {
+        checkForUpdate(true);
+      }
+    };
+    const handleFocus = () => {
+      checkForUpdate(true);
+    };
+    document.addEventListener("visibilitychange", handleVisibility);
+    window.addEventListener("focus", handleFocus);
+    return () => {
+      document.removeEventListener("visibilitychange", handleVisibility);
+      window.removeEventListener("focus", handleFocus);
+    };
   }, [checkForUpdate]);
 
   // 获取用户已查看的版本历史
@@ -579,7 +597,7 @@ const App = () => {
   // 查看完整更新日志
   const handleViewFullLog = () => {
     handleUpdateModalClose();
-    handleNavigate('help');
+    handleNavigate('changelog');
   };
 
   // ========================================

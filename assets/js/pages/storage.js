@@ -9,6 +9,7 @@ const StoragePage = ({ state, setState }) => {
   const [syncCode, setSyncCode] = useState("");
   const [syncCodeInput, setSyncCodeInput] = useState("");
   const [syncCodeType, setSyncCodeType] = useState("config");
+  const [accountImportMode, setAccountImportMode] = useState("merge");
   const fileInputRef = useRef(null);
 
   const exportTypes = [
@@ -100,6 +101,16 @@ const StoragePage = ({ state, setState }) => {
 
   const generateSyncCode = () => {
     try {
+      if (syncCodeType === "accounts") {
+        if (typeof AccountManager === "undefined") {
+          throw new Error("账号管理模块未加载");
+        }
+        const code = AccountManager.exportAccounts();
+        setSyncCode(code);
+        addToast("success", "账号同步码已生成", "复制同步码到另一设备粘贴即可同步账号");
+        return;
+      }
+
       let data;
       if (syncCodeType === "config") {
         data = {
@@ -139,6 +150,23 @@ const StoragePage = ({ state, setState }) => {
     }
     try {
       let code = syncCodeInput.trim();
+
+      if (code.startsWith("SD-ACC-")) {
+        if (typeof AccountManager === "undefined") {
+          addToast("error", "同步失败", "账号管理模块未加载");
+          return;
+        }
+        const result = AccountManager.importAccounts(code, accountImportMode);
+        if (result.success) {
+          addToast("success", "账号同步成功", result.message);
+          ActivityLogger.add("账号导入", `同步码导入 (${accountImportMode})`);
+          setSyncCodeInput("");
+        } else {
+          addToast("error", "账号同步失败", result.message);
+        }
+        return;
+      }
+
       let isConfig = false;
       if (code.startsWith("SD-CFG-")) {
         isConfig = true;
@@ -532,6 +560,7 @@ const StoragePage = ({ state, setState }) => {
                 onChange: (e) => setSyncCodeType(e.target.value),
               },
                 React.createElement("option", { value: "config" }, "仅配置（规则/模板/店铺等）"),
+                React.createElement("option", { value: "accounts" }, "账号数据"),
                 React.createElement("option", { value: "all" }, "全部数据"),
               ),
             ),
@@ -554,6 +583,17 @@ const StoragePage = ({ state, setState }) => {
             React.createElement("div", { className: "sync-code-title" },
               React.createElement("span", { className: "sync-code-icon" }, React.createElement(Icons.Download, null)),
               " 导入同步码",
+            ),
+            syncCodeType === "accounts" && React.createElement("div", { className: "form-item", style: { marginBottom: "12px" } },
+              React.createElement("label", { className: "form-label" }, "账号导入模式"),
+              React.createElement("select", {
+                className: "select",
+                value: accountImportMode,
+                onChange: (e) => setAccountImportMode(e.target.value),
+              },
+                React.createElement("option", { value: "merge" }, "合并导入（保留现有账号，添加新账号）"),
+                React.createElement("option", { value: "replace" }, "替换导入（替换所有账号）"),
+              ),
             ),
             React.createElement("div", { className: "form-item" },
               React.createElement("label", { className: "form-label" }, "粘贴同步码"),

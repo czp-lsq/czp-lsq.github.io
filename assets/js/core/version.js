@@ -1,9 +1,38 @@
-const APP_VERSION = "czp-1.15.0";
+const APP_VERSION = "czp-1.16.0";
 const DATA_VERSION = "8.0.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
+const BUILD_TIME = (() => {
+  try {
+    const meta = document.querySelector('meta[name="app-build-time"]');
+    return meta ? meta.getAttribute("content") : "";
+  } catch (e) {
+    return "";
+  }
+})();
 const UPDATE_LOG = [
-  { version: "czp-1.15.0", date: "2026-07-13 03:37:58",
+  { version: "czp-1.16.0", date: "2026-07-13 04:37:39",
+    summary: "UI体验全面优化与账号跨设备同步",
+    changes: [
+      { type: "feature", text: "新增账号跨设备同步功能，支持导出/导入账号同步码" },
+      { type: "feature", text: "添加步骤弹窗全面优化，分组渐变Header、数量徽章、卡片悬浮动效" },
+      { type: "feature", text: "调试模式展示全面重构，实时预览、数据预览、每步详情三模块和谐统一" },
+      { type: "feature", text: "计算规则页面未配置模板时，左右两侧空状态提示视觉统一" },
+      { type: "feature", text: "更新检测机制增强，页面获得焦点/可见时自动检测更新" },
+      { type: "feature", text: "更新日志时间与构建时间对齐，确保时间准确性" },
+      { type: "feature", text: "修复「查看完整日志」按钮跳转路径错误的问题" },
+      { type: "optimize", text: "下拉框搜索图标与输入框布局优化，避免文字重叠" },
+      { type: "optimize", text: "下拉框最大高度适配视口，确保选项完整可见" },
+      { type: "optimize", text: "更新检测间隔缩短至1分钟，及时发现新版本" },
+    ],
+    bugfixes: [
+      { text: "修复更新提示弹窗查看完整日志跳转到错误页面的问题" },
+      { text: "修复更新日志显示时间与实际发布时间不一致的问题" },
+      { text: "修复下拉框搜索图标与输入文字重叠的问题" },
+      { text: "修复下拉框选项显示不完整的问题" },
+    ],
+  },
+  { version: "czp-1.15.0", date: "2026-07-13 04:06:09",
     summary: "下拉框修复、文件协议兼容与代码架构优化",
     changes: [
       { type: "feature", text: "下拉框组件增强对 null/undefined 数据的兼容，避免渲染异常" },
@@ -209,4 +238,5 @@ if (typeof window !== 'undefined') {
   window.VersionKey = VERSION_KEY;
   window.VersionHistoryKey = VERSION_HISTORY_KEY;
   window.UpdateLog = UPDATE_LOG;
+  window.BuildTime = BUILD_TIME;
 }

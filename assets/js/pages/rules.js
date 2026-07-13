@@ -5580,8 +5580,60 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "card-scroll" },
-            activeField &&
-              /*#__PURE__*/ React.createElement(
+            fields.length === 0
+              ? /*#__PURE__*/ React.createElement(
+                  "div",
+                  {
+                    className: "rules-empty-state",
+                  },
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "rules-empty-icon" },
+                    /*#__PURE__*/ React.createElement(Icons.FileSpreadsheet, null),
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "rules-empty-title" },
+                    "暂无模板配置",
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "rules-empty-desc" },
+                    "请先在模板中心上传利润表模板，系统将自动识别占位符并生成可配置字段",
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    Button,
+                    {
+                      type: "primary",
+                      onClick: () => onNavigate && onNavigate("template"),
+                    },
+                    /*#__PURE__*/ React.createElement(Icons.ArrowRight, null),
+                    " 前往模板中心",
+                  ),
+                )
+              : !activeField
+              ? /*#__PURE__*/ React.createElement(
+                  "div",
+                  {
+                    className: "rules-empty-state rules-empty-state-hint",
+                  },
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "rules-empty-icon" },
+                    /*#__PURE__*/ React.createElement(Icons.Edit3, null),
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "rules-empty-title" },
+                    "请选择字段",
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "rules-empty-desc" },
+                    "请从左侧选择一个字段开始配置计算规则",
+                  ),
+                )
+              : /*#__PURE__*/ React.createElement(
                 React.Fragment,
                 null,
                 /*#__PURE__*/ React.createElement(
@@ -5657,18 +5709,25 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                       { className: "debug-preview-header" },
                       /*#__PURE__*/ React.createElement(
                         "div",
-                        {
-                          style: {
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 8,
-                          },
-                        },
-                        /*#__PURE__*/ React.createElement(Icons.Play, null),
+                        { className: "debug-preview-header-left" },
                         /*#__PURE__*/ React.createElement(
-                          "span",
-                          { style: { fontWeight: 600 } },
-                          "\u5B9E\u65F6\u9884\u89C8\u7ED3\u679C",
+                          "div",
+                          { className: "debug-preview-icon-wrap" },
+                          /*#__PURE__*/ React.createElement(Icons.Play, null),
+                        ),
+                        /*#__PURE__*/ React.createElement(
+                          "div",
+                          { className: "debug-preview-title-group" },
+                          /*#__PURE__*/ React.createElement(
+                            "div",
+                            { className: "debug-preview-title" },
+                            "\u5B9E\u65F6\u9884\u89C8\u7ED3\u679C",
+                          ),
+                          /*#__PURE__*/ React.createElement(
+                            "div",
+                            { className: "debug-preview-subtitle" },
+                            activeField?.name || "\u5F53\u524D\u5B57\u6BB5",
+                          ),
                         ),
                       ),
                       /*#__PURE__*/ React.createElement(
@@ -5676,7 +5735,10 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                         {
                           className: `debug-status ${previewResult.error ? "error" : "success"}`,
                         },
-                        previewResult.error ? "⚠ 计算错误" : "✓ 计算成功",
+                        previewResult.error
+                          ? /*#__PURE__*/ React.createElement(Icons.AlertCircle, null)
+                          : /*#__PURE__*/ React.createElement(Icons.CheckCircle, null),
+                        previewResult.error ? "\u8BA1\u7B97\u9519\u8BEF" : "\u8BA1\u7B97\u6210\u529F",
                       ),
                     ),
                     previewResult.error
@@ -5684,13 +5746,23 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                           "div",
                           { className: "debug-error" },
                           /*#__PURE__*/ React.createElement(
-                            Icons.AlertCircle,
-                            null,
+                            "div",
+                            { className: "debug-error-icon-wrap" },
+                            /*#__PURE__*/ React.createElement(Icons.AlertCircle, null),
                           ),
                           /*#__PURE__*/ React.createElement(
-                            "span",
-                            null,
-                            previewResult.error,
+                            "div",
+                            { className: "debug-error-content" },
+                            /*#__PURE__*/ React.createElement(
+                              "div",
+                              { className: "debug-error-title" },
+                              "\u8BA1\u7B97\u51FA\u9519",
+                            ),
+                            /*#__PURE__*/ React.createElement(
+                              "div",
+                              { className: "debug-error-message" },
+                              previewResult.error,
+                            ),
                           ),
                         )
                       : /*#__PURE__*/ React.createElement(
@@ -5702,6 +5774,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                             /*#__PURE__*/ React.createElement(
                               "div",
                               { className: "debug-final-label" },
+                              /*#__PURE__*/ React.createElement(Icons.Zap, null),
                               "\u6700\u7EC8\u7ED3\u679C",
                             ),
                             /*#__PURE__*/ React.createElement(
@@ -5716,9 +5789,21 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                             /*#__PURE__*/ React.createElement(
                               "div",
                               { className: "debug-final-meta" },
-                              "\u5171 ",
-                              previewResult.data?.length || 0,
-                              " \u6761\u6570\u636E",
+                              /*#__PURE__*/ React.createElement(
+                                "span",
+                                { className: "debug-final-meta-item" },
+                                /*#__PURE__*/ React.createElement(Icons.Database, null),
+                                "\u5171 ",
+                                previewResult.data?.length || 0,
+                                " \u6761\u6570\u636E",
+                              ),
+                              previewResult.stepResults?.length > 0 && /*#__PURE__*/ React.createElement(
+                                "span",
+                                { className: "debug-final-meta-item" },
+                                /*#__PURE__*/ React.createElement(Icons.List, null),
+                                previewResult.stepResults.length,
+                                " \u4E2A\u6B65\u9AA4",
+                              ),
                             ),
                           ),
                           previewResult.data &&
@@ -5729,7 +5814,21 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                               /*#__PURE__*/ React.createElement(
                                 "div",
                                 { className: "debug-section-title" },
-                                "\uD83D\uDCCA \u6570\u636E\u9884\u89C8\uFF08\u524D5\u6761\uFF09",
+                                /*#__PURE__*/ React.createElement(
+                                  "div",
+                                  { className: "debug-section-title-icon" },
+                                  /*#__PURE__*/ React.createElement(Icons.Table, null),
+                                ),
+                                /*#__PURE__*/ React.createElement(
+                                  "span",
+                                  { className: "debug-section-title-text" },
+                                  "\u6570\u636E\u9884\u89C8",
+                                ),
+                                /*#__PURE__*/ React.createElement(
+                                  "span",
+                                  { className: "debug-section-badge" },
+                                  "\u524D5\u6761",
+                                ),
                               ),
                               /*#__PURE__*/ React.createElement(
                                 "div",
@@ -5745,7 +5844,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                       null,
                                       /*#__PURE__*/ React.createElement(
                                         "th",
-                                        { style: { width: 40 } },
+                                        null,
                                         "#",
                                       ),
                                       Object.keys(previewResult.data[0] || {})
@@ -5753,8 +5852,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                         .map((k) =>
                                           /*#__PURE__*/ React.createElement(
                                             "th",
-                                            { key: k },
-                                            k === "val" ? "计算值" : k,
+                                            { key: k, className: k === "val" ? "debug-col-val" : "" },
+                                            k === "val" ? "\u8BA1\u7B97\u503C" : k,
                                           ),
                                         ),
                                     ),
@@ -5770,20 +5869,15 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                           { key: i },
                                           /*#__PURE__*/ React.createElement(
                                             "td",
-                                            {
-                                              style: {
-                                                color: "var(--color-text-tertiary)",
-                                                fontSize: 12,
-                                              },
-                                            },
+                                            null,
                                             i + 1,
                                           ),
-                                          Object.values(row)
+                                          Object.entries(row)
                                             .slice(0, 6)
-                                            .map((v, j) =>
+                                            .map(([k, v], j) =>
                                               /*#__PURE__*/ React.createElement(
                                                 "td",
-                                                { key: j },
+                                                { key: j, className: k === "val" ? "debug-col-val" : "" },
                                                 typeof v === "number"
                                                   ? v.toLocaleString("zh-CN", {
                                                       maximumFractionDigits: 2,
@@ -5792,12 +5886,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                                     ? String(v)
                                                     : /*#__PURE__*/ React.createElement(
                                                         "span",
-                                                        {
-                                                          style: {
-                                                            color:
-                                                              "var(--color-text-muted)",
-                                                          },
-                                                        },
+                                                        null,
                                                         "-",
                                                       ),
                                               ),
@@ -5824,7 +5913,22 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                               /*#__PURE__*/ React.createElement(
                                 "div",
                                 { className: "debug-section-title" },
-                                "\uD83D\uDD0D \u6BCF\u6B65\u8BA1\u7B97\u8BE6\u60C5",
+                                /*#__PURE__*/ React.createElement(
+                                  "div",
+                                  { className: "debug-section-title-icon" },
+                                  /*#__PURE__*/ React.createElement(Icons.Activity, null),
+                                ),
+                                /*#__PURE__*/ React.createElement(
+                                  "span",
+                                  { className: "debug-section-title-text" },
+                                  "\u6BCF\u6B65\u8BA1\u7B97\u8BE6\u60C5",
+                                ),
+                                /*#__PURE__*/ React.createElement(
+                                  "span",
+                                  { className: "debug-section-badge" },
+                                  previewResult.stepResults.length,
+                                  " \u6B65",
+                                ),
                               ),
                               /*#__PURE__*/ React.createElement(
                                 "div",
@@ -5839,30 +5943,48 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                     },
                                     /*#__PURE__*/ React.createElement(
                                       "div",
-                                      { className: "debug-step-index" },
-                                      idx + 1,
-                                    ),
-                                    /*#__PURE__*/ React.createElement(
-                                      "div",
-                                      {
-                                        className: "debug-step-icon",
-                                        style: { color: stepInfo.color },
-                                      },
-                                      stepInfo.icon,
+                                      { className: "debug-step-left" },
+                                      /*#__PURE__*/ React.createElement(
+                                        "div",
+                                        { className: "debug-step-index" },
+                                        idx + 1,
+                                      ),
+                                      /*#__PURE__*/ React.createElement(
+                                        "div",
+                                        {
+                                          className: "debug-step-icon",
+                                          style: { color: stepInfo.color, background: stepInfo.bg },
+                                        },
+                                        stepInfo.icon,
+                                      ),
                                     ),
                                     /*#__PURE__*/ React.createElement(
                                       "div",
                                       { className: "debug-step-info" },
                                       /*#__PURE__*/ React.createElement(
                                         "div",
-                                        { className: "debug-step-name" },
-                                        stepInfo.name,
+                                        { className: "debug-step-header" },
+                                        /*#__PURE__*/ React.createElement(
+                                          "div",
+                                          { className: "debug-step-name" },
+                                          stepInfo.name,
+                                        ),
                                       ),
                                       sr.error
                                         ? /*#__PURE__*/ React.createElement(
-                                            "div",
-                                            { className: "debug-step-error" },
-                                            sr.error,
+                                            React.Fragment,
+                                            null,
+                                            /*#__PURE__*/ React.createElement(
+                                              "div",
+                                              { className: "debug-step-error-header" },
+                                              /*#__PURE__*/ React.createElement(Icons.AlertCircle, null),
+                                              "\u6267\u884C\u5931\u8D25",
+                                            ),
+                                            /*#__PURE__*/ React.createElement(
+                                              "div",
+                                              { className: "debug-step-error" },
+                                              sr.error,
+                                            ),
                                           )
                                         : /*#__PURE__*/ React.createElement(
                                             "div",
@@ -5872,32 +5994,17 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                               { className: "debug-step-meta-row" },
                                               /*#__PURE__*/ React.createElement(
                                                 "span",
-                                                { className: "debug-step-meta-label" },
-                                                "行数:",
-                                              ),
-                                              /*#__PURE__*/ React.createElement(
-                                                "span",
-                                                { className: "debug-step-meta-value" },
+                                                { className: "debug-step-meta-tag highlight" },
+                                                /*#__PURE__*/ React.createElement(Icons.Database, null),
                                                 sr.rows?.length || sr.rows || 0,
+                                                " \u884C",
                                               ),
                                               sr.columns && /*#__PURE__*/ React.createElement(
-                                                React.Fragment,
-                                                null,
-                                                /*#__PURE__*/ React.createElement(
-                                                  "span",
-                                                  { className: "debug-step-meta-divider" },
-                                                  "|",
-                                                ),
-                                                /*#__PURE__*/ React.createElement(
-                                                  "span",
-                                                  { className: "debug-step-meta-label" },
-                                                  "列数:",
-                                                ),
-                                                /*#__PURE__*/ React.createElement(
-                                                  "span",
-                                                  { className: "debug-step-meta-value" },
-                                                  sr.columns,
-                                                ),
+                                                "span",
+                                                { className: "debug-step-meta-tag" },
+                                                /*#__PURE__*/ React.createElement(Icons.Columns, null),
+                                                sr.columns,
+                                                " \u5217",
                                               ),
                                             ),
                                             sr.preview && sr.preview.length > 0 && /*#__PURE__*/ React.createElement(
@@ -5906,7 +6013,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                               /*#__PURE__*/ React.createElement(
                                                 "div",
                                                 { className: "debug-step-preview-label" },
-                                                "预览:",
+                                                /*#__PURE__*/ React.createElement(Icons.Eye, null),
+                                                "\u9884\u89C8\u6570\u636E",
                                               ),
                                               /*#__PURE__*/ React.createElement(
                                                 "div",
@@ -5923,36 +6031,49 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                                       k,
                                                     ),
                                                     ": ",
-                                                    typeof v === "number"
-                                                      ? v.toLocaleString("zh-CN", { maximumFractionDigits: 2 })
-                                                      : v != null
-                                                        ? String(v).slice(0, 30)
-                                                        : "-",
+                                                    /*#__PURE__*/ React.createElement(
+                                                      "span",
+                                                      { className: "debug-step-preview-value" },
+                                                      typeof v === "number"
+                                                        ? v.toLocaleString("zh-CN", { maximumFractionDigits: 2 })
+                                                        : v != null
+                                                          ? String(v).slice(0, 30)
+                                                          : "-",
+                                                    ),
                                                   ),
                                                 )),
                                               )),
                                               sr.preview.length > 3 && /*#__PURE__*/ React.createElement(
                                                 "span",
                                                 { className: "debug-step-preview-more" },
-                                                `...(共${sr.preview.length}条)`,
+                                                `...(\u5171${sr.preview.length}\u6761)`,
                                               ),
                                             ),
                                             sr.value !== undefined && sr.value !== null && sr.value !== "" && /*#__PURE__*/ React.createElement(
                                               "div",
                                               { className: "debug-step-value-box" },
                                               /*#__PURE__*/ React.createElement(
-                                                "span",
-                                                { className: "debug-step-value-label" },
-                                                "输出值:",
+                                                "div",
+                                                { className: "debug-step-value-icon" },
+                                                /*#__PURE__*/ React.createElement(Icons.Zap, null),
                                               ),
                                               /*#__PURE__*/ React.createElement(
-                                                "span",
-                                                { className: "debug-step-value-content" },
-                                                typeof sr.value === "number"
-                                                  ? sr.value.toLocaleString("zh-CN", { maximumFractionDigits: 2 })
-                                                  : typeof sr.value === "object"
-                                                    ? JSON.stringify(sr.value).slice(0, 80)
-                                                    : String(sr.value),
+                                                "div",
+                                                { className: "debug-step-value-content-wrap" },
+                                                /*#__PURE__*/ React.createElement(
+                                                  "div",
+                                                  { className: "debug-step-value-label" },
+                                                  "\u8F93\u51FA\u503C",
+                                                ),
+                                                /*#__PURE__*/ React.createElement(
+                                                  "div",
+                                                  { className: "debug-step-value-content" },
+                                                  typeof sr.value === "number"
+                                                    ? sr.value.toLocaleString("zh-CN", { maximumFractionDigits: 2 })
+                                                    : typeof sr.value === "object"
+                                                      ? JSON.stringify(sr.value).slice(0, 80)
+                                                      : String(sr.value),
+                                                ),
                                               ),
                                             ),
                                           ),
@@ -6430,20 +6551,36 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 { className: "step-type-group-header" },
                 /*#__PURE__*/ React.createElement(
                   "div",
-                  {
-                    className: "step-type-group-dot",
-                    style: { background: group.color },
-                  },
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "div",
-                  { className: "step-type-group-title" },
-                  group.title,
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "div",
-                  { className: "step-type-group-desc" },
-                  group.desc,
+                  { className: "step-type-group-info" },
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "step-type-group-title-row" },
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      {
+                        className: "step-type-group-dot",
+                        style: { background: group.color },
+                      },
+                    ),
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { className: "step-type-group-title" },
+                      group.title,
+                    ),
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      {
+                        className: "step-type-group-count",
+                        style: { color: group.color, background: group.color + "15" },
+                      },
+                      group.types.length + " 种",
+                    ),
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "step-type-group-desc" },
+                    group.desc,
+                  ),
                 ),
               ),
               /*#__PURE__*/ React.createElement(

@@ -1,0 +1,30 @@
+{
+  "id": "",
+  "name": "",
+  "font_family": "iconfont",
+  "css_prefix_text": "icon-",
+  "description": "",
+  "glyphs": [
+    {
+      "icon_id": "11887935",
+      "name": "pdd",
+      "font_class": "fhdpc_px_pinduoduo",
+      "unicode": "e601",
+      "unicode_decimal": 58881
+    },
+    {
+      "icon_id": "34064566",
+      "name": "抖音",
+      "font_class": "douyin",
+      "unicode": "e602",
+      "unicode_decimal": 58882
+    },
+    {
+      "icon_id": "37870462",
+      "name": "淘宝",
+      "font_class": "taobao",
+      "unicode": "eb7e",
+      "unicode_decimal": 60286
+    }
+  ]
+}

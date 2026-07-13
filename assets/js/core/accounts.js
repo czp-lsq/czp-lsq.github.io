@@ -303,6 +303,116 @@ const AccountManager = (() => {
     }
   };
 
+  const SYNC_CODE_VERSION = "1";
+  const SYNC_CODE_PREFIX = "SD-ACC-";
+
+  const exportAccounts = () => {
+    try {
+      const accountsData = accounts.map(account => ({
+        id: account.id,
+        username: account.username,
+        name: account.name,
+        email: account.email,
+        role: account.role,
+        status: account.status,
+        password: account.password,
+        salt: account.salt,
+        createdAt: account.createdAt,
+        updatedAt: account.updatedAt,
+      }));
+
+      const exportData = {
+        version: SYNC_CODE_VERSION,
+        exportTime: Date.now(),
+        accountCount: accountsData.length,
+        accounts: accountsData,
+      };
+
+      const jsonStr = JSON.stringify(exportData);
+      const encoded = btoa(unescape(encodeURIComponent(jsonStr)));
+      return SYNC_CODE_PREFIX + encoded;
+    } catch (e) {
+      throw new Error("导出账号失败：" + e.message);
+    }
+  };
+
+  const validateAccountData = (account) => {
+    if (!account || typeof account !== "object") return false;
+    if (!account.id || !account.username) return false;
+    if (!account.role || !account.status) return false;
+    return true;
+  };
+
+  const importAccounts = (syncCode, mode = "merge") => {
+    try {
+      if (!syncCode || typeof syncCode !== "string") {
+        return { success: false, message: "同步码不能为空" };
+      }
+
+      let code = syncCode.trim();
+      if (!code.startsWith(SYNC_CODE_PREFIX)) {
+        return { success: false, message: "无效的账号同步码格式" };
+      }
+      code = code.substring(SYNC_CODE_PREFIX.length);
+
+      let decoded, importData;
+      try {
+        decoded = decodeURIComponent(escape(atob(code)));
+        importData = JSON.parse(decoded);
+      } catch (e) {
+        return { success: false, message: "同步码格式错误或已损坏" };
+      }
+
+      if (!importData.accounts || !Array.isArray(importData.accounts)) {
+        return { success: false, message: "同步码数据格式不正确" };
+      }
+
+      const validAccounts = importData.accounts.filter(validateAccountData);
+      if (validAccounts.length === 0) {
+        return { success: false, message: "没有有效的账号数据" };
+      }
+
+      let newAccounts;
+      let importedCount = 0;
+
+      if (mode === "replace") {
+        newAccounts = validAccounts;
+        importedCount = validAccounts.length;
+      } else {
+        newAccounts = [...accounts];
+        validAccounts.forEach(importedAcc => {
+          const existingIndex = newAccounts.findIndex(a => 
+            a.id === importedAcc.id || 
+            a.username.toLowerCase() === importedAcc.username.toLowerCase()
+          );
+          if (existingIndex === -1) {
+            newAccounts.push(importedAcc);
+            importedCount++;
+          }
+        });
+      }
+
+      const hasActiveAdmin = newAccounts.some(a => a.role === "admin" && a.status === "active");
+      if (!hasActiveAdmin) {
+        return { success: false, message: "导入后将没有可用的管理员账号，操作已取消" };
+      }
+
+      accounts = newAccounts;
+      saveAccounts(accounts);
+
+      return {
+        success: true,
+        message: mode === "replace" 
+          ? `成功替换所有账号（共 ${importedCount} 个）` 
+          : `成功导入 ${importedCount} 个新账号`,
+        importedCount,
+        totalCount: accounts.length,
+      };
+    } catch (e) {
+      return { success: false, message: "导入失败：" + e.message };
+    }
+  };
+
   initDefaultAdmin();
 
   return {
@@ -318,5 +428,7 @@ const AccountManager = (() => {
     getAccounts,
     getAccountById,
     authenticate,
+    exportAccounts,
+    importAccounts,
   };
 })();
