@@ -87,6 +87,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   const [debugExpanded, setDebugExpanded] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showAddStepModal, setShowAddStepModal] = useState(false);
+  const [stepSearchKeyword, setStepSearchKeyword] = useState("");
+  const [stepCategory, setStepCategory] = useState("all");
   const platform = state.platforms.find((p) => p.id === currentPlatform);
   const template = state.templates[currentPlatform];
   const savedRules = state.rules[currentPlatform] || {};
@@ -6537,7 +6539,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
         Modal,
         {
           title: "\u6DFB\u52A0\u8BA1\u7B97\u6B65\u9AA4",
-          width: "800px",
+          width: "900px",
           onClose: () => setShowAddStepModal(false),
           footer: /*#__PURE__*/ React.createElement(
             Button,
@@ -6548,6 +6550,42 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
         /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-type-modal" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "step-type-search" },
+            /*#__PURE__*/ React.createElement(Icons.Search, null),
+            /*#__PURE__*/ React.createElement(
+              "input",
+              {
+                type: "text",
+                className: "step-type-search-input",
+                placeholder: "搜索计算步骤类型...",
+                value: stepSearchKeyword,
+                onChange: (e) => setStepSearchKeyword(e.target.value),
+              },
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "step-type-categories" },
+            [
+              { id: "all", name: "全部", icon: Icons.LayoutGrid },
+              { id: "input", name: "数据输入", icon: Icons.FileText },
+              { id: "filter", name: "数据筛选", icon: Icons.Filter },
+              { id: "transform", name: "数据转换", icon: Icons.ArrowRightLeft },
+              { id: "compute", name: "计算聚合", icon: Icons.Calculator },
+              { id: "join", name: "跨表关联", icon: Icons.Link },
+            ].map((cat) => /*#__PURE__*/ React.createElement(
+              "button",
+              {
+                key: cat.id,
+                className: "step-type-category-tab" + (stepCategory === cat.id ? " active" : ""),
+                onClick: () => setStepCategory(cat.id),
+              },
+              /*#__PURE__*/ React.createElement(cat.icon, { size: 14 }),
+              cat.name,
+            )),
+          ),
           [
             {
               id: "input",
@@ -6584,8 +6622,14 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               types: ["join", "union", "crossMatch", "intersect"],
               color: "var(--color-accent)",
             },
-          ].map((group) =>
-            /*#__PURE__*/ React.createElement(
+          ].filter((group) => stepCategory === "all" || group.id === stepCategory).map((group) => {
+            const filteredTypes = group.types.filter((type) => {
+              const info = getStepTypeInfo(type);
+              return info.name.toLowerCase().includes(stepSearchKeyword.toLowerCase()) ||
+                info.desc.toLowerCase().includes(stepSearchKeyword.toLowerCase());
+            });
+            if (filteredTypes.length === 0) return null;
+            return /*#__PURE__*/ React.createElement(
               "div",
               { key: group.id, className: "step-type-group" },
               /*#__PURE__*/ React.createElement(
@@ -6615,7 +6659,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                         className: "step-type-group-count",
                         style: { color: group.color, background: group.color + "15" },
                       },
-                      group.types.length + " 种",
+                      filteredTypes.length + " 种",
                     ),
                   ),
                   /*#__PURE__*/ React.createElement(
@@ -6628,7 +6672,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               /*#__PURE__*/ React.createElement(
                 "div",
                 { className: "step-type-grid" },
-                group.types.map((type) => {
+                filteredTypes.map((type) => {
                   const info = getStepTypeInfo(type);
                   return /*#__PURE__*/ React.createElement(
                     "button",
@@ -6659,8 +6703,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   );
                 }),
               ),
-            ),
-          ),
+            );
+          }),
         ),
       ),
   );

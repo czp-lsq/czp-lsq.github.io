@@ -1,4 +1,4 @@
-const APP_VERSION = "czp-1.19.0";
+const APP_VERSION = "czp-1.20.0";
 const DATA_VERSION = "8.0.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
@@ -11,18 +11,16 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
-  { version: "czp-1.19.0", date: "2026-07-13 05:00:00",
-    summary: "页面布局优化与数据修复增强",
+  { version: "czp-1.20.0", date: "2026-07-13 05:10:00",
+    summary: "弹窗功能增强与页面优化",
     changes: [
-      { type: "feature", text: "计算规则页面未配置模板时全屏显示统一提示，避免左右分区重复提示" },
-      { type: "feature", text: "计算步骤弹窗优化，增加宽度和高度，卡片改为3列布局更清晰" },
-      { type: "feature", text: "关于系统页面付费联系改为测试支持lsq.811，删除数据版本提示" },
-      { type: "feature", text: "压缩数据损坏时彻底清理所有存储，防止重复报错" },
+      { type: "feature", text: "计算步骤弹窗新增搜索功能，支持按名称和描述搜索" },
+      { type: "feature", text: "计算步骤弹窗新增分类标签筛选，快速定位所需步骤" },
+      { type: "feature", text: "弹窗宽度增加至900px，布局更专业美观" },
+      { type: "feature", text: "删除关于系统页面的技术支持模块" },
     ],
     bugfixes: [
-      { text: "修复计算规则页面未配置模板时左右分区重复提示问题" },
-      { text: "修复计算步骤弹窗卡片展示不清晰问题" },
-      { text: "修复压缩数据损坏导致的重复报错问题" },
+      { text: "修复计算步骤弹窗布局问题" },
     ],
   },
   { version: "czp-1.16.0", date: "2026-07-13 04:37:39",
