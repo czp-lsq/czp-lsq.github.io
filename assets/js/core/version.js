@@ -1,4 +1,4 @@
-const APP_VERSION = "czp-1.24.0";
+const APP_VERSION = "czp-1.25.0";
 const DATA_VERSION = "8.0.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
@@ -11,6 +11,20 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-1.25.0", date: "2026-07-13 08:00:00",
+    summary: "计算规则功能增强与优化",
+    changes: [
+      { type: "feature", text: "数据源选择时若表格有备注名则只显示备注名" },
+      { type: "feature", text: "删除所有预设规则模板，提示信息更新为引导手动配置" },
+      { type: "feature", text: "去除计算步骤必须有数据源的硬性限制，按逻辑进行正确错误提示" },
+      { type: "feature", text: "筛选步骤支持多值选择（等于/不等于条件可同时选多个值）" },
+      { type: "feature", text: "数据源文件列表增加类型标签（订单/退款/推广/账务/成本）" },
+      { type: "optimize", text: "已配置保存字段支持在公式计算中通过{字段名}引用参与后续计算" },
+    ],
+    bugfixes: [
+      { text: "优化数据源文件识别，订单类文件更易定位" },
+    ],
+  },
   { version: "czp-1.24.0", date: "2026-07-13 07:00:00",
     summary: "下拉框智能定位优化",
     changes: [

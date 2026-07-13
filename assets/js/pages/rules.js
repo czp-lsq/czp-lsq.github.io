@@ -949,13 +949,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
           return { ok: false, msg: "「数据源」必须是第一个步骤" };
         return { ok: true };
       },
-      fill: () => {
-        // 填充占位符步骤：文本字段专用，不需要数据源
-        return { ok: true };
-      },
+      fill: () => ({ ok: true }),
       filter: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「过滤」前需要有「数据源」" };
         const lastAggIdx = currentSteps
           .map((s, i) => (s.type === "aggregate" ? i : -1))
           .filter((i) => i >= 0)
@@ -969,148 +964,36 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
         }
         return { ok: true };
       },
-      virtual: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「虚拟字段」前需要有「数据源」" };
-        return { ok: true };
-      },
-      join: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「跨表关联」前需要有「数据源」" };
-        return { ok: true };
-      },
-      aggregate: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「聚合」前需要有「数据源」" };
-        return { ok: true };
-      },
-      formula: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「公式计算」前需要有「数据源」" };
-        return { ok: true };
-      },
+      virtual: () => ({ ok: true }),
+      join: () => ({ ok: true }),
+      aggregate: () => ({ ok: true }),
+      formula: () => ({ ok: true }),
       constant: () => ({ ok: true }),
       text: () => ({ ok: true }),
-      distinct: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「去重」前需要有「数据源」" };
-        return { ok: true };
-      },
-      sort: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「排序」前需要有「数据源」" };
-        return { ok: true };
-      },
-      limit: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「限制」前需要有「数据源」" };
-        return { ok: true };
-      },
-      lookup: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「查找替换」前需要有「数据源」" };
-        return { ok: true };
-      },
-      condition: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「条件判断」前需要有「数据源」" };
-        return { ok: true };
-      },
-      group: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「分组聚合」前需要有「数据源」" };
-        return { ok: true };
-      },
-      round: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「四舍五入」前需要有「数据源」" };
-        return { ok: true };
-      },
-      concat: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「字符串拼接」前需要有「数据源」" };
-        return { ok: true };
-      },
-      substring: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「字符串截取」前需要有「数据源」" };
-        return { ok: true };
-      },
-      date: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「日期处理」前需要有「数据源」" };
-        return { ok: true };
-      },
-      math: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「数学运算」前需要有「数据源」" };
-        return { ok: true };
-      },
-      rank: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「排名计算」前需要有「数据源」" };
-        return { ok: true };
-      },
-      diff: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「差值计算」前需要有「数据源」" };
-        return { ok: true };
-      },
-      ratio: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「比率计算」前需要有「数据源」" };
-        return { ok: true };
-      },
-      union: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「数据合并」前需要有「数据源」" };
-        return { ok: true };
-      },
-      crossMatch: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「跨表重复/交集」前需要有「数据源」" };
-        return { ok: true };
-      },
-      runningTotal: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「累计求和」前需要有「数据源」" };
-        return { ok: true };
-      },
-      percentOfTotal: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「占比计算」前需要有「数据源」" };
-        return { ok: true };
-      },
-      movingAverage: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「移动平均」前需要有「数据源」" };
-        return { ok: true };
-      },
-      binning: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「数据分箱」前需要有「数据源」" };
-        return { ok: true };
-      },
-      conditionalTag: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「条件标记」前需要有「数据源」" };
-        return { ok: true };
-      },
-      stringExtract: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「字符串提取」前需要有「数据源」" };
-        return { ok: true };
-      },
-      fillNA: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「空值填充」前需要有「数据源」" };
-        return { ok: true };
-      },
-      normalize: () => {
-        if (currentSteps.length === 0)
-          return { ok: false, msg: "「数据标准化」前需要有「数据源」" };
-        return { ok: true };
-      },
+      distinct: () => ({ ok: true }),
+      sort: () => ({ ok: true }),
+      limit: () => ({ ok: true }),
+      lookup: () => ({ ok: true }),
+      condition: () => ({ ok: true }),
+      group: () => ({ ok: true }),
+      round: () => ({ ok: true }),
+      concat: () => ({ ok: true }),
+      substring: () => ({ ok: true }),
+      date: () => ({ ok: true }),
+      math: () => ({ ok: true }),
+      rank: () => ({ ok: true }),
+      diff: () => ({ ok: true }),
+      ratio: () => ({ ok: true }),
+      union: () => ({ ok: true }),
+      crossMatch: () => ({ ok: true }),
+      runningTotal: () => ({ ok: true }),
+      percentOfTotal: () => ({ ok: true }),
+      movingAverage: () => ({ ok: true }),
+      binning: () => ({ ok: true }),
+      conditionalTag: () => ({ ok: true }),
+      stringExtract: () => ({ ok: true }),
+      fillNA: () => ({ ok: true }),
+      normalize: () => ({ ok: true }),
     };
     const check = stepLogicChecks[type]
       ? stepLogicChecks[type]()
@@ -1799,6 +1682,25 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                             { className: "table-select-item-name" },
                             t.name
                           ),
+                          (() => {
+                            const nameLower = (t.name || "").toLowerCase();
+                            const origLower = (t.originalName || "").toLowerCase();
+                            const combined = nameLower + origLower;
+                            let tag = null;
+                            if (combined.includes("订单") || combined.includes("order")) tag = { text: "订单", color: "var(--color-primary)" };
+                            else if (combined.includes("退款") || combined.includes("refund")) tag = { text: "退款", color: "var(--color-warning)" };
+                            else if (combined.includes("推广") || combined.includes("ad") || combined.includes("推广")) tag = { text: "推广", color: "var(--color-success)" };
+                            else if (combined.includes("账务") || combined.includes("账单") || combined.includes("bill")) tag = { text: "账务", color: "var(--color-info)" };
+                            else if (combined.includes("成本") || combined.includes("cost")) tag = { text: "成本", color: "var(--color-danger)" };
+                            return tag && /*#__PURE__*/ React.createElement(
+                              "span",
+                              {
+                                className: "table-select-item-tag",
+                                style: { color: tag.color, borderColor: tag.color },
+                              },
+                              tag.text
+                            );
+                          })(),
                           t.originalName && t.name === t.originalName && /*#__PURE__*/ React.createElement(
                             "span",
                             { className: "table-select-item-desc" },
@@ -1923,6 +1825,27 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
           { value: "regex", label: "正则匹配" },
         ];
         const valueOptions = filterValues.map((v) => ({ value: v, label: v }));
+        const isMultiSelectOp = step.config.op === "==" || step.config.op === "!=";
+        const selectedValues = isMultiSelectOp
+          ? (Array.isArray(step.config.values) ? step.config.values : (step.config.value ? [step.config.value] : []))
+          : (step.config.value ? [step.config.value] : []);
+        const toggleValue = (v) => {
+          if (isMultiSelectOp) {
+            const current = Array.isArray(step.config.values) ? step.config.values : (step.config.value ? [step.config.value] : []);
+            const newValues = current.includes(v)
+              ? current.filter((item) => item !== v)
+              : [...current, v];
+            updateStepConfig(step.id, "values", newValues);
+            if (newValues.length === 0) {
+              updateStepConfig(step.id, "value", "");
+            } else if (newValues.length === 1) {
+              updateStepConfig(step.id, "value", newValues[0]);
+            }
+          } else {
+            updateStepConfig(step.id, "value", step.config.value === v ? "" : v);
+            updateStepConfig(step.id, "values", []);
+          }
+        };
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
@@ -1973,7 +1896,12 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               ),
               /*#__PURE__*/ React.createElement(SearchableSelect, {
                 value: step.config.op,
-                onChange: (val) => updateStepConfig(step.id, "op", val),
+                onChange: (val) => {
+                  updateStepConfig(step.id, "op", val);
+                  if (val !== "==" && val !== "!=") {
+                    updateStepConfig(step.id, "values", []);
+                  }
+                },
                 options: opOptions,
                 placeholder: "请选择条件",
               }),
@@ -1985,14 +1913,14 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             /*#__PURE__*/ React.createElement(
               "label",
               { className: "form-label" },
-              "筛选值",
+              isMultiSelectOp ? "筛选值（可多选）" : "筛选值",
               filterValues.length > 0 && /*#__PURE__*/ React.createElement(
                 "span",
                 { style: { color: "var(--color-text-muted)", fontWeight: 400, fontSize: 12, marginLeft: 6 } },
-                `（可搜索筛选）`,
+                `（已选 ${selectedValues.length} 项）`,
               ),
             ),
-            /*#__PURE__*/ React.createElement(SearchableSelect, {
+            !isMultiSelectOp && /*#__PURE__*/ React.createElement(SearchableSelect, {
               value: step.config.value || "",
               onChange: (val) => updateStepConfig(step.id, "value", val),
               options: valueOptions,
@@ -2006,31 +1934,26 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             /*#__PURE__*/ React.createElement(
               "div",
               { className: "filter-quick-label" },
-              "快捷选择：",
+              isMultiSelectOp ? "快捷选择（可多选）：" : "快捷选择：",
             ),
             /*#__PURE__*/ React.createElement(
               "div",
               { className: "filter-value-tags" },
-              filterValues.slice(0, 10).map((v) =>
+              filterValues.slice(0, 15).map((v) =>
                 /*#__PURE__*/ React.createElement(
                   "span",
                   {
                     key: v,
-                    className: `filter-value-tag ${step.config.value === v ? "active" : ""}`,
-                    onClick: () =>
-                      updateStepConfig(
-                        step.id,
-                        "value",
-                        step.config.value === v ? "" : v,
-                      ),
+                    className: `filter-value-tag ${selectedValues.includes(v) ? "active" : ""}`,
+                    onClick: () => toggleValue(v),
                   },
                   v,
                 ),
               ),
-              filterValues.length > 10 && /*#__PURE__*/ React.createElement(
+              filterValues.length > 15 && /*#__PURE__*/ React.createElement(
                 "span",
                 { className: "filter-value-tag filter-value-more" },
-                `+${filterValues.length - 10}`,
+                `+${filterValues.length - 15}`,
               ),
             ),
           ),
@@ -2040,7 +1963,9 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             /*#__PURE__*/ React.createElement(Icons.Info, null),
             " 🎯 ",
             /*#__PURE__*/ React.createElement("strong", null, "筛选"),
-            "：从数据中挑出符合条件的行，不符合条件的行会被隐藏。下拉列表自动识别列中所有值，与Excel筛选体验一致。",
+            isMultiSelectOp
+              ? "：从数据中挑出符合条件的行，不符合条件的行会被隐藏。支持同时选择多个值进行匹配。"
+              : "：从数据中挑出符合条件的行，不符合条件的行会被隐藏。下拉列表自动识别列中所有值，与Excel筛选体验一致。",
           ),
         );
       case "filterRange":
@@ -6185,7 +6110,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                         /*#__PURE__*/ React.createElement(
                           "div",
                           { className: "empty-desc" },
-                          "\u70B9\u51FB\u4E0A\u65B9\u6309\u94AE\u6DFB\u52A0\u8BA1\u7B97\u6B65\u9AA4\uFF0C\u6216\u5C55\u5F00\u89C4\u5219\u6A21\u677F\u5957\u7528\u9884\u8BBE",
+                          "\u70B9\u51FB\u4E0A\u65B9\u300C+ \u6DFB\u52A0\u6B65\u9AA4\u300D\u6309\u94AE\u5F00\u59CB\u914D\u7F6E\u8BA1\u7B97\u89C4\u5219",
                         ),
                       )
                     : currentRule.steps.map((step, idx) => {

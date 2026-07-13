@@ -288,6 +288,9 @@ const CalcEngine = {
           }
           case "filter": {
             if (!step.config.column) break;
+            const multiValues = Array.isArray(step.config.values) && step.config.values.length > 0
+              ? step.config.values
+              : (step.config.value !== "" && step.config.value != null ? [step.config.value] : []);
             data = data.filter((row) => {
               const val = row[step.config.column] ?? row.val;
               let target = step.config.value;
@@ -297,10 +300,18 @@ const CalcEngine = {
               const v = val != null ? String(val) : "";
               const t = target != null ? String(target) : "";
               switch (step.config.op) {
-                case "==":
+                case "==": {
+                  if (multiValues.length > 0) {
+                    return multiValues.some((mv) => v === String(mv));
+                  }
                   return v === t;
-                case "!=":
+                }
+                case "!=": {
+                  if (multiValues.length > 0) {
+                    return !multiValues.some((mv) => v === String(mv));
+                  }
                   return v !== t;
+                }
                 case ">":
                   return Number(val) > Number(target);
                 case "<":
@@ -1862,249 +1873,7 @@ const CalcEngine = {
     return { value: null, data: [], stepResults };
   },
   getPresetTemplates() {
-    return {
-      all: [
-        {
-          id: "profit_simple",
-          category: "profit",
-          platform: "all",
-          name: "简易利润计算",
-          desc: "销售额 - 成本 - 费用 = 利润",
-          level: 0,
-          steps: [
-            { type: "source", config: { table: "", column: "销售额" } },
-            { type: "aggregate", config: { func: "sum" } },
-            { type: "formula", config: { expr: "{val} * 0.7" } },
-          ],
-        },
-        {
-          id: "roi_calc",
-          category: "profit",
-          platform: "all",
-          name: "ROI投资回报率",
-          desc: "(收益 - 成本) / 成本 × 100%",
-          level: 1,
-          steps: [
-            { type: "source", config: { table: "", column: "成交额" } },
-            { type: "aggregate", config: { func: "sum" } },
-            {
-              type: "formula",
-              config: { expr: "({val} - 1000) / 1000 * 100" },
-            },
-          ],
-        },
-        {
-          id: "avg_order",
-          category: "sales",
-          platform: "all",
-          name: "客单价计算",
-          desc: "总销售额 / 订单数",
-          level: 0,
-          steps: [
-            { type: "source", config: { table: "", column: "订单金额" } },
-            { type: "aggregate", config: { func: "avg" } },
-          ],
-        },
-        {
-          id: "conversion_rate",
-          category: "sales",
-          platform: "all",
-          name: "转化率计算",
-          desc: "成交订单数 / 访客数 × 100%",
-          level: 1,
-          steps: [
-            { type: "source", config: { table: "", column: "访客数" } },
-            { type: "aggregate", config: { func: "sum" } },
-            { type: "formula", config: { expr: "{val} / 1000 * 100" } },
-          ],
-        },
-        {
-          id: "sum_filtered",
-          category: "cost",
-          platform: "all",
-          name: "求和（排除退款）",
-          desc: "排除已退款订单后对金额求和",
-          level: 1,
-          steps: [
-            { type: "source", config: { table: "", column: "订单金额" } },
-            {
-              type: "filter",
-              config: { column: "val", op: "!=", value: "退款成功" },
-            },
-            { type: "aggregate", config: { func: "sum" } },
-          ],
-        },
-        {
-          id: "cost_calc",
-          category: "cost",
-          platform: "all",
-          name: "商品成本×数量",
-          desc: "从成本表关联单价，再乘以解析数量",
-          level: 2,
-          steps: [
-            { type: "source", config: { table: "", column: "商品id" } },
-            {
-              type: "join",
-              config: {
-                table: "",
-                key: "商品id",
-                fk: "商品ID",
-                col: "成本单价",
-              },
-            },
-            {
-              type: "virtual",
-              config: {
-                source: "商品规格",
-                target: "解析数量",
-                rule: "parseQty",
-              },
-            },
-            { type: "formula", config: { expr: "{val} * {解析数量}" } },
-            { type: "aggregate", config: { func: "sum" } },
-          ],
-        },
-      ],
-      pdd: [
-        {
-          id: "pdd_revenue",
-          category: "sales",
-          platform: "pdd",
-          name: "拼多多·销售收入",
-          desc: "汇总订单实收金额（排除退款）",
-          level: 1,
-          steps: [
-            { type: "source", config: { table: "", column: "商家实收金额" } },
-            {
-              type: "filter",
-              config: { column: "售后状态", op: "!=", value: "退款成功" },
-            },
-            { type: "aggregate", config: { func: "sum" } },
-          ],
-        },
-        {
-          id: "pdd_cost",
-          category: "cost",
-          platform: "pdd",
-          name: "拼多多·商品成本",
-          desc: "从产品成本表关联单价 × 解析数量",
-          level: 2,
-          steps: [
-            { type: "source", config: { table: "", column: "商品id" } },
-            {
-              type: "join",
-              config: {
-                table: "",
-                key: "商品id",
-                fk: "商品ID",
-                col: "成本单价",
-              },
-            },
-            {
-              type: "virtual",
-              config: {
-                source: "商品规格",
-                target: "解析数量",
-                rule: "parseQty",
-              },
-            },
-            { type: "formula", config: { expr: "{val} * {解析数量}" } },
-            {
-              type: "filter",
-              config: { column: "售后状态", op: "!=", value: "退款成功" },
-            },
-            { type: "aggregate", config: { func: "sum" } },
-          ],
-        },
-        {
-          id: "pdd_commission",
-          category: "cost",
-          platform: "pdd",
-          name: "拼多多·平台扣点",
-          desc: "订单金额 × 平台扣点比例",
-          level: 1,
-          steps: [
-            { type: "source", config: { table: "", column: "商家实收金额" } },
-            { type: "aggregate", config: { func: "sum" } },
-            { type: "formula", config: { expr: "{val} * 0.006" } },
-          ],
-        },
-        {
-          id: "pdd_profit",
-          category: "profit",
-          platform: "pdd",
-          name: "拼多多·净利润",
-          desc: "销售收入 - 商品成本 - 平台扣点",
-          level: 2,
-          steps: [
-            { type: "source", config: { table: "", column: "商家实收金额" } },
-            { type: "aggregate", config: { func: "sum" } },
-            { type: "formula", config: { expr: "{val} * 0.7" } },
-          ],
-        },
-      ],
-      taobao: [
-        {
-          id: "tb_revenue",
-          category: "sales",
-          platform: "taobao",
-          name: "淘宝·销售收入",
-          desc: "汇总订单实付金额（排除退款）",
-          level: 1,
-          steps: [
-            { type: "source", config: { table: "", column: "用户实付金额" } },
-            {
-              type: "filter",
-              config: { column: "订单状态", op: "!=", value: "退款成功" },
-            },
-            { type: "aggregate", config: { func: "sum" } },
-          ],
-        },
-        {
-          id: "tb_commission",
-          category: "cost",
-          platform: "taobao",
-          name: "淘宝·技术服务费",
-          desc: "订单金额 × 佣金比例",
-          level: 1,
-          steps: [
-            { type: "source", config: { table: "", column: "用户实付金额" } },
-            { type: "aggregate", config: { func: "sum" } },
-            { type: "formula", config: { expr: "{val} * 0.05" } },
-          ],
-        },
-      ],
-      douyin: [
-        {
-          id: "dy_revenue",
-          category: "sales",
-          platform: "douyin",
-          name: "抖音·GMV汇总",
-          desc: "汇总订单支付金额",
-          level: 0,
-          steps: [
-            { type: "source", config: { table: "", column: "订单支付金额" } },
-            { type: "aggregate", config: { func: "sum" } },
-          ],
-        },
-        {
-          id: "dy_refund",
-          category: "cost",
-          platform: "douyin",
-          name: "抖音·退款金额",
-          desc: "汇总退款成功订单金额",
-          level: 1,
-          steps: [
-            { type: "source", config: { table: "", column: "订单支付金额" } },
-            {
-              type: "filter",
-              config: { column: "售后状态", op: "==", value: "退款成功" },
-            },
-            { type: "aggregate", config: { func: "sum" } },
-          ],
-        },
-      ],
-    };
+    return {};
   },
   getFormulaHints() {
     return [
