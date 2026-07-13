@@ -475,6 +475,14 @@ const App = () => {
 
   const checkForUpdate = useCallback(async (showToast = false) => {
     try {
+      // 检测是否为 file:// 协议，本地文件无法 fetch 更新
+      if (window.location.protocol === "file:") {
+        return;
+      }
+      // 仅在 HTTP/HTTPS 下检测更新
+      if (!navigator.onLine) {
+        return;
+      }
       const res = await fetch(`index.html?_=${Date.now()}`, {
         cache: "no-store",
       });
@@ -491,15 +499,20 @@ const App = () => {
         setUpdateInfo({
           version: remoteVersion,
           date: now.toLocaleString(),
-          changes: ["检测到新版本，建议刷新页面以获取最新功能。"],
           detectedAt: now,
+          summary: "发现新版本",
+          changes: [
+            { type: "feature", text: `新版本 ${remoteVersion} 已发布，建议刷新页面以获取最新功能。` }
+          ],
         });
         setShowUpdateModal(true);
         if (showToast) {
           addToastRef.current("info", "发现新版本", `${remoteVersion} 已发布，请刷新页面`, 5000);
         }
       }
-    } catch (e) {}
+    } catch (e) {
+      // 静默失败（file:// 协议等情况下）
+    }
   }, []);
 
   useEffect(() => {
@@ -507,6 +520,8 @@ const App = () => {
   }, [checkForUpdate]);
 
   useEffect(() => {
+    // 只在 HTTP/HTTPS 协议下启动定时检查
+    if (window.location.protocol === "file:") return;
     const timer = setInterval(() => checkForUpdate(true), 3 * 60 * 1000);
     return () => clearInterval(timer);
   }, [checkForUpdate]);

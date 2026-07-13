@@ -906,18 +906,23 @@ const ChangelogPage = ({ updateLog, appVersion }) => {
 
   const renderChangeGroup = (type, items) => {
     const cfg = typeConfig[type];
-    if (!items || items.length === 0) return null;
+    if (!cfg) return null;
+    if (!Array.isArray(items) || items.length === 0) return null;
     return React.createElement("div", { className: "changelog-change-group", key: type },
       React.createElement("div", { className: "changelog-change-label", style: { color: cfg.color } },
         cfg.icon + " " + cfg.label
       ),
       React.createElement("ul", { className: "changelog-change-list" },
-        items.map((item, idx) => React.createElement("li", { key: idx }, typeof item === "string" ? item : item.text))
+        items.map(function(item, idx) {
+          if (!item) return null;
+          const text = typeof item === "string" ? item : (item.text || "");
+          return React.createElement("li", { key: idx }, text);
+        })
       )
     );
   };
 
-  if (!updateLog || updateLog.length === 0) {
+  if (!updateLog || !Array.isArray(updateLog) || updateLog.length === 0) {
     return React.createElement("div", { className: "changelog-page fade-in" },
       React.createElement("div", { className: "card", style: { padding: "40px", textAlign: "center" } },
         React.createElement("div", { style: { color: "var(--color-text-muted)", fontSize: "14px" } }, "暂无更新记录")
@@ -959,7 +964,7 @@ const ChangelogPage = ({ updateLog, appVersion }) => {
           React.createElement("h2", { style: { margin: 0, fontSize: 20, fontWeight: 600, color: "var(--color-text-primary)" } }, "更新日志"),
         ),
         React.createElement("p", { style: { margin: "8px 0 0", color: "var(--color-text-secondary)", fontSize: 14 } },
-          "系统版本更新历史记录，了解每个版本的新增功能、优化改进与问题修复",
+          "系统版本更新历史记录，了解每个版本的新增功能、优化改进与问题修复"
         ),
       ),
       React.createElement("div", { style: headerStatsStyle },
@@ -974,12 +979,15 @@ const ChangelogPage = ({ updateLog, appVersion }) => {
       ),
     ),
     React.createElement("div", { className: "changelog-timeline" },
-      updateLog.map((entry) => {
+      updateLog.map(function(entry, idx) {
+        if (!entry || !entry.version) return null;
         var isCurrent = entry.version === appVersion;
-        var featureItems = (entry.changes || []).filter(function(c) { return c.type === "feature"; });
-        var optimizeItems = (entry.changes || []).filter(function(c) { return c.type === "optimize"; });
-        var bugfixFromChanges = (entry.changes || []).filter(function(c) { return c.type === "bugfix"; }).map(function(c) { return c.text; });
-        var bugfixItems = [].concat(bugfixFromChanges).concat(entry.bugfixes || []);
+        var featureItems = (entry.changes || []).filter(function(c) { return c && c.type === "feature"; });
+        var optimizeItems = (entry.changes || []).filter(function(c) { return c && c.type === "optimize"; });
+        var bugfixFromChanges = (entry.changes || []).filter(function(c) { return c && c.type === "bugfix" && c.text; }).map(function(c) { return c.text; });
+        var bugfixItems = [].concat(bugfixFromChanges).concat(Array.isArray(entry.bugfixes) ? entry.bugfixes : []);
+        // 优先使用 detectedAt 真实检测时间，否则使用 date 字段
+        var displayDate = entry.detectedAt ? entry.detectedAt : (entry.date || "");
         return React.createElement("div", { key: entry.version, className: "changelog-item" + (isCurrent ? " changelog-current" : "") },
           React.createElement("div", { className: "changelog-item-marker" },
             React.createElement("div", { className: "changelog-dot" + (isCurrent ? " changelog-dot-current" : "") })
@@ -989,7 +997,7 @@ const ChangelogPage = ({ updateLog, appVersion }) => {
               React.createElement("div", { className: "changelog-version-row" },
                 React.createElement("span", { className: "changelog-version-tag" + (isCurrent ? " changelog-version-tag-current" : "") }, entry.version),
                 isCurrent && React.createElement("span", { className: "changelog-current-badge" }, "当前版本"),
-                React.createElement("span", { className: "changelog-date" }, entry.date)
+                React.createElement("span", { className: "changelog-date" }, displayDate)
               ),
               entry.summary && React.createElement("p", { className: "changelog-summary" }, entry.summary)
             ),
@@ -1006,19 +1014,34 @@ const ChangelogPage = ({ updateLog, appVersion }) => {
 };
 
 const AuditLogPage = ({ currentUser }) => {
-  const [logs, setLogs] = useState(() => ActivityLogger.get());
+  const [logs, setLogs] = useState(() => {
+    try {
+      const result = ActivityLogger.get();
+      return Array.isArray(result) ? result : [];
+    } catch (e) {
+      return [];
+    }
+  });
   const [filterType, setFilterType] = useState("all");
 
   var loginUser = "";
   try {
     var saved = localStorage.getItem("app_login_user");
-    if (saved) loginUser = JSON.parse(saved).username || "";
+    if (saved) {
+      var parsed = JSON.parse(saved);
+      loginUser = parsed.username || "";
+    }
   } catch (e) {}
 
   var categories = ActivityLogger.getCategories ? ActivityLogger.getCategories() : {};
-  var categoryList = Object.entries(categories).map(function(e) { return { key: e[0], name: e[1].name }; });
+  var categoryList = Object.entries(categories || {}).map(function(e) {
+    return { key: e[0], name: e[1] && e[1].name ? e[1].name : e[0] };
+  });
 
-  var filtered = filterType === "all" ? logs : logs.filter(function(l) { return l.category === filterType; });
+  var safeLogs = Array.isArray(logs) ? logs : [];
+  var filtered = filterType === "all" ? safeLogs : safeLogs.filter(function(l) {
+    return l && l.category === filterType;
+  });
 
   var handleRefresh = function() {
     setLogs(ActivityLogger.get());
@@ -1092,25 +1115,36 @@ const AuditLogPage = ({ currentUser }) => {
         )
       : React.createElement("div", { className: "auditlog-list" },
           filtered.map(function(log, idx) {
+            if (!log) return null;
             var catInfo = categories[log.category] || {};
             var catColor = categoryColorMap[log.category] || "var(--color-text-tertiary)";
-            return React.createElement("div", { key: log.id || idx, className: "card auditlog-item" },
+            var actionText = log.action || "未知操作";
+            var detailText = log.detail || "";
+            var operatorText = log.operator || "-";
+            var timeText = "-";
+            try {
+              if (log.time) {
+                var t = new Date(log.time);
+                if (!isNaN(t.getTime())) {
+                  timeText = t.toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" });
+                }
+              }
+            } catch (e) {}
+            return React.createElement("div", { key: log.id || ("log_" + idx), className: "card auditlog-item" },
               React.createElement("div", { className: "auditlog-item-left" },
                 React.createElement("span", {
                   className: "auditlog-category-dot",
                   style: { background: catColor }
                 }),
                 React.createElement("div", { className: "auditlog-item-info" },
-                  React.createElement("span", { className: "auditlog-action" }, log.action),
-                  log.detail && React.createElement("span", { className: "auditlog-detail" }, log.detail)
+                  React.createElement("span", { className: "auditlog-action" }, actionText),
+                  detailText && React.createElement("span", { className: "auditlog-detail" }, detailText)
                 )
               ),
               React.createElement("div", { className: "auditlog-item-right" },
-                React.createElement("span", { className: "auditlog-category-tag", style: { color: catColor, borderColor: catColor } }, catInfo.name || log.category),
-                React.createElement("span", { className: "auditlog-operator" }, log.operator || "-"),
-                React.createElement("span", { className: "auditlog-time" },
-                  new Date(log.time).toLocaleString("zh-CN", { month: "2-digit", day: "2-digit", hour: "2-digit", minute: "2-digit", second: "2-digit" })
-                )
+                React.createElement("span", { className: "auditlog-category-tag", style: { color: catColor, borderColor: catColor } }, catInfo.name || log.category || "其他"),
+                React.createElement("span", { className: "auditlog-operator" }, operatorText),
+                React.createElement("span", { className: "auditlog-time" }, timeText)
               )
             );
           })

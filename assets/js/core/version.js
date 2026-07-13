@@ -1,8 +1,26 @@
-const APP_VERSION = "czp-1.14.0";
+const APP_VERSION = "czp-1.15.0";
 const DATA_VERSION = "8.0.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
 const UPDATE_LOG = [
+  { version: "czp-1.15.0", date: "2026-07-13 23:30:00",
+    summary: "下拉框修复、文件协议兼容与代码架构优化",
+    changes: [
+      { type: "feature", text: "下拉框组件增强对 null/undefined 数据的兼容，避免渲染异常" },
+      { type: "feature", text: "file:// 协议下自动跳过更新检查，避免网络请求错误" },
+      { type: "feature", text: "操作日志页面增强数据校验，兼容损坏的历史记录" },
+      { type: "feature", text: "更新日志使用检测时间作为发布记录时间，确保数据真实性" },
+      { type: "feature", text: "IndexedDB 存储模块升级为通用解决方案，跨设备数据同步更稳定" },
+      { type: "optimize", text: "SearchableSelect 组件对 options/groups 默认为空数组，渲染更健壮" },
+      { type: "optimize", text: "操作日志页面对无效时间、无效分类等多场景做兜底处理" },
+      { type: "optimize", text: "代码分层继续推进，计算规则模块逻辑逐步抽离为独立模块" },
+    ],
+    bugfixes: [
+      { text: "修复计算规则添加步骤后续输入下拉框不显示值的错误" },
+      { text: "修复 file:// 协议下刷新页面提示'未找到 solo-remote-file'的错误" },
+      { text: "修复操作日志在历史数据异常时的渲染失败问题" },
+    ],
+  },
   { version: "czp-1.14.0", date: "2026-07-13 22:00:00",
     summary: "账号管理系统升级与代码架构优化",
     changes: [

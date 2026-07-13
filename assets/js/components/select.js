@@ -113,7 +113,7 @@ const VirtualList = ({ items, itemHeight, containerHeight, renderItem, onSelect,
 const SearchableSelect = ({
   value,
   onChange,
-  options,
+  options = [],
   placeholder = "请选择",
   className = "",
   size = "default",
@@ -134,6 +134,9 @@ const SearchableSelect = ({
   const inputRef = useRef(null);
   const optionsRef = useRef(null);
 
+  const safeOptions = Array.isArray(options) ? options : [];
+  const safeGroups = Array.isArray(groups) ? groups : null;
+
   const debouncedSearch = useMemo(
     () => debounce((query) => setDebouncedQuery(query), debounceDelay),
     [debounceDelay]
@@ -144,10 +147,10 @@ const SearchableSelect = ({
   }, [searchQuery, debouncedSearch]);
 
   const processedGroups = useMemo(() => {
-    if (groups) return groups;
-    if (groupBy && options && options.length > 0) {
+    if (safeGroups) return safeGroups;
+    if (groupBy && safeOptions.length > 0) {
       const groupMap = {};
-      options.forEach((opt) => {
+      safeOptions.forEach((opt) => {
         const groupVal = typeof opt === "object" ? opt[groupBy] : "";
         const groupLabel = groupVal || "未分类";
         if (!groupMap[groupLabel]) {
@@ -162,29 +165,31 @@ const SearchableSelect = ({
       }));
     }
     return null;
-  }, [groups, groupBy, options]);
+  }, [safeGroups, groupBy, safeOptions]);
 
   const filterOptions = (opts, query) => {
-    if (!query.trim()) return opts;
+    if (!Array.isArray(opts)) return [];
+    if (!query || !query.trim()) return opts;
     const q = query.toLowerCase();
     return opts.filter((opt) => {
       const label = typeof opt === "object" ? (opt.label || opt.value || "") : String(opt);
+      if (!label) return false;
       if (label.toLowerCase().includes(q)) return true;
       const pinyin = getPinyinFirstLetter(label);
-      if (pinyin.includes(q)) return true;
+      if (pinyin && pinyin.includes(q)) return true;
       const fullPinyin = label.split('').map(c => {
         for (const [letter, chars] of Object.entries(PINYIN_TABLE)) {
           if (chars.includes(c)) return letter;
         }
         return c.toLowerCase();
       }).join('');
-      if (fullPinyin.includes(q)) return true;
+      if (fullPinyin && fullPinyin.includes(q)) return true;
       return false;
     });
   };
 
   const processedOptions = useMemo(() => {
-    const useGroups = processedGroups || groups;
+    const useGroups = processedGroups || safeGroups;
     let selectableIdx = -1;
     if (useGroups) {
       const result = [];
@@ -195,7 +200,7 @@ const SearchableSelect = ({
           label: group.label,
           groupIndex: groupIdx,
         });
-        const groupOptions = group.options || [];
+        const groupOptions = Array.isArray(group.options) ? group.options : [];
         const filtered = filterOptions(groupOptions, debouncedQuery);
         filtered.forEach((opt) => {
           selectableIdx++;
@@ -210,7 +215,7 @@ const SearchableSelect = ({
       });
       return result;
     } else {
-      return filterOptions(options, debouncedQuery).map((opt, idx) => {
+      return filterOptions(safeOptions, debouncedQuery).map((opt, idx) => {
         selectableIdx++;
         return {
           ...opt,
@@ -220,7 +225,7 @@ const SearchableSelect = ({
         };
       });
     }
-  }, [processedGroups, groups, options, debouncedQuery]);
+  }, [processedGroups, safeGroups, safeOptions, debouncedQuery]);
 
   const selectableOptions = useMemo(() => {
     return processedOptions.filter(item => item.type === 'option');
@@ -230,8 +235,9 @@ const SearchableSelect = ({
 
   const displayValue = useMemo(() => {
     if (value === "" || value == null) return "";
-    
+
     const findOption = (opts) => {
+      if (!Array.isArray(opts)) return null;
       for (const o of opts) {
         const optValue = typeof o === "object" ? o.value : o;
         if (optValue === value) {
@@ -240,29 +246,29 @@ const SearchableSelect = ({
       }
       return null;
     };
-    
-    let opt = findOption(options);
-    
-    if (!opt && groups) {
-      for (const group of groups) {
-        if (group.options) {
+
+    let opt = findOption(safeOptions);
+
+    if (!opt && safeGroups) {
+      for (const group of safeGroups) {
+        if (group && Array.isArray(group.options)) {
           opt = findOption(group.options);
           if (opt) break;
         }
       }
     }
-    
+
     if (!opt && processedGroups) {
       for (const group of processedGroups) {
-        if (group.options) {
+        if (group && Array.isArray(group.options)) {
           opt = findOption(group.options);
           if (opt) break;
         }
       }
     }
-    
+
     return opt ? (typeof opt === "object" ? opt.label : opt) : value;
-  }, [value, options, groups, processedGroups]);
+  }, [value, safeOptions, safeGroups, processedGroups]);
 
   useEffect(() => {
     const handleClickOutside = (e) => {
@@ -323,7 +329,7 @@ const SearchableSelect = ({
           const optValue = typeof selectedOpt === "object" ? selectedOpt.value : selectedOpt;
           handleSelect(optValue);
         } else if (allowCreate && searchQuery.trim()) {
-          const exists = options.some(
+          const exists = safeOptions.some(
             (o) => (typeof o === "object" ? o.value : o) === searchQuery.trim(),
           );
           if (!exists) {
@@ -386,8 +392,8 @@ const SearchableSelect = ({
 
   const getListHeight = () => {
     const maxHeight = 320;
-    const useGroups = processedGroups || groups;
-    const estimatedHeight = enableVirtualScroll ? maxHeight : Math.min(selectableOptions.length * 36 + (useGroups ? useGroups.length * 32 : 0), maxHeight);
+    const useGroups = processedGroups || safeGroups;
+    const estimatedHeight = enableVirtualScroll ? maxHeight : Math.min(selectableOptions.length * 36 + (useGroups && useGroups.length > 0 ? useGroups.length * 32 : 0), maxHeight);
     return Math.max(120, estimatedHeight);
   };
 
