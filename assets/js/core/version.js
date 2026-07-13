@@ -1,8 +1,24 @@
-const APP_VERSION = "czp-1.13.0";
-const DATA_VERSION = "7.0.0";
+const APP_VERSION = "czp-1.14.0";
+const DATA_VERSION = "8.0.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
 const UPDATE_LOG = [
+  { version: "czp-1.14.0", date: "2026-07-13 22:00:00",
+    summary: "账号管理系统升级与代码架构优化",
+    changes: [
+      { type: "feature", text: "新增 AccountManager 账号管理模块，支持密码加密存储（SHA-256）" },
+      { type: "feature", text: "管理员可管理账号状态（启用/禁用），禁用后其他设备无法登录" },
+      { type: "feature", text: "支持添加、编辑、删除账号，权限分离（admin/user）" },
+      { type: "feature", text: "IndexedDB + localStorage 双层数据持久化，防止刷新后数据丢失" },
+      { type: "feature", text: "数据自动保存机制，页面关闭/切换时自动保存" },
+      { type: "optimize", text: "代码分层设计，store.js 集成IndexedDB存储支持" },
+      { type: "optimize", text: "完善数据恢复策略，支持从备份和快照恢复" },
+    ],
+    bugfixes: [
+      { text: "修复计算规则页面语法错误导致的页面加载失败问题" },
+      { text: "修复页面刷新后数据丢失需要重新上传的问题" },
+    ],
+  },
   { version: "czp-1.13.0", date: "2026-07-13 21:00:00",
     summary: "数据持久化升级与系统稳定性增强",
     changes: [

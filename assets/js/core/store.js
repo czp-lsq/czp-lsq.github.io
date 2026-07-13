@@ -669,7 +669,7 @@ const Store = (() => {
   const STORAGE_KEY = "profit_calc_system_v10";
   const BACKUP_KEY = "profit_calc_system_v10_backup";
   const COMPRESSED_MARKER = "__COMPRESSED__:";
-  const CURRENT_VERSION = window.DataVersion || "6.0.0";
+  const CURRENT_VERSION = window.DataVersion || "7.0.0";
   const QUOTA_WARN_THRESHOLD = 0.85; // 85% 配额告警
   const QUOTA_CRITICAL_THRESHOLD = 0.95; // 95% 严重告警
   const MAX_DATA_SIZE = 4 * 1024 * 1024; // 4MB 数据大小告警阈值
@@ -681,6 +681,61 @@ const Store = (() => {
   let _lastSerialized = null; // 缓存上次序列化结果，避免重复序列化
   let _stateCache = null; // 状态缓存
   let _isDirty = false; // 状态是否已修改
+  
+  const useIndexedDB = typeof window !== "undefined" && window.indexedDB;
+  const IDB_STORE_NAME = "app_data";
+  const IDB_DB_NAME = "shopdata_db";
+  const IDB_DB_VERSION = 1;
+
+  // ====== IndexedDB 辅助函数 ======
+  const openDB = () => {
+    return new Promise((resolve, reject) => {
+      if (!useIndexedDB) {
+        reject(new Error("IndexedDB not supported"));
+        return;
+      }
+      const request = indexedDB.open(IDB_DB_NAME, IDB_DB_VERSION);
+      request.onerror = () => reject(request.error);
+      request.onsuccess = () => resolve(request.result);
+      request.onupgradeneeded = (e) => {
+        const db = e.target.result;
+        if (!db.objectStoreNames.contains(IDB_STORE_NAME)) {
+          const store = db.createObjectStore(IDB_STORE_NAME, { keyPath: "key" });
+          store.createIndex("updated_at", "updated_at", { unique: false });
+        }
+      };
+    });
+  };
+
+  const idbGet = async (key) => {
+    try {
+      const db = await openDB();
+      return new Promise((resolve) => {
+        const transaction = db.transaction([IDB_STORE_NAME], "readonly");
+        const store = transaction.objectStore(IDB_STORE_NAME);
+        const request = store.get(key);
+        request.onsuccess = () => resolve(request.result ? request.result.value : null);
+        request.onerror = () => resolve(null);
+      });
+    } catch (e) {
+      return null;
+    }
+  };
+
+  const idbSet = async (key, value) => {
+    try {
+      const db = await openDB();
+      return new Promise((resolve) => {
+        const transaction = db.transaction([IDB_STORE_NAME], "readwrite");
+        const store = transaction.objectStore(IDB_STORE_NAME);
+        const request = store.put({ key, value, updated_at: Date.now() });
+        request.onsuccess = () => resolve(true);
+        request.onerror = () => resolve(false);
+      });
+    } catch (e) {
+      return false;
+    }
+  };
 
   // ====== 数据版本迁移机制 ======
   const migrations = {
@@ -877,8 +932,11 @@ const Store = (() => {
     return null;
   };
 
-  // 加载状态
+  // 加载状态（支持异步从IndexedDB加载）
+  let _loadedState = null;
   const load = () => {
+    if (_loadedState) return _loadedState;
+    
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (saved) {
@@ -911,6 +969,7 @@ const Store = (() => {
         }
 
         _stateCache = state;
+        _loadedState = state;
         return state;
       }
     } catch (e) {
@@ -925,6 +984,7 @@ const Store = (() => {
       
       if (restored) {
         _stateCache = restored;
+        _loadedState = restored;
         return restored;
       }
       
@@ -933,6 +993,51 @@ const Store = (() => {
         localStorage.removeItem(STORAGE_KEY);
       } catch (e2) {}
     }
+    
+    // localStorage没有数据，尝试从IndexedDB加载
+    if (useIndexedDB) {
+      idbGet(STORAGE_KEY).then((idbData) => {
+        if (idbData) {
+          try {
+            let state = idbData;
+            let version = state._version || "1.0.0";
+            
+            // 确保基本结构存在
+            if (!state.platforms || !Array.isArray(state.platforms)) {
+              state.platforms = [
+                { id: "pdd", name: "拼多多", emoji: "🍊", shops: [] },
+                { id: "tb", name: "淘宝", emoji: "🛒", shops: [] },
+                { id: "dy", name: "抖音", emoji: "🎵", shops: [] },
+              ];
+            }
+            if (!state.templates || typeof state.templates !== "object") state.templates = {};
+            if (!state.samples || typeof state.samples !== "object") state.samples = {};
+            if (!state.rules || typeof state.rules !== "object") state.rules = {};
+            if (!state.externals || !Array.isArray(state.externals)) state.externals = [];
+            if (!state.batchData || typeof state.batchData !== "object") state.batchData = {};
+            if (!state.calcHistory || !Array.isArray(state.calcHistory)) state.calcHistory = [];
+            if (!state.userSettings || typeof state.userSettings !== "object") {
+              state.userSettings = { theme: "light", language: "zh-CN", autoSave: true };
+            }
+            
+            if (version !== CURRENT_VERSION) {
+              state = runMigrations(state, version);
+              state._version = CURRENT_VERSION;
+            }
+            
+            _loadedState = state;
+            _stateCache = state;
+            save(state, true);
+            
+            StorageEvents.emit("restored", { source: "indexeddb" });
+            subs.forEach((s) => s(state));
+          } catch (e) {
+            console.error("Failed to load from IndexedDB:", e);
+          }
+        }
+      }).catch(() => {});
+    }
+    
     return null;
   };
 
@@ -1011,6 +1116,11 @@ const Store = (() => {
 
       localStorage.setItem(STORAGE_KEY, serialized);
       backup(serialized);
+      
+      // 同时保存到IndexedDB
+      if (useIndexedDB) {
+        idbSet(STORAGE_KEY, toSave).catch(() => {});
+      }
       
       _stateCache = toSave;
       _isDirty = false;
