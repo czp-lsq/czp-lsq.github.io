@@ -2043,6 +2043,173 @@
   background: var(--color-bg-tertiary);
 }
 
+/* 步骤说明 */
+.rules-page .step-description {
+  display: flex;
+  gap: 10px;
+  padding: 12px 14px;
+  margin: 0 0 12px;
+  background: linear-gradient(135deg, var(--color-primary-50), var(--color-info-50));
+  border: 1px solid var(--color-primary-100);
+  border-radius: var(--radius-md);
+  font-size: 12px;
+  line-height: 1.6;
+}
+
+.rules-page .step-description-icon {
+  font-size: 18px;
+  line-height: 1.2;
+  flex-shrink: 0;
+}
+
+.rules-page .step-description-text {
+  flex: 1;
+  min-width: 0;
+}
+
+.rules-page .step-description-title {
+  color: var(--color-text-primary);
+  font-weight: 500;
+  margin-bottom: 4px;
+}
+
+.rules-page .step-description-usecase {
+  color: var(--color-text-tertiary);
+  font-size: 11px;
+  font-style: italic;
+}
+
+/* 步骤调试面板 */
+.rules-page .step-debug-panel {
+  margin-top: 12px;
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+  overflow: hidden;
+}
+
+.rules-page .step-debug-title {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  user-select: none;
+  transition: var(--transition-fast);
+}
+
+.rules-page .step-debug-title:hover {
+  background: var(--color-bg-tertiary);
+  color: var(--color-text-primary);
+}
+
+.rules-page .step-debug-toggle {
+  margin-left: auto;
+  display: flex;
+  align-items: center;
+  transition: transform var(--transition-fast);
+}
+
+.rules-page .step-debug-toggle.open {
+  transform: rotate(180deg);
+}
+
+.rules-page .step-debug-content {
+  padding: 0 14px 14px;
+  border-top: 1px solid var(--color-border-light);
+}
+
+.rules-page .debug-section {
+  padding-top: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.rules-page .debug-row {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rules-page .debug-label {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+
+.rules-page .debug-value {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-family: var(--font-mono, "SF Mono", "Monaco", monospace);
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  max-height: 200px;
+  overflow: auto;
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+.rules-page .debug-value pre {
+  margin: 0;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.rules-page .debug-error {
+  color: var(--color-danger);
+  font-size: 11px;
+}
+
+.rules-page .debug-empty {
+  color: var(--color-text-tertiary);
+  font-style: italic;
+  font-size: 11px;
+}
+
+.rules-page .debug-arrow {
+  text-align: center;
+  color: var(--color-text-tertiary);
+  font-size: 14px;
+  margin: -2px 0;
+}
+
+.rules-page .debug-tip {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  padding: 6px 10px;
+  background: var(--color-warning-50);
+  border-radius: var(--radius-sm);
+  border-left: 3px solid var(--color-warning);
+  margin-top: 4px;
+}
+
+/* 步骤流程高亮（用于字段位置联动） */
+.rules-page .step-card.highlight {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-100);
+  animation: highlight-pulse 1.2s ease-in-out;
+}
+
+@keyframes highlight-pulse {
+  0%, 100% { box-shadow: 0 0 0 3px var(--color-primary-100); }
+  50% { box-shadow: 0 0 0 6px var(--color-primary-200); }
+}
+
+/* 字段列表项高亮 */
+.rules-page .field-item.highlight {
+  background: var(--color-primary-50);
+  border-color: var(--color-primary);
+  font-weight: 500;
+}
+
 .rules-page .step-config {
   padding: 4px 16px 16px;
 }

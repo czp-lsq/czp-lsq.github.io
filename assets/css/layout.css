@@ -782,22 +782,33 @@ body {
   justify-content: center;
   font-size: 14px;
   flex-shrink: 0;
+  font-family: "iconfont" !important;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
 }
 
-.platform-icon.pinduoduo {
+.platform-icon.pinduoduo,
+.platform-icon.pdd {
   background: linear-gradient(135deg, #FFD100 0%, #FF6B00 100%);
   color: white;
   font-weight: bold;
 }
 
-.platform-icon.taobao {
+.platform-icon.taobao,
+.platform-icon.tb {
   background: linear-gradient(135deg, #FF4400 0%, #FF6600 100%);
   color: white;
 }
 
-.platform-icon.douyin {
+.platform-icon.douyin,
+.platform-icon.dy {
   background: linear-gradient(135deg, #000000 0%, #1A1A1A 100%);
   color: white;
+}
+
+.platform-icon::before {
+  font-size: 16px;
+  line-height: 1;
 }
 
 .platform-emoji {

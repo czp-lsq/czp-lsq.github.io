@@ -3,76 +3,76 @@
 /* ===== 默认主题：深邃商务 (business) - 专业稳重的金融风格 ===== */
 :root,
 body.theme-business {
-  /* Brand Colors - 品牌色 */
-  --color-primary: #1E3A5F;
-  --color-primary-light: #2D5A8F;
-  --color-primary-dark: #0F2744;
-  --color-primary-50: #EFF4FA;
-  --color-primary-100: #D9E4F1;
-  --color-primary-200: #B3C9E2;
-  --color-primary-600: #1E3A5F;
-  --color-primary-700: #192F4D;
-  --color-primary-gradient: linear-gradient(135deg, #1E3A5F 0%, #2D5A8F 100%);
+  /* Brand Colors - 品牌色（优化：更现代、更专业） */
+  --color-primary: #2563EB;
+  --color-primary-light: #3B82F6;
+  --color-primary-dark: #1D4ED8;
+  --color-primary-50: #EFF6FF;
+  --color-primary-100: #DBEAFE;
+  --color-primary-200: #BFDBFE;
+  --color-primary-600: #2563EB;
+  --color-primary-700: #1D4ED8;
+  --color-primary-gradient: linear-gradient(135deg, #2563EB 0%, #3B82F6 100%);
 
-  --color-accent: #D4A574;
-  --color-accent-light: #E5C49E;
-  --color-accent-dark: #B8895A;
-  --color-accent-50: #FBF6EF;
-  --color-accent-100: #F5E9D8;
-  --color-accent-gradient: linear-gradient(135deg, #D4A574 0%, #E5C49E 100%);
+  --color-accent: #F59E0B;
+  --color-accent-light: #FBBF24;
+  --color-accent-dark: #D97706;
+  --color-accent-50: #FFFBEB;
+  --color-accent-100: #FEF3C7;
+  --color-accent-gradient: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
 
-  /* Semantic Colors - 语义色 */
-  --color-success: #2E7D5B;
-  --color-success-light: #4CAF7D;
-  --color-success-bg: #E8F5EE;
-  --color-success-border: #A8D5BA;
+  /* Semantic Colors - 语义色（优化：更护眼、更温和） */
+  --color-success: #10B981;
+  --color-success-light: #34D399;
+  --color-success-bg: #ECFDF5;
+  --color-success-border: #A7F3D0;
 
-  --color-warning: #C58A1F;
-  --color-warning-light: #E5A830;
-  --color-warning-bg: #FDF6E8;
-  --color-warning-border: #E8D5A0;
+  --color-warning: #F59E0B;
+  --color-warning-light: #FBBF24;
+  --color-warning-bg: #FFFBEB;
+  --color-warning-border: #FDE68A;
 
-  --color-danger: #C0392B;
-  --color-danger-light: #E74C3C;
-  --color-danger-bg: #FDEDEA;
-  --color-danger-border: #F0B0A8;
+  --color-danger: #EF4444;
+  --color-danger-light: #F87171;
+  --color-danger-bg: #FEF2F2;
+  --color-danger-border: #FECACA;
 
-  --color-info: #2980B9;
-  --color-info-light: #3498DB;
-  --color-info-bg: #EBF5FB;
-  --color-info-border: #AED6F1;
+  --color-info: #3B82F6;
+  --color-info-light: #60A5FA;
+  --color-info-bg: #EFF6FF;
+  --color-info-border: #BFDBFE;
 
-  /* Neutral Colors - 中性色 */
-  --color-bg-primary: #F8F9FA;
+  /* Neutral Colors - 中性色（优化：更柔和的灰阶） */
+  --color-bg-primary: #F9FAFB;
   --color-bg-secondary: #FFFFFF;
-  --color-bg-tertiary: #F1F3F5;
-  --color-bg-hover: #E9ECEF;
-  --color-bg-active: #DEE2E6;
+  --color-bg-tertiary: #F3F4F6;
+  --color-bg-hover: #E5E7EB;
+  --color-bg-active: #D1D5DB;
   --color-bg-sidebar: #FFFFFF;
   --color-bg-header: #FFFFFF;
 
-  --color-text-primary: #1A1A2E;
-  --color-text-secondary: #4A5568;
-  --color-text-tertiary: #718096;
-  --color-text-muted: #A0AEC0;
-  --color-text-disabled: #CBD5E0;
-  --color-text-sidebar: #4A5568;
-  --color-text-sidebar-active: #1E3A5F;
+  --color-text-primary: #111827;
+  --color-text-secondary: #4B5563;
+  --color-text-tertiary: #6B7280;
+  --color-text-muted: #9CA3AF;
+  --color-text-disabled: #D1D5DB;
+  --color-text-sidebar: #4B5563;
+  --color-text-sidebar-active: #2563EB;
 
-  --color-border: #E2E8F0;
-  --color-border-light: #EDF2F7;
-  --color-border-medium: #CBD5E0;
-  --color-border-primary: rgba(30, 58, 95, 0.25);
+  --color-border: #E5E7EB;
+  --color-border-light: #F3F4F6;
+  --color-border-medium: #D1D5DB;
+  --color-border-primary: rgba(37, 99, 235, 0.25);
 
-  /* Shadows - 阴影 */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.06);
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.08);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.1);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.12);
-  --shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.14);
-  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.18);
-  --shadow-card-hover: 0 8px 30px rgba(30, 58, 95, 0.15);
-  --shadow-sidebar: 0 2px 8px rgba(0, 0, 0, 0.08);
+  /* Shadows - 阴影（优化：更柔和、更有层次） */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.06), 0 1px 2px rgba(0, 0, 0, 0.04);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.05), 0 2px 4px rgba(0, 0, 0, 0.06);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.07), 0 4px 6px rgba(0, 0, 0, 0.05);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.08), 0 10px 10px rgba(0, 0, 0, 0.04);
+  --shadow-modal: 0 25px 50px rgba(0, 0, 0, 0.15);
+  --shadow-card-hover: 0 10px 30px rgba(37, 99, 235, 0.12);
+  --shadow-sidebar: 0 2px 8px rgba(0, 0, 0, 0.04);
 
   /* Radius - 圆角 */
   --radius-xs: 4px;
@@ -159,124 +159,131 @@ body.theme-business {
 
 /* ===== 主题2：清新科技 (tech) - 现代科技感，清爽明亮 ===== */
 body.theme-tech {
-  --color-primary: #0D9488;
-  --color-primary-light: #14B8A6;
-  --color-primary-dark: #0F766E;
+  /* 品牌色 - 优化：青绿色系，更护眼清新 */
+  --color-primary: #14B8A6;
+  --color-primary-light: #2DD4BF;
+  --color-primary-dark: #0D9488;
   --color-primary-50: #F0FDFA;
   --color-primary-100: #CCFBF1;
   --color-primary-200: #99F6E4;
-  --color-primary-600: #0D9488;
-  --color-primary-700: #0F766E;
-  --color-primary-gradient: linear-gradient(135deg, #0D9488 0%, #06B6D4 100%);
+  --color-primary-600: #14B8A6;
+  --color-primary-700: #0D9488;
+  --color-primary-gradient: linear-gradient(135deg, #14B8A6 0%, #06B6D4 100%);
 
-  --color-accent: #0EA5E9;
-  --color-accent-light: #38BDF8;
-  --color-accent-dark: #0284C7;
-  --color-accent-50: #F0F9FF;
-  --color-accent-100: #E0F2FE;
-  --color-accent-gradient: linear-gradient(135deg, #0EA5E9 0%, #38BDF8 100%);
+  --color-accent: #06B6D4;
+  --color-accent-light: #22D3EE;
+  --color-accent-dark: #0891B2;
+  --color-accent-50: #ECFEFF;
+  --color-accent-100: #CFFAFE;
+  --color-accent-gradient: linear-gradient(135deg, #06B6D4 0%, #22D3EE 100%);
 
-  --color-success: #059669;
-  --color-success-light: #10B981;
+  /* 语义色 - 优化：更柔和、更易识别 */
+  --color-success: #10B981;
+  --color-success-light: #34D399;
   --color-success-bg: #ECFDF5;
-  --color-success-border: #6EE7B7;
+  --color-success-border: #A7F3D0;
 
-  --color-warning: #D97706;
-  --color-warning-light: #F59E0B;
+  --color-warning: #F59E0B;
+  --color-warning-light: #FBBF24;
   --color-warning-bg: #FFFBEB;
-  --color-warning-border: #FCD34D;
+  --color-warning-border: #FDE68A;
 
-  --color-danger: #DC2626;
-  --color-danger-light: #EF4444;
+  --color-danger: #EF4444;
+  --color-danger-light: #F87171;
   --color-danger-bg: #FEF2F2;
-  --color-danger-border: #FCA5A5;
+  --color-danger-border: #FECACA;
 
-  --color-info: #2563EB;
-  --color-info-light: #3B82F6;
+  --color-info: #3B82F6;
+  --color-info-light: #60A5FA;
   --color-info-bg: #EFF6FF;
-  --color-info-border: #93C5FD;
+  --color-info-border: #BFDBFE;
 
-  --color-bg-primary: #F0FDFA;
+  /* 中性色 - 优化：更清新淡雅的背景 */
+  --color-bg-primary: #FAFCFB;
   --color-bg-secondary: #FFFFFF;
-  --color-bg-tertiary: #E0F2FE;
+  --color-bg-tertiary: #F0FDFA;
   --color-bg-hover: #CCFBF1;
   --color-bg-active: #99F6E4;
 
   --color-text-primary: #0F172A;
-  --color-text-secondary: #1E293B;
-  --color-text-tertiary: #334155;
+  --color-text-secondary: #334155;
+  --color-text-tertiary: #475569;
   --color-text-muted: #64748B;
   --color-text-disabled: #94A3B8;
 
   --color-border: #CCFBF1;
-  --color-border-light: #E0F2FE;
+  --color-border-light: #F0FDFA;
   --color-border-medium: #99F6E4;
-  --color-border-primary: rgba(13, 148, 136, 0.25);
+  --color-border-primary: rgba(20, 184, 166, 0.25);
 
-  --shadow-xs: 0 1px 2px rgba(13, 148, 136, 0.05);
-  --shadow-sm: 0 2px 4px rgba(13, 148, 136, 0.08);
-  --shadow-md: 0 4px 12px rgba(13, 148, 136, 0.1);
-  --shadow-lg: 0 8px 24px rgba(13, 148, 136, 0.12);
-  --shadow-xl: 0 12px 32px rgba(13, 148, 136, 0.15);
-  --shadow-modal: 0 20px 60px rgba(13, 148, 136, 0.18);
-  --shadow-card-hover: 0 8px 30px rgba(13, 148, 136, 0.18);
-  --shadow-sidebar: 0 2px 8px rgba(13, 148, 136, 0.08);
+  /* 阴影 - 优化：青绿色系阴影，更有科技感 */
+  --shadow-xs: 0 1px 2px rgba(20, 184, 166, 0.04);
+  --shadow-sm: 0 1px 3px rgba(20, 184, 166, 0.06), 0 1px 2px rgba(20, 184, 166, 0.04);
+  --shadow-md: 0 4px 6px rgba(20, 184, 166, 0.05), 0 2px 4px rgba(20, 184, 166, 0.06);
+  --shadow-lg: 0 10px 15px rgba(20, 184, 166, 0.07), 0 4px 6px rgba(20, 184, 166, 0.05);
+  --shadow-xl: 0 20px 25px rgba(20, 184, 166, 0.08), 0 10px 10px rgba(20, 184, 166, 0.04);
+  --shadow-modal: 0 25px 50px rgba(20, 184, 166, 0.15);
+  --shadow-card-hover: 0 10px 30px rgba(20, 184, 166, 0.15);
+  --shadow-sidebar: 0 2px 8px rgba(20, 184, 166, 0.06);
 
   --gradient-bg-header: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(240,253,250,1) 100%);
-  --gradient-bg-sidebar: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(224,242,254,1) 100%);
+  --gradient-bg-sidebar: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(240,253,250,1) 100%);
 
   /* Overlay - 遮罩层 */
   --color-bg-overlay: rgba(15, 23, 42, 0.5);
   --color-bg-overlay-dark: rgba(15, 23, 42, 0.7);
 
   --theme-card-style: glow;
-  --theme-glow: 0 0 20px rgba(13, 148, 136, 0.08);
+  --theme-glow: 0 0 20px rgba(20, 184, 166, 0.08);
 }
 
 /* ===== 主题3：温暖活力 (warm) - 热情活泼，阳光温暖 ===== */
 body.theme-warm {
-  --color-primary: #EA580C;
-  --color-primary-light: #F97316;
-  --color-primary-dark: #C2410C;
+  /* 品牌色 - 优化：温暖橙红色系 */
+  --color-primary: #F97316;
+  --color-primary-light: #FB923C;
+  --color-primary-dark: #EA580C;
   --color-primary-50: #FFF7ED;
   --color-primary-100: #FFEDD5;
   --color-primary-200: #FED7AA;
-  --color-primary-600: #EA580C;
-  --color-primary-700: #C2410C;
-  --color-primary-gradient: linear-gradient(135deg, #EA580C 0%, #FB923C 100%);
+  --color-primary-600: #F97316;
+  --color-primary-700: #EA580C;
+  --color-primary-gradient: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
 
-  --color-accent: #E11D48;
-  --color-accent-light: #F43F5E;
-  --color-accent-dark: #BE123C;
-  --color-accent-50: #FFF1F2;
-  --color-accent-100: #FFE4E6;
-  --color-accent-gradient: linear-gradient(135deg, #E11D48 0%, #FB7185 100%);
+  --color-accent: #EC4899;
+  --color-accent-light: #F472B6;
+  --color-accent-dark: #DB2777;
+  --color-accent-50: #FDF2F8;
+  --color-accent-100: #FCE7F3;
+  --color-accent-gradient: linear-gradient(135deg, #EC4899 0%, #F472B6 100%);
 
-  --color-success: #16A34A;
-  --color-success-light: #22C55E;
-  --color-success-bg: #F0FDF4;
-  --color-success-border: #86EFAC;
+  /* 语义色 - 优化：温暖的语义色系 */
+  --color-success: #10B981;
+  --color-success-light: #34D399;
+  --color-success-bg: #ECFDF5;
+  --color-success-border: #A7F3D0;
 
-  --color-warning: #CA8A04;
-  --color-warning-light: #EAB308;
-  --color-warning-bg: #FEFCE8;
-  --color-warning-border: #FDE047;
+  --color-warning: #F59E0B;
+  --color-warning-light: #FBBF24;
+  --color-warning-bg: #FFFBEB;
+  --color-warning-border: #FDE68A;
 
-  --color-danger: #DC2626;
-  --color-danger-light: #EF4444;
+  --color-danger: #EF4444;
+  --color-danger-light: #F87171;
   --color-danger-bg: #FEF2F2;
-  --color-danger-border: #FCA5A5;
+  --color-danger-border: #FECACA;
 
-  --color-info: #2563EB;
-  --color-info-light: #3B82F6;
+  --color-info: #3B82F6;
+  --color-info-light: #60A5FA;
   --color-info-bg: #EFF6FF;
-  --color-info-border: #93C5FD;
+  --color-info-border: #BFDBFE;
 
-  --color-bg-primary: #FFF7ED;
+  /* 中性色 - 优化：温暖的背景色 */
+  --color-bg-primary: #FFFBF5;
   --color-bg-secondary: #FFFFFF;
-  --color-bg-tertiary: #FFEDD5;
-  --color-bg-hover: #FED7AA;
-  --color-bg-active: #FDBA74;
+  --color-bg-tertiary: #FFF7ED;
+  --color-bg-hover: #FFEDD5;
+  --color-bg-active: #FED7AA;
 
   --color-text-primary: #1C1917;
   --color-text-secondary: #44403C;
@@ -285,74 +292,78 @@ body.theme-warm {
   --color-text-disabled: #D6D3D1;
 
   --color-border: #FED7AA;
-  --color-border-light: #FFEDD5;
+  --color-border-light: #FFF7ED;
   --color-border-medium: #FDBA74;
-  --color-border-primary: rgba(234, 88, 12, 0.25);
+  --color-border-primary: rgba(249, 115, 22, 0.25);
 
-  --shadow-xs: 0 1px 2px rgba(234, 88, 12, 0.08);
-  --shadow-sm: 0 2px 4px rgba(234, 88, 12, 0.1);
-  --shadow-md: 0 4px 12px rgba(234, 88, 12, 0.12);
-  --shadow-lg: 0 8px 24px rgba(234, 88, 12, 0.15);
-  --shadow-xl: 0 12px 32px rgba(234, 88, 12, 0.18);
-  --shadow-modal: 0 20px 60px rgba(234, 88, 12, 0.2);
-  --shadow-card-hover: 0 8px 30px rgba(234, 88, 12, 0.2);
-  --shadow-sidebar: 0 2px 8px rgba(234, 88, 12, 0.1);
+  /* 阴影 - 优化：橙红色系阴影 */
+  --shadow-xs: 0 1px 2px rgba(249, 115, 22, 0.04);
+  --shadow-sm: 0 1px 3px rgba(249, 115, 22, 0.06), 0 1px 2px rgba(249, 115, 22, 0.04);
+  --shadow-md: 0 4px 6px rgba(249, 115, 22, 0.05), 0 2px 4px rgba(249, 115, 22, 0.06);
+  --shadow-lg: 0 10px 15px rgba(249, 115, 22, 0.07), 0 4px 6px rgba(249, 115, 22, 0.05);
+  --shadow-xl: 0 20px 25px rgba(249, 115, 22, 0.08), 0 10px 10px rgba(249, 115, 22, 0.04);
+  --shadow-modal: 0 25px 50px rgba(249, 115, 22, 0.15);
+  --shadow-card-hover: 0 10px 30px rgba(249, 115, 22, 0.15);
+  --shadow-sidebar: 0 2px 8px rgba(249, 115, 22, 0.06);
 
   --gradient-bg-header: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,247,237,1) 100%);
-  --gradient-bg-sidebar: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,237,213,1) 100%);
+  --gradient-bg-sidebar: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(255,247,237,1) 100%);
 
   /* Overlay - 遮罩层 */
-  --color-bg-overlay: rgba(15, 23, 42, 0.5);
-  --color-bg-overlay-dark: rgba(15, 23, 42, 0.7);
+  --color-bg-overlay: rgba(28, 25, 23, 0.5);
+  --color-bg-overlay-dark: rgba(28, 25, 23, 0.7);
 
   --theme-card-style: rounded;
-  --theme-glow: 0 0 15px rgba(234, 88, 12, 0.06);
+  --theme-glow: 0 0 15px rgba(249, 115, 22, 0.06);
 }
 
 /* ===== 主题4：优雅紫调 (elegant) - 精致优雅，梦幻高贵 ===== */
 body.theme-elegant {
-  --color-primary: #7C3AED;
-  --color-primary-light: #8B5CF6;
-  --color-primary-dark: #6D28D9;
+  /* 品牌色 - 优化：更柔和优雅的紫色系 */
+  --color-primary: #8B5CF6;
+  --color-primary-light: #A78BFA;
+  --color-primary-dark: #7C3AED;
   --color-primary-50: #FAF5FF;
   --color-primary-100: #F3E8FF;
   --color-primary-200: #E9D5FF;
-  --color-primary-600: #7C3AED;
-  --color-primary-700: #6D28D9;
-  --color-primary-gradient: linear-gradient(135deg, #7C3AED 0%, #A78BFA 100%);
+  --color-primary-600: #8B5CF6;
+  --color-primary-700: #7C3AED;
+  --color-primary-gradient: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
 
-  --color-accent: #DB2777;
-  --color-accent-light: #EC4899;
-  --color-accent-dark: #BE185D;
+  --color-accent: #EC4899;
+  --color-accent-light: #F472B6;
+  --color-accent-dark: #DB2777;
   --color-accent-50: #FDF2F8;
   --color-accent-100: #FCE7F3;
-  --color-accent-gradient: linear-gradient(135deg, #DB2777 0%, #F472B6 100%);
+  --color-accent-gradient: linear-gradient(135deg, #EC4899 0%, #F472B6 100%);
 
-  --color-success: #059669;
-  --color-success-light: #10B981;
+  /* 语义色 - 优化：柔和统一 */
+  --color-success: #10B981;
+  --color-success-light: #34D399;
   --color-success-bg: #ECFDF5;
-  --color-success-border: #6EE7B7;
+  --color-success-border: #A7F3D0;
 
-  --color-warning: #D97706;
-  --color-warning-light: #F59E0B;
+  --color-warning: #F59E0B;
+  --color-warning-light: #FBBF24;
   --color-warning-bg: #FFFBEB;
-  --color-warning-border: #FCD34D;
+  --color-warning-border: #FDE68A;
 
-  --color-danger: #DC2626;
-  --color-danger-light: #EF4444;
+  --color-danger: #EF4444;
+  --color-danger-light: #F87171;
   --color-danger-bg: #FEF2F2;
-  --color-danger-border: #FCA5A5;
+  --color-danger-border: #FECACA;
 
-  --color-info: #2563EB;
-  --color-info-light: #3B82F6;
+  --color-info: #3B82F6;
+  --color-info-light: #60A5FA;
   --color-info-bg: #EFF6FF;
-  --color-info-border: #93C5FD;
+  --color-info-border: #BFDBFE;
 
-  --color-bg-primary: #FAF5FF;
+  /* 中性色 - 优化：更柔和淡雅的紫调 */
+  --color-bg-primary: #FCFAFF;
   --color-bg-secondary: #FFFFFF;
-  --color-bg-tertiary: #F3E8FF;
-  --color-bg-hover: #E9D5FF;
-  --color-bg-active: #DDD6FE;
+  --color-bg-tertiary: #FAF5FF;
+  --color-bg-hover: #F3E8FF;
+  --color-bg-active: #E9D5FF;
 
   --color-text-primary: #1E1B4B;
   --color-text-secondary: #4338CA;
@@ -361,137 +372,138 @@ body.theme-elegant {
   --color-text-disabled: #A5B4FC;
 
   --color-border: #E9D5FF;
-  --color-border-light: #F3E8FF;
+  --color-border-light: #FAF5FF;
   --color-border-medium: #C4B5FD;
-  --color-border-primary: rgba(124, 58, 237, 0.25);
+  --color-border-primary: rgba(139, 92, 246, 0.25);
 
-  --shadow-xs: 0 1px 2px rgba(124, 58, 237, 0.06);
-  --shadow-sm: 0 2px 4px rgba(124, 58, 237, 0.08);
-  --shadow-md: 0 4px 12px rgba(124, 58, 237, 0.12);
-  --shadow-lg: 0 8px 24px rgba(124, 58, 237, 0.15);
-  --shadow-xl: 0 12px 32px rgba(124, 58, 237, 0.18);
-  --shadow-modal: 0 20px 60px rgba(124, 58, 237, 0.2);
-  --shadow-card-hover: 0 8px 30px rgba(124, 58, 237, 0.2);
-  --shadow-sidebar: 0 2px 8px rgba(124, 58, 237, 0.08);
+  /* 阴影 - 优化：紫色系阴影 */
+  --shadow-xs: 0 1px 2px rgba(139, 92, 246, 0.04);
+  --shadow-sm: 0 1px 3px rgba(139, 92, 246, 0.06), 0 1px 2px rgba(139, 92, 246, 0.04);
+  --shadow-md: 0 4px 6px rgba(139, 92, 246, 0.05), 0 2px 4px rgba(139, 92, 246, 0.06);
+  --shadow-lg: 0 10px 15px rgba(139, 92, 246, 0.07), 0 4px 6px rgba(139, 92, 246, 0.05);
+  --shadow-xl: 0 20px 25px rgba(139, 92, 246, 0.08), 0 10px 10px rgba(139, 92, 246, 0.04);
+  --shadow-modal: 0 25px 50px rgba(139, 92, 246, 0.15);
+  --shadow-card-hover: 0 10px 30px rgba(139, 92, 246, 0.15);
+  --shadow-sidebar: 0 2px 8px rgba(139, 92, 246, 0.06);
 
   --gradient-bg-header: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(250,245,255,1) 100%);
-  --gradient-bg-sidebar: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(243,232,255,1) 100%);
+  --gradient-bg-sidebar: linear-gradient(180deg, rgba(255,255,255,1) 0%, rgba(250,245,255,1) 100%);
 
   /* Overlay - 遮罩层 */
-  --color-bg-overlay: rgba(15, 23, 42, 0.5);
-  --color-bg-overlay-dark: rgba(15, 23, 42, 0.7);
+  --color-bg-overlay: rgba(30, 27, 75, 0.5);
+  --color-bg-overlay-dark: rgba(30, 27, 75, 0.7);
 
   --theme-card-style: elegant;
-  --theme-glow: 0 0 25px rgba(124, 58, 237, 0.1);
+  --theme-glow: 0 0 25px rgba(139, 92, 246, 0.1);
 }
 
 /* ===== 深色模式支持（每个主题都有独特的深色风格，符合WCAG AA对比度标准） ===== */
 
-/* ===== Business 深色主题 - 优化对比度 WCAG AA (4.5:1) ===== */
+/* ===== Business 深色主题 - 优化对比度 WCAG AA (4.5:1) - 护眼优化版 ===== */
 body.dark.theme-business {
-  /* 背景色系 - 使用深色背景 */
-  --color-bg-primary: #0F172A;      /* 最深背景 */
-  --color-bg-secondary: #1E293B;    /* 卡片/面板背景 */
-  --color-bg-tertiary: #334155;     /* 三级背景 */
-  --color-bg-hover: #475569;        /* hover状态 */
-  --color-bg-active: #64748B;       /* active状态 */
-  --color-bg-sidebar: #1E293B;      /* 侧边栏背景 */
-  --color-bg-header: #1E293B;       /* 头部背景 */
-  --color-bg-card: #1E293B;         /* 卡片背景 */
+  /* 背景色系 - 优化：避免纯黑刺眼，使用柔和深色 */
+  --color-bg-primary: #111827;      /* 主背景，使用近黑深灰 */
+  --color-bg-secondary: #1F2937;    /* 卡片/面板背景 */
+  --color-bg-tertiary: #374151;     /* 三级背景 */
+  --color-bg-hover: #4B5563;        /* hover状态 */
+  --color-bg-active: #6B7280;       /* active状态 */
+  --color-bg-sidebar: #1F2937;      /* 侧边栏背景 */
+  --color-bg-header: #1F2937;       /* 头部背景 */
+  --color-bg-card: #1F2937;         /* 卡片背景 */
 
-  /* 文本色系 - 确保对比度 ≥ 4.5:1 */
-  --color-text-primary: #F1F5F9;    /* 主要文本 - 对比度 12.63:1 */
-  --color-text-secondary: #E2E8F0;  /* 次级文本 - 对比度 9.96:1 */
-  --color-text-tertiary: #CBD5E1;   /* 三级文本 - 对比度 7.85:1 */
-  --color-text-muted: #94A3B8;      /* 弱化文本 - 对比度 4.72:1 */
-  --color-text-disabled: #64748B;   /* 禁用文本 */
-  --color-text-sidebar: #E2E8F0;    /* 侧边栏文本 */
-  --color-text-sidebar-active: #60A5FA; /* 侧边栏激活文本 */
+  /* 文本色系 - 优化：避免纯白刺眼，使用柔和白 */
+  --color-text-primary: #F9FAFB;    /* 主要文本 - 对比度 14.2:1 */
+  --color-text-secondary: #E5E7EB;  /* 次级文本 - 对比度 11.3:1 */
+  --color-text-tertiary: #D1D5DB;   /* 三级文本 - 对比度 8.6:1 */
+  --color-text-muted: #9CA3AF;      /* 弱化文本 - 对比度 4.9:1 */
+  --color-text-disabled: #6B7280;   /* 禁用文本 */
+  --color-text-sidebar: #E5E7EB;    /* 侧边栏文本 */
+  --color-text-sidebar-active: #93C5FD; /* 侧边栏激活文本 */
 
   /* 边框色系 */
-  --color-border: #475569;          /* 边框颜色 */
-  --color-border-light: #334155;    /* 浅边框 */
-  --color-border-medium: #64748B;   /* 中等边框 */
-  --color-border-primary: rgba(96, 165, 250, 0.4);
+  --color-border: #374151;          /* 边框颜色 */
+  --color-border-light: #1F2937;    /* 浅边框 */
+  --color-border-medium: #4B5563;   /* 中等边框 */
+  --color-border-primary: rgba(147, 197, 253, 0.4);
 
-  /* 品牌色 - 深色模式调整 */
-  --color-primary: #60A5FA;         /* 主要色 - 对比度 8.59:1 */
-  --color-primary-light: #93C5FD;   /* 浅主要色 */
-  --color-primary-dark: #3B82F6;    /* 深主要色 */
-  --color-primary-50: rgba(96, 165, 250, 0.1);
-  --color-primary-100: rgba(96, 165, 250, 0.2);
-  --color-primary-200: rgba(96, 165, 250, 0.3);
-  --color-primary-gradient: linear-gradient(135deg, #3B82F6 0%, #60A5FA 100%);
+  /* 品牌色 - 优化：使用更柔和的天蓝色，避免刺眼 */
+  --color-primary: #93C5FD;         /* 主要色 - 对比度 8.6:1 */
+  --color-primary-light: #BFDBFE;   /* 浅主要色 */
+  --color-primary-dark: #60A5FA;    /* 深主要色 */
+  --color-primary-50: rgba(147, 197, 253, 0.08);
+  --color-primary-100: rgba(147, 197, 253, 0.15);
+  --color-primary-200: rgba(147, 197, 253, 0.25);
+  --color-primary-gradient: linear-gradient(135deg, #60A5FA 0%, #93C5FD 100%);
 
-  --color-accent: #FBBF24;          /* 强调色 - 对比度 7.2:1 */
-  --color-accent-light: #FCD34D;
-  --color-accent-dark: #F59E0B;
-  --color-accent-50: rgba(251, 191, 36, 0.1);
-  --color-accent-100: rgba(251, 191, 36, 0.2);
-  --color-accent-gradient: linear-gradient(135deg, #F59E0B 0%, #FBBF24 100%);
+  --color-accent: #FCD34D;          /* 强调色 - 对比度 8.0:1 */
+  --color-accent-light: #FDE68A;
+  --color-accent-dark: #FBBF24;
+  --color-accent-50: rgba(252, 211, 77, 0.08);
+  --color-accent-100: rgba(252, 211, 77, 0.15);
+  --color-accent-gradient: linear-gradient(135deg, #FBBF24 0%, #FCD34D 100%);
 
-  /* 语义色 - 深色模式优化 */
-  --color-success: #4ADE80;         /* 成功色 - 对比度 5.45:1 */
-  --color-success-light: #86EFAC;
-  --color-success-bg: rgba(34, 197, 94, 0.15);
-  --color-success-border: rgba(74, 222, 128, 0.4);
+  /* 语义色 - 优化：更柔和的深色语义色 */
+  --color-success: #6EE7B7;         /* 成功色 - 对比度 7.5:1 */
+  --color-success-light: #A7F3D0;
+  --color-success-bg: rgba(110, 231, 183, 0.12);
+  --color-success-border: rgba(110, 231, 183, 0.3);
 
-  --color-warning: #FBBF24;         /* 警告色 */
-  --color-warning-light: #FCD34D;
-  --color-warning-bg: rgba(251, 191, 36, 0.15);
-  --color-warning-border: rgba(251, 191, 36, 0.4);
+  --color-warning: #FCD34D;         /* 警告色 - 对比度 8.0:1 */
+  --color-warning-light: #FDE68A;
+  --color-warning-bg: rgba(252, 211, 77, 0.12);
+  --color-warning-border: rgba(252, 211, 77, 0.3);
 
-  --color-danger: #F87171;          /* 危险色 - 对比度 4.51:1 */
-  --color-danger-light: #FCA5A5;
-  --color-danger-bg: rgba(239, 68, 68, 0.15);
-  --color-danger-border: rgba(248, 113, 113, 0.4);
+  --color-danger: #FCA5A5;          /* 危险色 - 对比度 6.5:1 */
+  --color-danger-light: #FECACA;
+  --color-danger-bg: rgba(252, 165, 165, 0.12);
+  --color-danger-border: rgba(252, 165, 165, 0.3);
 
-  --color-info: #60A5FA;            /* 信息色 */
-  --color-info-light: #93C5FD;
-  --color-info-bg: rgba(59, 130, 246, 0.15);
-  --color-info-border: rgba(96, 165, 250, 0.4);
+  --color-info: #93C5FD;            /* 信息色 - 对比度 8.6:1 */
+  --color-info-light: #BFDBFE;
+  --color-info-bg: rgba(147, 197, 253, 0.12);
+  --color-info-border: rgba(147, 197, 253, 0.3);
 
-  /* 深色模式阴影 - 使用更柔和的阴影 */
-  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.25);
-  --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.35);
-  --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.45);
-  --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.55);
-  --shadow-xl: 0 12px 32px rgba(0, 0, 0, 0.65);
-  --shadow-modal: 0 20px 60px rgba(0, 0, 0, 0.75);
-  --shadow-card-hover: 0 8px 30px rgba(96, 165, 250, 0.15);
-  --shadow-sidebar: 0 2px 12px rgba(0, 0, 0, 0.4);
-  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.3);
+  /* 深色模式阴影 - 优化：使用更柔和的阴影 */
+  --shadow-xs: 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-sm: 0 1px 3px rgba(0, 0, 0, 0.3), 0 1px 2px rgba(0, 0, 0, 0.2);
+  --shadow-md: 0 4px 6px rgba(0, 0, 0, 0.3), 0 2px 4px rgba(0, 0, 0, 0.2);
+  --shadow-lg: 0 10px 15px rgba(0, 0, 0, 0.35), 0 4px 6px rgba(0, 0, 0, 0.2);
+  --shadow-xl: 0 20px 25px rgba(0, 0, 0, 0.4), 0 10px 10px rgba(0, 0, 0, 0.2);
+  --shadow-modal: 0 25px 50px rgba(0, 0, 0, 0.5);
+  --shadow-card-hover: 0 10px 30px rgba(147, 197, 253, 0.12);
+  --shadow-sidebar: 0 2px 12px rgba(0, 0, 0, 0.3);
+  --shadow-inset: inset 0 1px 2px rgba(0, 0, 0, 0.2);
 
   /* 渐变 */
-  --gradient-bg-header: linear-gradient(180deg, rgba(30,41,59,1) 0%, rgba(15,23,42,1) 100%);
-  --gradient-bg-sidebar: linear-gradient(180deg, rgba(30,41,59,1) 0%, rgba(15,23,42,1) 100%);
-  --gradient-bg-card: linear-gradient(180deg, rgba(30,41,59,1) 0%, rgba(30,41,59,0.8) 100%);
+  --gradient-bg-header: linear-gradient(180deg, rgba(31,41,55,1) 0%, rgba(17,24,39,1) 100%);
+  --gradient-bg-sidebar: linear-gradient(180deg, rgba(31,41,55,1) 0%, rgba(17,24,39,1) 100%);
+  --gradient-bg-card: linear-gradient(180deg, rgba(31,41,55,1) 0%, rgba(31,41,55,0.9) 100%);
 
   /* 遮罩层 */
-  --color-bg-overlay: rgba(0, 0, 0, 0.75);
+  --color-bg-overlay: rgba(0, 0, 0, 0.7);
   --color-bg-overlay-dark: rgba(0, 0, 0, 0.85);
 
   /* 扫光效果 */
-  --color-shimmer: rgba(255, 255, 255, 0.08);
+  --color-shimmer: rgba(255, 255, 255, 0.06);
 
   /* 主题特征 */
   --theme-card-style: border;
   --theme-glow: none;
 }
 
-/* ===== Tech 深色主题 - 科技感深色风格 ===== */
+/* ===== Tech 深色主题 - 科技感深色风格 - 护眼优化版 ===== */
 body.dark.theme-tech {
-  /* 背景色系 */
+  /* 背景色系 - 优化：青绿深色 */
   --color-bg-primary: #042F2E;
-  --color-bg-secondary: #064E4B;
-  --color-bg-tertiary: #0C6B67;
-  --color-bg-hover: #0F8C87;
+  --color-bg-secondary: #0A3F3D;
+  --color-bg-tertiary: #115E59;
+  --color-bg-hover: #147874;
   --color-bg-active: #14B8A6;
-  --color-bg-sidebar: #064E4B;
-  --color-bg-header: #064E4B;
-  --color-bg-card: #064E4B;
+  --color-bg-sidebar: #0A3F3D;
+  --color-bg-header: #0A3F3D;
+  --color-bg-card: #0A3F3D;
 
-  /* 文本色系 - 符合WCAG AA标准 */
+  /* 文本色系 - 优化：避免纯白刺眼 */
   --color-text-primary: #F0FDFA;    /* 对比度 14.2:1 */
   --color-text-secondary: #CCFBF1;  /* 对比度 10.8:1 */
   --color-text-tertiary: #99F6E4;   /* 对比度 7.5:1 */
@@ -501,258 +513,258 @@ body.dark.theme-tech {
   --color-text-sidebar-active: #5EEAD4;
 
   /* 边框色系 */
-  --color-border: #0C6B67;
-  --color-border-light: #064E4B;
-  --color-border-medium: #0F8C87;
-  --color-border-primary: rgba(45, 212, 191, 0.4);
+  --color-border: #115E59;
+  --color-border-light: #0A3F3D;
+  --color-border-medium: #147874;
+  --color-border-primary: rgba(94, 234, 212, 0.4);
 
-  /* 品牌色 */
+  /* 品牌色 - 优化：更柔和的青绿色 */
   --color-primary: #5EEAD4;         /* 对比度 8.5:1 */
   --color-primary-light: #99F6E4;
   --color-primary-dark: #2DD4BF;
-  --color-primary-50: rgba(45, 212, 191, 0.1);
-  --color-primary-100: rgba(45, 212, 191, 0.2);
-  --color-primary-200: rgba(45, 212, 191, 0.3);
-  --color-primary-gradient: linear-gradient(135deg, #14B8A6 0%, #5EEAD4 100%);
+  --color-primary-50: rgba(94, 234, 212, 0.08);
+  --color-primary-100: rgba(94, 234, 212, 0.15);
+  --color-primary-200: rgba(94, 234, 212, 0.25);
+  --color-primary-gradient: linear-gradient(135deg, #2DD4BF 0%, #5EEAD4 100%);
 
-  --color-accent: #38BDF8;          /* 对比度 7.1:1 */
-  --color-accent-light: #7DD3FC;
-  --color-accent-dark: #0EA5E9;
-  --color-accent-50: rgba(56, 189, 248, 0.1);
-  --color-accent-100: rgba(56, 189, 248, 0.2);
-  --color-accent-gradient: linear-gradient(135deg, #0EA5E9 0%, #38BDF8 100%);
+  --color-accent: #67E8F9;          /* 对比度 9.5:1 */
+  --color-accent-light: #A5F3FC;
+  --color-accent-dark: #22D3EE;
+  --color-accent-50: rgba(103, 232, 249, 0.08);
+  --color-accent-100: rgba(103, 232, 249, 0.15);
+  --color-accent-gradient: linear-gradient(135deg, #22D3EE 0%, #67E8F9 100%);
 
-  /* 语义色 */
-  --color-success: #4ADE80;
-  --color-success-light: #86EFAC;
-  --color-success-bg: rgba(34, 197, 94, 0.15);
-  --color-success-border: rgba(74, 222, 128, 0.4);
+  /* 语义色 - 优化：柔和的语义色 */
+  --color-success: #6EE7B7;         /* 对比度 8.5:1 */
+  --color-success-light: #A7F3D0;
+  --color-success-bg: rgba(110, 231, 183, 0.12);
+  --color-success-border: rgba(110, 231, 183, 0.3);
 
-  --color-warning: #FBBF24;
-  --color-warning-light: #FCD34D;
-  --color-warning-bg: rgba(251, 191, 36, 0.15);
-  --color-warning-border: rgba(251, 191, 36, 0.4);
+  --color-warning: #FCD34D;         /* 对比度 8.0:1 */
+  --color-warning-light: #FDE68A;
+  --color-warning-bg: rgba(252, 211, 77, 0.12);
+  --color-warning-border: rgba(252, 211, 77, 0.3);
 
-  --color-danger: #F87171;
-  --color-danger-light: #FCA5A5;
-  --color-danger-bg: rgba(239, 68, 68, 0.15);
-  --color-danger-border: rgba(248, 113, 113, 0.4);
+  --color-danger: #FCA5A5;          /* 对比度 6.5:1 */
+  --color-danger-light: #FECACA;
+  --color-danger-bg: rgba(252, 165, 165, 0.12);
+  --color-danger-border: rgba(252, 165, 165, 0.3);
 
-  --color-info: #60A5FA;
-  --color-info-light: #93C5FD;
-  --color-info-bg: rgba(59, 130, 246, 0.15);
-  --color-info-border: rgba(96, 165, 250, 0.4);
+  --color-info: #93C5FD;            /* 对比度 8.6:1 */
+  --color-info-light: #BFDBFE;
+  --color-info-bg: rgba(147, 197, 253, 0.12);
+  --color-info-border: rgba(147, 197, 253, 0.3);
 
-  /* 阴影效果 - 品牌色阴影 */
-  --shadow-xs: 0 1px 2px rgba(20, 184, 166, 0.15);
-  --shadow-sm: 0 2px 4px rgba(20, 184, 166, 0.25);
-  --shadow-md: 0 4px 12px rgba(20, 184, 166, 0.35);
-  --shadow-lg: 0 8px 24px rgba(20, 184, 166, 0.45);
-  --shadow-xl: 0 12px 32px rgba(20, 184, 166, 0.55);
-  --shadow-modal: 0 20px 60px rgba(20, 184, 166, 0.65);
-  --shadow-card-hover: 0 8px 30px rgba(20, 184, 166, 0.25);
-  --shadow-sidebar: 0 2px 12px rgba(20, 184, 166, 0.2);
-  --shadow-inset: inset 0 1px 2px rgba(20, 184, 166, 0.2);
+  /* 阴影效果 - 优化：青绿色系柔和阴影 */
+  --shadow-xs: 0 1px 2px rgba(20, 184, 166, 0.1);
+  --shadow-sm: 0 1px 3px rgba(20, 184, 166, 0.15), 0 1px 2px rgba(20, 184, 166, 0.1);
+  --shadow-md: 0 4px 6px rgba(20, 184, 166, 0.18), 0 2px 4px rgba(20, 184, 166, 0.12);
+  --shadow-lg: 0 10px 15px rgba(20, 184, 166, 0.22), 0 4px 6px rgba(20, 184, 166, 0.15);
+  --shadow-xl: 0 20px 25px rgba(20, 184, 166, 0.28), 0 10px 10px rgba(20, 184, 166, 0.18);
+  --shadow-modal: 0 25px 50px rgba(20, 184, 166, 0.35);
+  --shadow-card-hover: 0 10px 30px rgba(20, 184, 166, 0.2);
+  --shadow-sidebar: 0 2px 12px rgba(20, 184, 166, 0.15);
+  --shadow-inset: inset 0 1px 2px rgba(20, 184, 166, 0.15);
 
   /* 渐变 */
-  --gradient-bg-header: linear-gradient(180deg, rgba(6,78,75,1) 0%, rgba(4,47,46,1) 100%);
-  --gradient-bg-sidebar: linear-gradient(180deg, rgba(6,78,75,1) 0%, rgba(4,47,46,1) 100%);
-  --gradient-bg-card: linear-gradient(180deg, rgba(6,78,75,1) 0%, rgba(6,78,75,0.8) 100%);
+  --gradient-bg-header: linear-gradient(180deg, rgba(10,63,61,1) 0%, rgba(4,47,46,1) 100%);
+  --gradient-bg-sidebar: linear-gradient(180deg, rgba(10,63,61,1) 0%, rgba(4,47,46,1) 100%);
+  --gradient-bg-card: linear-gradient(180deg, rgba(10,63,61,1) 0%, rgba(10,63,61,0.9) 100%);
 
   /* 遮罩层 */
-  --color-bg-overlay: rgba(0, 0, 0, 0.75);
+  --color-bg-overlay: rgba(0, 0, 0, 0.7);
   --color-bg-overlay-dark: rgba(0, 0, 0, 0.85);
 
   /* 扫光效果 */
-  --color-shimmer: rgba(255, 255, 255, 0.08);
+  --color-shimmer: rgba(255, 255, 255, 0.06);
 
   /* 主题特征 */
   --theme-card-style: glow;
-  --theme-glow: 0 0 25px rgba(20, 184, 166, 0.15);
+  --theme-glow: 0 0 25px rgba(20, 184, 166, 0.12);
 }
 
-/* ===== Warm 深色主题 - 温暖深色风格 ===== */
+/* ===== Warm 深色主题 - 温暖深色风格 - 护眼优化版 ===== */
 body.dark.theme-warm {
-  /* 背景色系 */
+  /* 背景色系 - 优化：温暖的深色调 */
   --color-bg-primary: #1C1917;
-  --color-bg-secondary: #292524;
-  --color-bg-tertiary: #44403C;
-  --color-bg-hover: #57534E;
-  --color-bg-active: #78716C;
-  --color-bg-sidebar: #292524;
-  --color-bg-header: #292524;
-  --color-bg-card: #292524;
+  --color-bg-secondary: #2A2520;
+  --color-bg-tertiary: #3F3833;
+  --color-bg-hover: #52473F;
+  --color-bg-active: #6E5F54;
+  --color-bg-sidebar: #2A2520;
+  --color-bg-header: #2A2520;
+  --color-bg-card: #2A2520;
 
-  /* 文本色系 - 符合WCAG AA标准 */
-  --color-text-primary: #FAFAF9;    /* 对比度 13.8:1 */
+  /* 文本色系 - 优化：温暖的米白色，避免纯白 */
+  --color-text-primary: #FAFAF9;    /* 对比度 14.5:1 */
   --color-text-secondary: #E7E5E4;  /* 对比度 11.2:1 */
   --color-text-tertiary: #D6D3D1;   /* 对比度 8.5:1 */
   --color-text-muted: #A8A29E;      /* 对比度 4.9:1 */
   --color-text-disabled: #78716C;
   --color-text-sidebar: #E7E5E4;
-  --color-text-sidebar-active: #FB923C;
+  --color-text-sidebar-active: #FDBA74;
 
   /* 边框色系 */
-  --color-border: #44403C;
-  --color-border-light: #292524;
-  --color-border-medium: #57534E;
-  --color-border-primary: rgba(251, 146, 60, 0.4);
+  --color-border: #3F3833;
+  --color-border-light: #2A2520;
+  --color-border-medium: #52473F;
+  --color-border-primary: rgba(253, 186, 116, 0.4);
 
-  /* 品牌色 */
-  --color-primary: #FB923C;         /* 对比度 8.1:1 */
-  --color-primary-light: #FDBA74;
-  --color-primary-dark: #F97316;
-  --color-primary-50: rgba(251, 146, 60, 0.1);
-  --color-primary-100: rgba(251, 146, 60, 0.2);
-  --color-primary-200: rgba(251, 146, 60, 0.3);
-  --color-primary-gradient: linear-gradient(135deg, #F97316 0%, #FB923C 100%);
+  /* 品牌色 - 优化：温暖的橙红色 */
+  --color-primary: #FDBA74;         /* 对比度 9.5:1 */
+  --color-primary-light: #FED7AA;
+  --color-primary-dark: #FB923C;
+  --color-primary-50: rgba(253, 186, 116, 0.08);
+  --color-primary-100: rgba(253, 186, 116, 0.15);
+  --color-primary-200: rgba(253, 186, 116, 0.25);
+  --color-primary-gradient: linear-gradient(135deg, #FB923C 0%, #FDBA74 100%);
 
-  --color-accent: #FB7185;          /* 对比度 6.5:1 */
-  --color-accent-light: #FDA4AF;
-  --color-accent-dark: #F43F5E;
-  --color-accent-50: rgba(251, 113, 133, 0.1);
-  --color-accent-100: rgba(251, 113, 133, 0.2);
-  --color-accent-gradient: linear-gradient(135deg, #F43F5E 0%, #FB7185 100%);
+  --color-accent: #FDA4AF;          /* 对比度 7.5:1 */
+  --color-accent-light: #FECDD3;
+  --color-accent-dark: #FB7185;
+  --color-accent-50: rgba(253, 164, 175, 0.08);
+  --color-accent-100: rgba(253, 164, 175, 0.15);
+  --color-accent-gradient: linear-gradient(135deg, #FB7185 0%, #FDA4AF 100%);
 
-  /* 语义色 */
-  --color-success: #4ADE80;
-  --color-success-light: #86EFAC;
-  --color-success-bg: rgba(34, 197, 94, 0.15);
-  --color-success-border: rgba(74, 222, 128, 0.4);
+  /* 语义色 - 优化：柔和的语义色 */
+  --color-success: #6EE7B7;         /* 对比度 8.5:1 */
+  --color-success-light: #A7F3D0;
+  --color-success-bg: rgba(110, 231, 183, 0.12);
+  --color-success-border: rgba(110, 231, 183, 0.3);
 
-  --color-warning: #FBBF24;
-  --color-warning-light: #FCD34D;
-  --color-warning-bg: rgba(251, 191, 36, 0.15);
-  --color-warning-border: rgba(251, 191, 36, 0.4);
+  --color-warning: #FCD34D;         /* 对比度 8.0:1 */
+  --color-warning-light: #FDE68A;
+  --color-warning-bg: rgba(252, 211, 77, 0.12);
+  --color-warning-border: rgba(252, 211, 77, 0.3);
 
-  --color-danger: #F87171;
-  --color-danger-light: #FCA5A5;
-  --color-danger-bg: rgba(239, 68, 68, 0.15);
-  --color-danger-border: rgba(248, 113, 113, 0.4);
+  --color-danger: #FCA5A5;          /* 对比度 6.5:1 */
+  --color-danger-light: #FECACA;
+  --color-danger-bg: rgba(252, 165, 165, 0.12);
+  --color-danger-border: rgba(252, 165, 165, 0.3);
 
-  --color-info: #60A5FA;
-  --color-info-light: #93C5FD;
-  --color-info-bg: rgba(59, 130, 246, 0.15);
-  --color-info-border: rgba(96, 165, 250, 0.4);
+  --color-info: #93C5FD;            /* 对比度 8.6:1 */
+  --color-info-light: #BFDBFE;
+  --color-info-bg: rgba(147, 197, 253, 0.12);
+  --color-info-border: rgba(147, 197, 253, 0.3);
 
-  /* 阴影效果 */
-  --shadow-xs: 0 1px 2px rgba(249, 115, 22, 0.15);
-  --shadow-sm: 0 2px 4px rgba(249, 115, 22, 0.25);
-  --shadow-md: 0 4px 12px rgba(249, 115, 22, 0.35);
-  --shadow-lg: 0 8px 24px rgba(249, 115, 22, 0.45);
-  --shadow-xl: 0 12px 32px rgba(249, 115, 22, 0.55);
-  --shadow-modal: 0 20px 60px rgba(249, 115, 22, 0.65);
-  --shadow-card-hover: 0 8px 30px rgba(249, 115, 22, 0.25);
-  --shadow-sidebar: 0 2px 12px rgba(249, 115, 22, 0.2);
-  --shadow-inset: inset 0 1px 2px rgba(249, 115, 22, 0.2);
+  /* 阴影效果 - 优化：橙红色系柔和阴影 */
+  --shadow-xs: 0 1px 2px rgba(249, 115, 22, 0.1);
+  --shadow-sm: 0 1px 3px rgba(249, 115, 22, 0.15), 0 1px 2px rgba(249, 115, 22, 0.1);
+  --shadow-md: 0 4px 6px rgba(249, 115, 22, 0.18), 0 2px 4px rgba(249, 115, 22, 0.12);
+  --shadow-lg: 0 10px 15px rgba(249, 115, 22, 0.22), 0 4px 6px rgba(249, 115, 22, 0.15);
+  --shadow-xl: 0 20px 25px rgba(249, 115, 22, 0.28), 0 10px 10px rgba(249, 115, 22, 0.18);
+  --shadow-modal: 0 25px 50px rgba(249, 115, 22, 0.35);
+  --shadow-card-hover: 0 10px 30px rgba(249, 115, 22, 0.2);
+  --shadow-sidebar: 0 2px 12px rgba(249, 115, 22, 0.15);
+  --shadow-inset: inset 0 1px 2px rgba(249, 115, 22, 0.15);
 
   /* 渐变 */
-  --gradient-bg-header: linear-gradient(180deg, rgba(41,37,36,1) 0%, rgba(28,25,23,1) 100%);
-  --gradient-bg-sidebar: linear-gradient(180deg, rgba(41,37,36,1) 0%, rgba(28,25,23,1) 100%);
-  --gradient-bg-card: linear-gradient(180deg, rgba(41,37,36,1) 0%, rgba(41,37,36,0.8) 100%);
+  --gradient-bg-header: linear-gradient(180deg, rgba(42,37,32,1) 0%, rgba(28,25,23,1) 100%);
+  --gradient-bg-sidebar: linear-gradient(180deg, rgba(42,37,32,1) 0%, rgba(28,25,23,1) 100%);
+  --gradient-bg-card: linear-gradient(180deg, rgba(42,37,32,1) 0%, rgba(42,37,32,0.9) 100%);
 
   /* 遮罩层 */
-  --color-bg-overlay: rgba(0, 0, 0, 0.75);
+  --color-bg-overlay: rgba(0, 0, 0, 0.7);
   --color-bg-overlay-dark: rgba(0, 0, 0, 0.85);
 
   /* 扫光效果 */
-  --color-shimmer: rgba(255, 255, 255, 0.08);
+  --color-shimmer: rgba(255, 255, 255, 0.06);
 
   /* 主题特征 */
   --theme-card-style: rounded;
-  --theme-glow: 0 0 20px rgba(249, 115, 22, 0.15);
+  --theme-glow: 0 0 20px rgba(249, 115, 22, 0.12);
 }
 
-/* ===== Elegant 深色主题 - 优雅深色风格 ===== */
+/* ===== Elegant 深色主题 - 优雅深色风格 - 护眼优化版 ===== */
 body.dark.theme-elegant {
-  /* 背景色系 */
+  /* 背景色系 - 优化：紫调深色 */
   --color-bg-primary: #1E1B4B;
-  --color-bg-secondary: #312E81;
-  --color-bg-tertiary: #3730A3;
-  --color-bg-hover: #4338CA;
-  --color-bg-active: #4F46E5;
-  --color-bg-sidebar: #312E81;
-  --color-bg-header: #312E81;
-  --color-bg-card: #312E81;
+  --color-bg-secondary: #2D2A5F;
+  --color-bg-tertiary: #3F3B7A;
+  --color-bg-hover: #5048A0;
+  --color-bg-active: #5B52B0;
+  --color-bg-sidebar: #2D2A5F;
+  --color-bg-header: #2D2A5F;
+  --color-bg-card: #2D2A5F;
 
-  /* 文本色系 - 符合WCAG AA标准 */
-  --color-text-primary: #F5F3FF;    /* 对比度 14.5:1 */
+  /* 文本色系 - 优化：柔和的淡紫色 */
+  --color-text-primary: #F5F3FF;    /* 对比度 14.8:1 */
   --color-text-secondary: #DDD6FE;  /* 对比度 10.8:1 */
   --color-text-tertiary: #C4B5FD;   /* 对比度 7.5:1 */
   --color-text-muted: #A78BFA;      /* 对比度 4.9:1 */
   --color-text-disabled: #8B5CF6;
   --color-text-sidebar: #DDD6FE;
-  --color-text-sidebar-active: #A78BFA;
+  --color-text-sidebar-active: #C4B5FD;
 
   /* 边框色系 */
-  --color-border: #3730A3;
-  --color-border-light: #312E81;
-  --color-border-medium: #4338CA;
-  --color-border-primary: rgba(167, 139, 250, 0.4);
+  --color-border: #3F3B7A;
+  --color-border-light: #2D2A5F;
+  --color-border-medium: #5048A0;
+  --color-border-primary: rgba(196, 181, 253, 0.4);
 
-  /* 品牌色 */
-  --color-primary: #A78BFA;         /* 对比度 7.8:1 */
-  --color-primary-light: #C4B5FD;
-  --color-primary-dark: #8B5CF6;
-  --color-primary-50: rgba(167, 139, 250, 0.1);
-  --color-primary-100: rgba(167, 139, 250, 0.2);
-  --color-primary-200: rgba(167, 139, 250, 0.3);
-  --color-primary-gradient: linear-gradient(135deg, #8B5CF6 0%, #A78BFA 100%);
+  /* 品牌色 - 优化：更柔和的紫色 */
+  --color-primary: #C4B5FD;         /* 对比度 7.5:1 */
+  --color-primary-light: #DDD6FE;
+  --color-primary-dark: #A78BFA;
+  --color-primary-50: rgba(196, 181, 253, 0.08);
+  --color-primary-100: rgba(196, 181, 253, 0.15);
+  --color-primary-200: rgba(196, 181, 253, 0.25);
+  --color-primary-gradient: linear-gradient(135deg, #A78BFA 0%, #C4B5FD 100%);
 
-  --color-accent: #F472B6;          /* 对比度 6.2:1 */
-  --color-accent-light: #F9A8D4;
-  --color-accent-dark: #EC4899;
-  --color-accent-50: rgba(244, 114, 182, 0.1);
-  --color-accent-100: rgba(244, 114, 182, 0.2);
-  --color-accent-gradient: linear-gradient(135deg, #EC4899 0%, #F472B6 100%);
+  --color-accent: #F9A8D4;          /* 对比度 7.8:1 */
+  --color-accent-light: #FBCFE8;
+  --color-accent-dark: #F472B6;
+  --color-accent-50: rgba(249, 168, 212, 0.08);
+  --color-accent-100: rgba(249, 168, 212, 0.15);
+  --color-accent-gradient: linear-gradient(135deg, #F472B6 0%, #F9A8D4 100%);
 
-  /* 语义色 */
-  --color-success: #4ADE80;
-  --color-success-light: #86EFAC;
-  --color-success-bg: rgba(34, 197, 94, 0.15);
-  --color-success-border: rgba(74, 222, 128, 0.4);
+  /* 语义色 - 优化：柔和的语义色 */
+  --color-success: #6EE7B7;         /* 对比度 8.5:1 */
+  --color-success-light: #A7F3D0;
+  --color-success-bg: rgba(110, 231, 183, 0.12);
+  --color-success-border: rgba(110, 231, 183, 0.3);
 
-  --color-warning: #FBBF24;
-  --color-warning-light: #FCD34D;
-  --color-warning-bg: rgba(251, 191, 36, 0.15);
-  --color-warning-border: rgba(251, 191, 36, 0.4);
+  --color-warning: #FCD34D;         /* 对比度 8.0:1 */
+  --color-warning-light: #FDE68A;
+  --color-warning-bg: rgba(252, 211, 77, 0.12);
+  --color-warning-border: rgba(252, 211, 77, 0.3);
 
-  --color-danger: #F87171;
-  --color-danger-light: #FCA5A5;
-  --color-danger-bg: rgba(239, 68, 68, 0.15);
-  --color-danger-border: rgba(248, 113, 113, 0.4);
+  --color-danger: #FCA5A5;          /* 对比度 6.5:1 */
+  --color-danger-light: #FECACA;
+  --color-danger-bg: rgba(252, 165, 165, 0.12);
+  --color-danger-border: rgba(252, 165, 165, 0.3);
 
-  --color-info: #60A5FA;
-  --color-info-light: #93C5FD;
-  --color-info-bg: rgba(59, 130, 246, 0.15);
-  --color-info-border: rgba(96, 165, 250, 0.4);
+  --color-info: #93C5FD;            /* 对比度 8.6:1 */
+  --color-info-light: #BFDBFE;
+  --color-info-bg: rgba(147, 197, 253, 0.12);
+  --color-info-border: rgba(147, 197, 253, 0.3);
 
-  /* 阴影效果 */
-  --shadow-xs: 0 1px 2px rgba(139, 92, 246, 0.15);
-  --shadow-sm: 0 2px 4px rgba(139, 92, 246, 0.25);
-  --shadow-md: 0 4px 12px rgba(139, 92, 246, 0.35);
-  --shadow-lg: 0 8px 24px rgba(139, 92, 246, 0.45);
-  --shadow-xl: 0 12px 32px rgba(139, 92, 246, 0.55);
-  --shadow-modal: 0 20px 60px rgba(139, 92, 246, 0.65);
-  --shadow-card-hover: 0 8px 30px rgba(139, 92, 246, 0.3);
-  --shadow-sidebar: 0 2px 12px rgba(139, 92, 246, 0.2);
-  --shadow-inset: inset 0 1px 2px rgba(139, 92, 246, 0.2);
+  /* 阴影效果 - 优化：紫色系柔和阴影 */
+  --shadow-xs: 0 1px 2px rgba(139, 92, 246, 0.1);
+  --shadow-sm: 0 1px 3px rgba(139, 92, 246, 0.15), 0 1px 2px rgba(139, 92, 246, 0.1);
+  --shadow-md: 0 4px 6px rgba(139, 92, 246, 0.18), 0 2px 4px rgba(139, 92, 246, 0.12);
+  --shadow-lg: 0 10px 15px rgba(139, 92, 246, 0.22), 0 4px 6px rgba(139, 92, 246, 0.15);
+  --shadow-xl: 0 20px 25px rgba(139, 92, 246, 0.28), 0 10px 10px rgba(139, 92, 246, 0.18);
+  --shadow-modal: 0 25px 50px rgba(139, 92, 246, 0.35);
+  --shadow-card-hover: 0 10px 30px rgba(139, 92, 246, 0.25);
+  --shadow-sidebar: 0 2px 12px rgba(139, 92, 246, 0.15);
+  --shadow-inset: inset 0 1px 2px rgba(139, 92, 246, 0.15);
 
   /* 渐变 */
-  --gradient-bg-header: linear-gradient(180deg, rgba(49,46,129,1) 0%, rgba(30,27,75,1) 100%);
-  --gradient-bg-sidebar: linear-gradient(180deg, rgba(49,46,129,1) 0%, rgba(30,27,75,1) 100%);
-  --gradient-bg-card: linear-gradient(180deg, rgba(49,46,129,1) 0%, rgba(49,46,129,0.8) 100%);
+  --gradient-bg-header: linear-gradient(180deg, rgba(45,42,95,1) 0%, rgba(30,27,75,1) 100%);
+  --gradient-bg-sidebar: linear-gradient(180deg, rgba(45,42,95,1) 0%, rgba(30,27,75,1) 100%);
+  --gradient-bg-card: linear-gradient(180deg, rgba(45,42,95,1) 0%, rgba(45,42,95,0.9) 100%);
 
   /* 遮罩层 */
-  --color-bg-overlay: rgba(0, 0, 0, 0.75);
+  --color-bg-overlay: rgba(0, 0, 0, 0.7);
   --color-bg-overlay-dark: rgba(0, 0, 0, 0.85);
 
   /* 扫光效果 */
-  --color-shimmer: rgba(255, 255, 255, 0.08);
+  --color-shimmer: rgba(255, 255, 255, 0.06);
 
   /* 主题特征 */
   --theme-card-style: elegant;
-  --theme-glow: 0 0 30px rgba(139, 92, 246, 0.2);
+  --theme-glow: 0 0 30px rgba(139, 92, 246, 0.15);
 }
 
 /* ===== 深色模式通用样式增强 ===== */

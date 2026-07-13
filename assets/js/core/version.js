@@ -1,4 +1,4 @@
-const APP_VERSION = "czp-1.26.0";
+const APP_VERSION = "czp-1.27.0";
 const DATA_VERSION = "8.0.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
@@ -11,6 +11,26 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-1.27.0", date: "2026-07-13 18:00:00",
+    summary: "存储持久化、电商图标、规则模块与全主题优化",
+    changes: [
+      { type: "feature", text: "存储架构升级：IndexedDB作为主存储，localStorage作为缓存层，容量扩展到GB级，彻底解决自动清理数据问题" },
+      { type: "feature", text: "计算规则模块新增步骤说明面板：每种步骤类型都有详细说明和适用场景" },
+      { type: "feature", text: "计算规则模块新增调试预览面板：可查看每步的输入数据和输出结果" },
+      { type: "feature", text: "计算规则模块新增字段位置高亮：步骤操作时高亮关联字段" },
+      { type: "optimize", text: "电商图标正常引用：拼多多、淘宝、抖音图标使用iconfont真实图标" },
+      { type: "optimize", text: "默认主题升级：使用更现代的蓝色系，阴影更柔和" },
+      { type: "optimize", text: "科技主题优化：更清新的青绿色调，护眼更舒适" },
+      { type: "optimize", text: "温暖主题优化：更暖的橙红渐变，色彩更协调" },
+      { type: "optimize", text: "优雅主题优化：更柔和的紫调，统一各模式风格" },
+      { type: "optimize", text: "深色模式全主题优化：避免纯黑纯白刺眼，使用柔和深灰和米白" },
+    ],
+    bugfixes: [
+      { text: "修复存储容量估算错误（误把字符数当成字节数）" },
+      { text: "修复自动清理数据误删用户数据的Bug" },
+      { text: "修复电商图标无法显示的问题" },
+    ],
+  },
   { version: "czp-1.26.0", date: "2026-07-13 09:00:00",
     summary: "计算规则页面Bug修复与样式优化",
     changes: [

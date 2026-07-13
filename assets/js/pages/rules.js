@@ -89,6 +89,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   const [showAddStepModal, setShowAddStepModal] = useState(false);
   const [stepSearchKeyword, setStepSearchKeyword] = useState("");
   const [stepCategory, setStepCategory] = useState("all");
+  const [debugStepId, setDebugStepId] = useState(null);
   const platform = state.platforms.find((p) => p.id === currentPlatform);
   const template = state.templates[currentPlatform];
   const savedRules = state.rules[currentPlatform] || {};
@@ -5017,6 +5018,140 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
         );
     }
   };
+
+  // 调试预览：模拟执行当前步骤，展示输入/输出
+  const renderStepDebug = (step, stepIdx) => {
+    try {
+      // 收集前面步骤作为前置上下文
+      const allSteps = currentRule?.steps || [];
+      const prevSteps = allSteps.slice(0, stepIdx);
+
+      // 获取当前字段的样例数据作为输入
+      const activeFieldId = activeField?.id;
+      const samples = state.samples || {};
+      const fieldSamples = activeFieldId ? samples[activeFieldId] || [] : [];
+
+      // 尝试执行前面所有步骤，获取当前步骤的输入数据
+      let inputData = null;
+      let executeError = null;
+      try {
+        if (typeof CalcEngine?.runSteps === "function") {
+          const ctx = {
+            fieldId: activeFieldId,
+            platform: currentPlatform,
+            samples: fieldSamples,
+            template,
+          };
+          const res = CalcEngine.runSteps(prevSteps, ctx);
+          inputData = res?.data ?? res?.result ?? res;
+        }
+      } catch (e) {
+        executeError = e.message || String(e);
+      }
+
+      // 当前步骤执行
+      let outputData = null;
+      let currentError = null;
+      try {
+        if (typeof CalcEngine?.runSteps === "function") {
+          const ctx = {
+            fieldId: activeFieldId,
+            platform: currentPlatform,
+            samples: fieldSamples,
+            template,
+          };
+          const res = CalcEngine.runSteps(allSteps.slice(0, stepIdx + 1), ctx);
+          outputData = res?.data ?? res?.result ?? res;
+        }
+      } catch (e) {
+        currentError = e.message || String(e);
+      }
+
+      return /*#__PURE__*/ React.createElement(
+        "div",
+        { className: "debug-section" },
+        /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "debug-row" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "debug-label" },
+            "📥 输入数据",
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "debug-value" },
+            inputData
+              ? /*#__PURE__*/ React.createElement(
+                  "pre",
+                  null,
+                  JSON.stringify(inputData, null, 2).slice(0, 1000),
+                )
+              : executeError
+                ? /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "debug-error" },
+                    "执行失败: ",
+                    executeError,
+                  )
+                : /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "debug-empty" },
+                    "暂无输入数据（请先在「样例数据」中配置字段样例）",
+                  ),
+          ),
+        ),
+        /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "debug-arrow" },
+          "↓",
+        ),
+        /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "debug-row" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "debug-label" },
+            "📤 输出结果",
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "debug-value" },
+            outputData
+              ? /*#__PURE__*/ React.createElement(
+                  "pre",
+                  null,
+                  JSON.stringify(outputData, null, 2).slice(0, 1000),
+                )
+              : currentError
+                ? /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "debug-error" },
+                    "执行失败: ",
+                    currentError,
+                  )
+                : /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "debug-empty" },
+                    "暂无输出",
+                  ),
+          ),
+        ),
+        /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "debug-tip" },
+          "💡 提示：调试预览仅用于验证步骤逻辑。实际计算时会基于真实数据源执行。",
+        ),
+      );
+    } catch (e) {
+      return /*#__PURE__*/ React.createElement(
+        "div",
+        { className: "debug-error" },
+        "调试面板加载失败: ",
+        e.message,
+      );
+    }
+  };
   const renderPresetGrid = () => {
     const allPresets = CalcEngine.getPresetTemplates();
     const platformPresets = allPresets[presetCategory] || allPresets.all || [];
@@ -6306,6 +6441,42 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                             /*#__PURE__*/ React.createElement(
                               "div",
                               { className: "step-body" },
+                              info.description &&
+                                /*#__PURE__*/ React.createElement(
+                                  "div",
+                                  { className: "step-description" },
+                                  /*#__PURE__*/ React.createElement(
+                                    "span",
+                                    {
+                                      className:
+                                        "step-description-icon",
+                                    },
+                                    info.icon,
+                                  ),
+                                  /*#__PURE__*/ React.createElement(
+                                    "div",
+                                    { className: "step-description-text" },
+                                    /*#__PURE__*/ React.createElement(
+                                      "div",
+                                      {
+                                        className:
+                                          "step-description-title",
+                                      },
+                                      info.name,
+                                      " \u2014 ",
+                                      info.description,
+                                    ),
+                                    info.useCase &&
+                                      /*#__PURE__*/ React.createElement(
+                                        "div",
+                                        {
+                                          className:
+                                            "step-description-usecase",
+                                        },
+                                        info.useCase,
+                                      ),
+                                  ),
+                                ),
                               !stepValidation.valid &&
                                 /*#__PURE__*/ React.createElement(
                                   "div",
@@ -6337,6 +6508,47 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                   ),
                                 ),
                               renderStepConfig(step, activeField),
+                              /*#__PURE__*/ React.createElement(
+                                "div",
+                                { className: "step-debug-panel" },
+                                /*#__PURE__*/ React.createElement(
+                                  "div",
+                                  {
+                                    className: "step-debug-title",
+                                    onClick: () => {
+                                      setDebugStepId(
+                                        debugStepId === step.id
+                                          ? null
+                                          : step.id,
+                                      );
+                                    },
+                                  },
+                                  /*#__PURE__*/ React.createElement(
+                                    "span",
+                                    null,
+                                    "\uD83D\uDD0D",
+                                  ),
+                                  " \u8C03\u8BD5\u9884\u89C8",
+                                  /*#__PURE__*/ React.createElement(
+                                    "span",
+                                    {
+                                      className: `step-debug-toggle ${debugStepId === step.id ? "open" : ""}`,
+                                    },
+                                    /*#__PURE__*/ React.createElement(
+                                      Icons.ChevronDown,
+                                      null,
+                                    ),
+                                  ),
+                                ),
+                                debugStepId === step.id &&
+                                  /*#__PURE__*/ React.createElement(
+                                    "div",
+                                    {
+                                      className: "step-debug-content",
+                                    },
+                                    renderStepDebug(step, idx),
+                                  ),
+                              ),
                             ),
                         );
                       }),

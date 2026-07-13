@@ -1444,8 +1444,9 @@ const App = () => {
                 },
                 /*#__PURE__*/ React.createElement(
                   "span",
-                  { className: `platform-icon ${platform.id}` },
-                  platform.id === "pinduoduo" ? "PDD" : platform.id === "taobao" ? "TB" : platform.id === "douyin" ? "DY" : platform.emoji,
+                  {
+                    className: `platform-icon iconfont icon-${platform.id}`,
+                  },
                 ),
                 /*#__PURE__*/ React.createElement(
                   "span",

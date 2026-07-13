@@ -1,6 +1,6 @@
 @font-face {
-  font-family: "iconfont"; /* Project id  */
-  src: url('iconfont.ttf?t=1783913734639') format('truetype');
+  font-family: "iconfont";
+  src: url('iconfont.ttf') format('truetype');
 }
 
 .iconfont {
@@ -9,17 +9,18 @@
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+  display: inline-block;
+  line-height: 1;
 }
 
-.icon-fhdpc_px_pinduoduo:before {
-  content: "\e601";
-}
+/* 拼多多 - Pinduoduo */
+.icon-fhdpc_px_pinduoduo:before { content: "\e601"; }
+.icon-pdd:before { content: "\e601"; }
 
-.icon-douyin:before {
-  content: "\e602";
-}
+/* 抖音 - Douyin */
+.icon-douyin:before { content: "\e602"; }
+.icon-dy:before { content: "\e602"; }
 
-.icon-taobao:before {
-  content: "\eb7e";
-}
-
+/* 淘宝 - Taobao */
+.icon-taobao:before { content: "\eb7e"; }
+.icon-tb:before { content: "\eb7e"; }

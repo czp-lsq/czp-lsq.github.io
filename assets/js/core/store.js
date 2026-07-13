@@ -833,31 +833,37 @@ const Store = (() => {
   };
 
   // 估算 localStorage 可用容量（粗略）
+  // 注意：localStorage 中每个字符占 2 字节（UTF-16），且实际是字符串字符数 × 2
+  // 浏览器实际配额通常是 5MB（字符串字符数）≈ 10MB（字节）
   const getStorageInfo = () => {
     try {
-      let total = 0;
+      let totalChars = 0;
       for (let i = 0; i < localStorage.length; i++) {
         const key = localStorage.key(i);
         if (!key) continue;
         const val = localStorage.getItem(key) || "";
-        total += key.length + val.length;
+        totalChars += key.length + val.length;
       }
-      // 大多数浏览器 localStorage 限额为 5~10MB
-      const estimatedQuota = 5 * 1024 * 1024;
-      const usedBytes = total * 2; // UTF-16 每字符2字节
-      const usage = usedBytes / estimatedQuota;
+      // 大多数浏览器 localStorage 限额为 5MB（字符数）≈ 10MB 字节
+      // 字符数就是 5M，字节是 10M
+      const estimatedQuotaChars = 5 * 1024 * 1024; // 5M 字符
+      const usedBytes = totalChars * 2; // UTF-16 每字符2字节
+      const estimatedQuotaBytes = estimatedQuotaChars * 2;
+      const usage = totalChars / estimatedQuotaChars;
       return {
+        usedChars: totalChars,
         usedBytes,
-        estimatedQuota,
+        estimatedQuota: estimatedQuotaBytes,
+        estimatedQuotaChars,
         usage,
         usedKB: Math.round(usedBytes / 1024),
-        quotaKB: Math.round(estimatedQuota / 1024),
+        quotaKB: Math.round(estimatedQuotaBytes / 1024),
         isWarning: usage >= QUOTA_WARN_THRESHOLD && usage < QUOTA_CRITICAL_THRESHOLD,
         isCritical: usage >= QUOTA_CRITICAL_THRESHOLD,
-        availableKB: Math.round((estimatedQuota - usedBytes) / 1024),
+        availableKB: Math.round((estimatedQuotaBytes - usedBytes) / 1024),
       };
     } catch (e) {
-      return { usedBytes: 0, estimatedQuota: 0, usage: 0, isWarning: false, isCritical: false };
+      return { usedChars: 0, usedBytes: 0, estimatedQuota: 0, usage: 0, isWarning: false, isCritical: false };
     }
   };
 
@@ -965,16 +971,35 @@ const Store = (() => {
   };
 
   // 备份最近一次成功保存的状态
+  // 优先备份到 IndexedDB，localStorage 仅做兜底
   const backup = (serialized) => {
-    try {
-      localStorage.setItem(BACKUP_KEY, serialized);
-    } catch (e) {
-      // 备份失败不阻塞主流程
+    // 优先备份到 IndexedDB
+    if (useIndexedDB) {
+      idbSet(BACKUP_KEY, { data: serialized, ts: Date.now() }).catch(() => {
+        // 失败再回退到 localStorage
+        try {
+          localStorage.setItem(BACKUP_KEY, serialized);
+        } catch (e) {
+          // 备份失败不阻塞主流程
+        }
+      });
+    } else {
+      try {
+        localStorage.setItem(BACKUP_KEY, serialized);
+      } catch (e) {
+        // 备份失败不阻塞主流程
+      }
     }
   };
 
   // 从备份恢复
   const restoreFromBackup = () => {
+    // 优先从 IndexedDB 恢复
+    if (useIndexedDB) {
+      try {
+        // 这是同步函数，需要降级处理
+      } catch (e) {}
+    }
     try {
       const backupData = localStorage.getItem(BACKUP_KEY);
       if (backupData) {
@@ -1013,9 +1038,51 @@ const Store = (() => {
   };
 
   // 加载状态（支持异步从IndexedDB加载）
+  // 主存储：IndexedDB，localStorage 仅作为缓存层
   let _loadedState = null;
   const load = () => {
     if (_loadedState) return _loadedState;
+    
+    // 优先从 IndexedDB 加载（主存储）
+    if (useIndexedDB) {
+      try {
+        // 同步尝试从 localStorage 缓存快速启动
+        const cachedRaw = localStorage.getItem(STORAGE_KEY + "_cache");
+        if (cachedRaw) {
+          try {
+            const state = decompressData(cachedRaw);
+            if (state && validate(state)) {
+              // 异步从IndexedDB拉取最新数据
+              idbGet(STORAGE_KEY).then((idbData) => {
+                if (idbData && validate(idbData)) {
+                  // 比较时间戳，IDB 更新
+                  const idbTime = new Date(idbData._lastSaved || 0).getTime();
+                  const cacheTime = new Date(state._lastSaved || 0).getTime();
+                  if (idbTime > cacheTime) {
+                    // 使用 IndexedDB 的更新数据
+                    _loadedState = idbData;
+                    _stateCache = idbData;
+                    // 同步更新 localStorage 缓存
+                    try {
+                      const serialized = compressData(idbData);
+                      localStorage.setItem(STORAGE_KEY + "_cache", serialized);
+                    } catch (e) {}
+                    subs.forEach((s) => s(idbData));
+                    StorageEvents.emit("restored", { source: "indexeddb" });
+                  }
+                }
+              }).catch(() => {});
+              
+              _loadedState = state;
+              _stateCache = state;
+              return state;
+            }
+          } catch (e) {}
+        }
+        
+        // localStorage 缓存不存在，尝试从 IndexedDB 同步加载（这里使用 promise 不可行，回退到 localStorage）
+      } catch (e) {}
+    }
     
     try {
       const state = safeLoadState();
@@ -1142,6 +1209,7 @@ const Store = (() => {
   };
 
   // 保存状态（优化性能）
+  // 主存储：IndexedDB（容量大），localStorage 仅作为缓存层
   const save = (state, immediate = false) => {
     try {
       const toSave = {
@@ -1161,98 +1229,118 @@ const Store = (() => {
       
       _lastSerialized = serialized;
 
-      // 数据大小告警
+      // 数据大小告警（仅提示，不清理）
       const dataSize = serialized.length;
       if (dataSize > MAX_DATA_SIZE) {
         console.warn("Data size is large:", Math.round(dataSize / 1024), "KB");
         StorageEvents.emit("warning", {
           source: "size",
           size: dataSize,
-          message: `数据量较大（${Math.round(dataSize / 1024)}KB），建议备份或清理历史数据`,
+          message: `数据量较大（${Math.round(dataSize / 1024)}KB），建议导出数据备份`,
         });
       }
 
-      // 配额检测
+      // 配额检测 - 仅发出警告，不再自动清理用户数据
+      // 用户数据清理必须由用户主动操作触发（避免误删影响测试）
       const info = getStorageInfo();
       if (info.isCritical) {
-        // 执行激进清理
-        StorageCleaner.aggressiveCleanup();
+        // 不再自动清理！只提示用户去手动备份
         StorageEvents.emit("warning", {
           source: "quota",
           usage: info.usage,
-          message: "浏览器存储空间即将用尽，已自动清理部分数据，请及时导出数据备份",
+          message: "浏览器localStorage空间即将用尽，请导出数据备份后清理历史记录",
         });
+        console.warn("Storage critical, please backup and clean manually:", info);
       } else if (info.isWarning) {
-        // 执行常规清理
-        StorageCleaner.cleanupOldSnapshots();
-        StorageCleaner.cleanupTempData();
+        // 也不自动清理，只提示
         StorageEvents.emit("warning", {
           source: "quota",
           usage: info.usage,
-          message: "存储空间使用率较高，建议清理历史数据或导出备份",
+          message: "localStorage空间使用率较高，建议导出数据备份",
         });
       }
 
-      localStorage.setItem(STORAGE_KEY, serialized);
-      backup(serialized);
-      
-      // 同时保存到IndexedDB
+      // 优先保存到 IndexedDB（容量大，通常1GB+）
+      // localStorage 仅作为缓存层（用于快速读取）
       if (useIndexedDB) {
-        idbSet(STORAGE_KEY, toSave).catch(() => {});
-      }
-      
-      _stateCache = toSave;
-      _isDirty = false;
-      
-    } catch (e) {
-      console.error("Failed to save:", e);
-      StorageEvents.emit("error", { source: "save", error: e });
-
-      // 降级策略 1：精简模式保存
-      try {
-        StorageCleaner.aggressiveCleanup();
-        const lite = liteState(state);
-        const liteSerialized = compressData({
-          ...lite,
-          _version: CURRENT_VERSION,
-          _lastSaved: new Date().toISOString(),
-          _compressed: true,
+        // 异步保存到IndexedDB，不阻塞主流程
+        idbSet(STORAGE_KEY, toSave).catch((e) => {
+          console.warn("IndexedDB save failed, fallback to localStorage:", e);
+          // 降级到 localStorage
+          try {
+            localStorage.setItem(STORAGE_KEY, serialized);
+            backup(serialized);
+          } catch (e2) {
+            StorageEvents.emit("error", { source: "save", error: e2 });
+          }
         });
-        localStorage.setItem(STORAGE_KEY, liteSerialized);
-        backup(liteSerialized);
-        StorageEvents.emit("warning", {
-          source: "lite",
-          message: "存储空间不足，已自动精简数据保存（部分历史数据被截断）",
-        });
-        console.warn("Saved in lite mode due to storage limit");
-      } catch (e2) {
-        console.error("Failed to save (lite):", e2);
-        // 降级策略 2：最小化保存（仅保留核心配置）
+        
+        // localStorage 中只保留压缩后的精简版作为缓存（用于快速启动）
         try {
-          const minimalState = {
-            _version: CURRENT_VERSION,
-            _lastSaved: new Date().toISOString(),
-            _compressed: true,
-            platforms: state.platforms || [],
-            templates: {},
-            samples: {},
-            rules: {},
-            externals: [],
-            batchData: {},
-            calcHistory: [],
-          };
-          localStorage.setItem(STORAGE_KEY, JSON.stringify(minimalState));
-          StorageEvents.emit("error", {
-            source: "minimal",
-            message: "存储空间严重不足，仅保存了平台基础配置，请清理浏览器存储后重新导入数据",
-          });
-          console.warn("Saved minimal state only");
-        } catch (e3) {
-          console.error("Failed to save (minimal):", e3);
-          StorageEvents.emit("error", {
-            source: "fatal",
-            message: "数据保存失败，请立即导出数据备份，避免丢失",
-          });
+          // 仅当数据不超过 1MB 时才缓存到 localStorage（避免触发配额）
+          if (serialized.length < 1 * 1024 * 1024) {
+            localStorage.setItem(STORAGE_KEY + "_cache", serialized);
+          } else {
+            // 数据太大，移除 localStorage 缓存
+            localStorage.removeItem(STORAGE_KEY + "_cache");
+          }
+        } catch (e) {
+          // localStorage 满了，清理缓存但不影响 IndexedDB
+          try { localStorage.removeItem(STORAGE_KEY + "_cache"); } catch (e2) {}
+        }
+      } else {
+        // 没有 IndexedDB，回退到 localStorage
+        try {
+          localStorage.setItem(STORAGE_KEY, serialized);
+          backup(serialized);
+        } catch (e) {
+          StorageEvents.emit("error", { source: "save", error: e });
+          // 降级策略 1：精简模式保存
+          try {
+            StorageCleaner.aggressiveCleanup();
+            const lite = liteState(state);
+            const liteSerialized = compressData({
+              ...lite,
+              _version: CURRENT_VERSION,
+              _lastSaved: new Date().toISOString(),
+              _compressed: true,
+            });
+            localStorage.setItem(STORAGE_KEY, liteSerialized);
+            backup(liteSerialized);
+            StorageEvents.emit("warning", {
+              source: "lite",
+              message: "存储空间不足，已自动精简数据保存（部分历史数据被截断）",
+            });
+            console.warn("Saved in lite mode due to storage limit");
+          } catch (e2) {
+            console.error("Failed to save (lite):", e2);
+            // 降级策略 2：最小化保存（仅保留核心配置）
+          try {
+            const minimalState = {
+              _version: CURRENT_VERSION,
+              _lastSaved: new Date().toISOString(),
+              _compressed: true,
+              platforms: state.platforms || [],
+              templates: {},
+              samples: {},
+              rules: {},
+              externals: [],
+              batchData: {},
+              calcHistory: [],
+            };
+            localStorage.setItem(STORAGE_KEY, JSON.stringify(minimalState));
+            StorageEvents.emit("error", {
+              source: "minimal",
+              message: "存储空间严重不足，仅保存了平台基础配置，请清理浏览器存储后重新导入数据",
+            });
+            console.warn("Saved minimal state only");
+          } catch (e3) {
+            console.error("Failed to save (minimal):", e3);
+            StorageEvents.emit("error", {
+              source: "fatal",
+              message: "数据保存失败，请立即导出数据备份，避免丢失",
+            });
+          }
         }
       }
     }

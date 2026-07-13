@@ -12,6 +12,8 @@
         color: "var(--color-primary)",
         bg: "var(--color-primary-50)",
         category: "data",
+        description: "指定从哪个外部数据表获取数据，是计算流程的起点",
+        useCase: "适用：从订单表/退款表/广告表等数据源拉取原始数据",
       },
       fill: {
         name: "填充占位符",
@@ -19,6 +21,8 @@
         color: "var(--color-success)",
         bg: "var(--color-success-50)",
         category: "data",
+        description: "将数据源的值填入模板的占位符单元格",
+        useCase: "适用：将利润表中的{{营业额}}占位符替换为具体数值",
       },
       filter: {
         name: "过滤",
@@ -26,6 +30,8 @@
         color: "var(--color-info)",
         bg: "var(--color-info-50)",
         category: "transform",
+        description: "按条件过滤数据行，只保留符合条件的记录",
+        useCase: "适用：只统计已付款订单、排除退款单、按时间范围筛选",
       },
       aggregate: {
         name: "聚合",
@@ -33,6 +39,8 @@
         color: "var(--color-warning)",
         bg: "var(--color-warning-50)",
         category: "transform",
+        description: "对数据进行求和、求平均、计数等聚合运算",
+        useCase: "适用：求总营业额、计算平均订单金额、统计订单数量",
       },
       formula: {
         name: "公式计算",
@@ -40,6 +48,8 @@
         color: "var(--color-warning)",
         bg: "var(--color-warning-50)",
         category: "transform",
+        description: "使用数学公式对数据进行自定义计算",
+        useCase: "适用：销售额×利润率=利润、复杂的多步运算",
       },
       virtual: {
         name: "虚拟字段",
@@ -47,6 +57,8 @@
         color: "var(--color-accent)",
         bg: "var(--color-accent-50)",
         category: "transform",
+        description: "创建临时计算字段供后续步骤引用",
+        useCase: "适用：提取金额、计算小计、准备中间变量",
       },
       join: {
         name: "跨表关联",
@@ -54,6 +66,8 @@
         color: "var(--color-primary)",
         bg: "var(--color-primary-50)",
         category: "transform",
+        description: "按关联键将多个数据表合并为一个",
+        useCase: "适用：关联订单表与商品表、关联广告表与销售额",
       },
       condition: {
         name: "条件判断",
@@ -61,6 +75,8 @@
         color: "var(--color-info)",
         bg: "var(--color-info-50)",
         category: "transform",
+        description: "根据条件返回不同值，类似Excel的IF函数",
+        useCase: "适用：根据销售额区间分级、布尔判断、开关逻辑",
       },
       group: {
         name: "分组聚合",
@@ -68,6 +84,8 @@
         color: "var(--color-warning)",
         bg: "var(--color-warning-50)",
         category: "transform",
+        description: "按某个字段分组后对每组分别聚合",
+        useCase: "适用：按店铺分组求和、按月份统计、按商品分类汇总",
       },
       round: {
         name: "四舍五入",
@@ -75,6 +93,8 @@
         color: "var(--color-text-tertiary)",
         bg: "var(--color-bg-tertiary)",
         category: "format",
+        description: "对数值进行四舍五入，保留指定小数位",
+        useCase: "适用：金额保留2位小数、百分比保留整数",
       },
       concat: {
         name: "字符串拼接",
@@ -82,6 +102,8 @@
         color: "var(--color-text-tertiary)",
         bg: "var(--color-bg-tertiary)",
         category: "format",
+        description: "将多个文本字段拼接成一个字符串",
+        useCase: "适用：拼接店铺全称、合并地址、生成唯一标识",
       },
       substring: {
         name: "字符串截取",
@@ -89,6 +111,8 @@
         color: "var(--color-text-tertiary)",
         bg: "var(--color-bg-tertiary)",
         category: "format",
+        description: "从字符串中截取指定位置的部分内容",
+        useCase: "适用：提取订单号后4位、获取手机号段",
       },
       date: {
         name: "日期处理",
@@ -96,6 +120,8 @@
         color: "var(--color-text-tertiary)",
         bg: "var(--color-bg-tertiary)",
         category: "format",
+        description: "对日期进行格式化或转换",
+        useCase: "适用：日期格式化、提取年月、计算日期差",
       },
       math: {
         name: "数学运算",
@@ -103,6 +129,8 @@
         color: "var(--color-text-tertiary)",
         bg: "var(--color-bg-tertiary)",
         category: "format",
+        description: "执行加减乘除等基本数学运算",
+        useCase: "适用：单价×数量=总价、计算差额",
       },
       rank: {
         name: "排名",
@@ -110,6 +138,8 @@
         color: "var(--color-text-tertiary)",
         bg: "var(--color-bg-tertiary)",
         category: "format",
+        description: "对数据按某个字段排名",
+        useCase: "适用：店铺销售排名、商品热度Top10",
       },
       diff: {
         name: "差值",
@@ -117,6 +147,8 @@
         color: "var(--color-text-tertiary)",
         bg: "var(--color-bg-tertiary)",
         category: "format",
+        description: "计算两列数据之差",
+        useCase: "适用：销售额-成本=利润、本期-上期=增量",
       },
       ratio: {
         name: "比率",
@@ -124,6 +156,8 @@
         color: "var(--color-text-tertiary)",
         bg: "var(--color-bg-tertiary)",
         category: "format",
+        description: "计算两个数值的比率",
+        useCase: "适用：利润率、增长率、完成率",
       },
       union: {
         name: "合并",
@@ -131,6 +165,8 @@
         color: "var(--color-info)",
         bg: "var(--color-info-50)",
         category: "advanced",
+        description: "合并多个数据源的行数据",
+        useCase: "适用：合并多个月份订单、合并多个店铺数据",
       },
       keepDuplicate: {
         name: "保留重复",
@@ -138,6 +174,8 @@
         color: "var(--color-info)",
         bg: "var(--color-info-50)",
         category: "advanced",
+        description: "只保留出现重复的记录",
+        useCase: "适用：找出重复下单的客户、检测异常数据",
       },
       keepUnique: {
         name: "保留唯一",
@@ -145,6 +183,8 @@
         color: "var(--color-info)",
         bg: "var(--color-info-50)",
         category: "advanced",
+        description: "只保留不重复的记录",
+        useCase: "适用：筛选独立客户、获取唯一列表",
       },
       intersect: {
         name: "对比筛选",
@@ -152,6 +192,8 @@
         color: "var(--color-info)",
         bg: "var(--color-info-50)",
         category: "advanced",
+        description: "对比两个数据集的交集或差集",
+        useCase: "适用：找出新增客户、对比新旧订单",
       },
       limit: {
         name: "限制行数",
@@ -159,6 +201,8 @@
         color: "var(--color-info)",
         bg: "var(--color-info-50)",
         category: "advanced",
+        description: "限制数据只取前N行或跳过前N行",
+        useCase: "适用：只取前10名、分页展示",
       },
       lookup: {
         name: "查找替换",
@@ -166,6 +210,8 @@
         color: "var(--color-info)",
         bg: "var(--color-info-50)",
         category: "advanced",
+        description: "在数据中查找并替换指定值",
+        useCase: "适用：批量替换店铺名、统一分类名称",
       },
       sort: {
         name: "排序",
@@ -173,6 +219,8 @@
         color: "var(--color-info)",
         bg: "var(--color-info-50)",
         category: "advanced",
+        description: "按指定字段升序或降序排列",
+        useCase: "适用：按时间排序、按金额大小排序",
       },
       crossMatch: {
         name: "交叉匹配",
@@ -180,6 +228,8 @@
         color: "var(--color-info)",
         bg: "var(--color-info-50)",
         category: "advanced",
+        description: "交叉匹配两个数据集",
+        useCase: "适用：找出两表共有/独有的数据",
       },
       runningTotal: {
         name: "累计",
@@ -187,6 +237,8 @@
         color: "var(--color-primary)",
         bg: "var(--color-primary-50)",
         category: "transform",
+        description: "按行累加计算累计值",
+        useCase: "适用：累计销售额、累计订单数、库存结余",
       },
       percentOfTotal: {
         name: "占比",
@@ -194,6 +246,8 @@
         color: "var(--color-primary)",
         bg: "var(--color-primary-50)",
         category: "transform",
+        description: "计算每行占总和的百分比",
+        useCase: "适用：各店铺销售占比、各商品利润占比",
       },
       movingAverage: {
         name: "移动平均",
@@ -201,6 +255,8 @@
         color: "var(--color-primary)",
         bg: "var(--color-primary-50)",
         category: "transform",
+        description: "按滑动窗口计算移动平均值",
+        useCase: "适用：7日移动平均销售额、平滑波动数据",
       },
       binning: {
         name: "分箱",
@@ -208,6 +264,8 @@
         color: "var(--color-primary)",
         bg: "var(--color-primary-50)",
         category: "transform",
+        description: "将连续值分组到离散区间",
+        useCase: "适用：金额分档(0-100/100-500/500+)、年龄段分组",
       },
       conditionalTag: {
         name: "条件标记",
@@ -215,6 +273,8 @@
         color: "var(--color-primary)",
         bg: "var(--color-primary-50)",
         category: "transform",
+        description: "根据条件给数据打标签",
+        useCase: "适用：高/中/低价值客户标记、风险等级标记",
       },
       stringExtract: {
         name: "字符串提取",
@@ -222,6 +282,8 @@
         color: "var(--color-primary)",
         bg: "var(--color-primary-50)",
         category: "transform",
+        description: "使用正则或分隔符提取字符串片段",
+        useCase: "适用：从地址提取省份、从文本提取数字",
       },
       fillNA: {
         name: "空值填充",
@@ -229,6 +291,8 @@
         color: "var(--color-warning)",
         bg: "var(--color-warning-50)",
         category: "transform",
+        description: "将空值替换为指定值",
+        useCase: "适用：缺失数据填充0或平均值",
       },
       normalize: {
         name: "数据标准化",
@@ -236,6 +300,8 @@
         color: "var(--color-primary)",
         bg: "var(--color-primary-50)",
         category: "transform",
+        description: "将数据缩放到统一范围",
+        useCase: "适用：Min-Max归一化、Z-Score标准化",
       },
       constant: {
         name: "常量",
@@ -243,6 +309,8 @@
         color: "var(--color-primary)",
         bg: "var(--color-primary-50)",
         category: "transform",
+        description: "定义一个固定常量值",
+        useCase: "适用：税率、固定费率、汇率",
       },
       text: {
         name: "文本",
@@ -250,12 +318,16 @@
         color: "var(--color-primary)",
         bg: "var(--color-primary-50)",
         category: "transform",
+        description: "直接使用固定文本值",
+        useCase: "适用：固定标签、说明文字、注释",
       },
       distinct: {
         name: "去重",
         icon: "🆔",
         color: "var(--color-primary)",
         bg: "var(--color-primary-50)",
+        description: "去除重复的行数据",
+        useCase: "适用：获取唯一客户列表、唯一商品列表",
         category: "transform",
       },
     };
