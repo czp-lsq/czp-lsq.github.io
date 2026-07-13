@@ -1,4 +1,4 @@
-const APP_VERSION = "czp-1.16.0";
+const APP_VERSION = "czp-1.17.0";
 const DATA_VERSION = "8.0.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
@@ -11,6 +11,23 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-1.17.0", date: "2026-07-13 04:39:26",
+    summary: "数据持久化修复与工作区交互优化",
+    changes: [
+      { type: "feature", text: "修复已上传数据刷新后丢失问题，优化存储初始化顺序" },
+      { type: "feature", text: "修复修改备注点击没反应问题，添加持久化与成功提示" },
+      { type: "feature", text: "修复计算步骤弹窗卡片选不中问题，添加字段选择提示" },
+      { type: "feature", text: "修复工作区滑动不了问题，添加步骤列表滚动支持" },
+      { type: "feature", text: "版本更新时间统一为git提交时间，确保时间准确性" },
+      { type: "optimize", text: "更新检测机制增强，页面可见/获得焦点时自动检测" },
+    ],
+    bugfixes: [
+      { text: "修复已上传数据刷新后丢失问题" },
+      { text: "修复修改备注点击没反应问题" },
+      { text: "修复计算步骤弹窗卡片选不中问题" },
+      { text: "修复工作区滑动不了问题" },
+    ],
+  },
   { version: "czp-1.16.0", date: "2026-07-13 04:37:39",
     summary: "UI体验全面优化与账号跨设备同步",
     changes: [

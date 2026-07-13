@@ -1063,9 +1063,9 @@ const Store = (() => {
             
             _loadedState = state;
             _stateCache = state;
-            save(state, true);
             
             StorageEvents.emit("restored", { source: "indexeddb" });
+            save(state, true);
             subs.forEach((s) => s(state));
           } catch (e) {
             console.error("Failed to load from IndexedDB:", e);
@@ -1232,9 +1232,10 @@ const Store = (() => {
     userSettings: { theme: "light", language: "zh-CN", autoSave: true },
   };
   
+  const subs = new Set();
+  
   const saved = load();
   let state = saved || defaultState;
-  const subs = new Set();
   let saveTimeout = null;
   
   // 优化后的防抖保存

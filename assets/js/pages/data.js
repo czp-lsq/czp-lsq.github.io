@@ -189,6 +189,8 @@ const DataPage = ({ state, currentPlatform }) => {
         ),
       },
     }));
+    Store.flush();
+    addToast("success", "修改成功", `备注名已更新为「${newAlias}」`);
   };
   const deleteSample = (index) => {
     const sample = samples[index];

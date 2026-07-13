@@ -84,6 +84,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   const [copySourceFieldId, setCopySourceFieldId] = useState("");
   const [showPresets, setShowPresets] = useState(false);
   const [debugMode, setDebugMode] = useState(true);
+  const [debugExpanded, setDebugExpanded] = useState(false);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showAddStepModal, setShowAddStepModal] = useState(false);
   const platform = state.platforms.find((p) => p.id === currentPlatform);
@@ -932,7 +933,10 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
     addToast("success", "克隆成功", "已克隆该步骤");
   };
   const addStep = (type) => {
-    if (!activeField) return;
+    if (!activeField) {
+      addToast("warning", "请先选择字段", "请在左侧字段区选择一个字段后再添加步骤");
+      return;
+    }
     const currentSteps = currentRule?.steps || [];
     const stepLogicChecks = {
       source: () => {
@@ -5706,7 +5710,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                     { className: "debug-preview" },
                     /*#__PURE__*/ React.createElement(
                       "div",
-                      { className: "debug-preview-header" },
+                      { className: "debug-preview-header", onClick: () => setDebugExpanded(!debugExpanded), style: { cursor: "pointer" } },
                       /*#__PURE__*/ React.createElement(
                         "div",
                         { className: "debug-preview-header-left" },
@@ -5731,16 +5735,26 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                         ),
                       ),
                       /*#__PURE__*/ React.createElement(
-                        "span",
-                        {
-                          className: `debug-status ${previewResult.error ? "error" : "success"}`,
-                        },
-                        previewResult.error
-                          ? /*#__PURE__*/ React.createElement(Icons.AlertCircle, null)
-                          : /*#__PURE__*/ React.createElement(Icons.CheckCircle, null),
-                        previewResult.error ? "\u8BA1\u7B97\u9519\u8BEF" : "\u8BA1\u7B97\u6210\u529F",
+                        "div",
+                        { style: { display: "flex", alignItems: "center", gap: "12px" } },
+                        /*#__PURE__*/ React.createElement(
+                          "span",
+                          {
+                            className: `debug-status ${previewResult.error ? "error" : "success"}`,
+                          },
+                          previewResult.error
+                            ? /*#__PURE__*/ React.createElement(Icons.AlertCircle, null)
+                            : /*#__PURE__*/ React.createElement(Icons.CheckCircle, null),
+                          previewResult.error ? "\u8BA1\u7B97\u9519\u8BEF" : "\u8BA1\u7B97\u6210\u529F",
+                        ),
+                        /*#__PURE__*/ React.createElement(
+                          "span",
+                          { style: { fontSize: "12px", color: "var(--color-text-tertiary)", transition: "transform 0.2s", transform: debugExpanded ? "rotate(180deg)" : "rotate(0deg)" } },
+                          /*#__PURE__*/ React.createElement(Icons.ChevronDown, null),
+                        ),
                       ),
                     ),
+                    debugExpanded && (
                     previewResult.error
                       ? /*#__PURE__*/ React.createElement(
                           "div",
@@ -6083,7 +6097,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                               ),
                             ),
                         ),
-                  ),
+                    ),
+                ),
                 currentRule?.steps?.length > 0 &&
                   /*#__PURE__*/ React.createElement(
                     "div",
