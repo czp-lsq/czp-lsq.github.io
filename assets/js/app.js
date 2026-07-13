@@ -493,13 +493,20 @@ const App = () => {
       const buildTimeMeta = doc.querySelector('meta[name="app-build-time"]');
       const remoteBuildTime = buildTimeMeta ? buildTimeMeta.getAttribute("content") : null;
       const now = new Date();
+      const detectedAtStr = now.toLocaleString("zh-CN", {
+        year: "numeric",
+        month: "2-digit",
+        day: "2-digit",
+        hour: "2-digit",
+        minute: "2-digit",
+        second: "2-digit",
+      });
       setUpdateDetectedAt(now);
 
       if (remoteVersion && remoteVersion !== APP_VERSION) {
-        const displayDate = remoteBuildTime || now.toLocaleString();
         setUpdateInfo({
           version: remoteVersion,
-          date: displayDate,
+          date: detectedAtStr,
           buildTime: remoteBuildTime,
           detectedAt: now,
           summary: "发现新版本",

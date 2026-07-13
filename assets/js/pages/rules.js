@@ -5707,10 +5707,10 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   previewResult &&
                   /*#__PURE__*/ React.createElement(
                     "div",
-                    { className: "debug-preview" },
+                    { className: "debug-preview" + (debugExpanded ? "" : " collapsed") },
                     /*#__PURE__*/ React.createElement(
-                      "div",
-                      { className: "debug-preview-header", onClick: () => setDebugExpanded(!debugExpanded), style: { cursor: "pointer" } },
+                        "div",
+                        { className: "debug-preview-header", onClick: () => setDebugExpanded(!debugExpanded), style: { cursor: "pointer" } },
                       /*#__PURE__*/ React.createElement(
                         "div",
                         { className: "debug-preview-header-left" },
@@ -5754,7 +5754,6 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                         ),
                       ),
                     ),
-                    debugExpanded && (
                     previewResult.error
                       ? /*#__PURE__*/ React.createElement(
                           "div",
@@ -6097,8 +6096,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                               ),
                             ),
                         ),
-                    ),
-                ),
+                  ),
                 currentRule?.steps?.length > 0 &&
                   /*#__PURE__*/ React.createElement(
                     "div",

@@ -896,7 +896,6 @@ const Store = (() => {
       const saved = localStorage.getItem(STORAGE_KEY);
       if (!saved) return null;
 
-      // 检查数据是否明显损坏
       if (saved.startsWith(COMPRESSED_MARKER)) {
         try {
           const compressed = saved.slice(COMPRESSED_MARKER.length);
@@ -906,16 +905,37 @@ const Store = (() => {
           }
           return JSON.parse(decompressed);
         } catch (e) {
-          console.error("Compressed data is corrupted, cleaning up:", e);
+          console.error("Compressed data is corrupted, trying backup:", e);
+          const backup = restoreFromBackup();
+          if (backup) {
+            console.log("Successfully restored from backup");
+            return backup;
+          }
+          const snapshot = restoreFromSnapshot();
+          if (snapshot) {
+            console.log("Successfully restored from snapshot");
+            return snapshot;
+          }
+          console.warn("No backup available, cleaning up corrupted data");
           localStorage.removeItem(STORAGE_KEY);
           return null;
         }
       }
 
-      // 未压缩数据
       return JSON.parse(saved);
     } catch (e) {
-      console.error("LocalStorage data is corrupted, cleaning up:", e);
+      console.error("LocalStorage data is corrupted, trying backup:", e);
+      const backup = restoreFromBackup();
+      if (backup) {
+        console.log("Successfully restored from backup");
+        return backup;
+      }
+      const snapshot = restoreFromSnapshot();
+      if (snapshot) {
+        console.log("Successfully restored from snapshot");
+        return snapshot;
+      }
+      console.warn("No backup available, cleaning up corrupted data");
       localStorage.removeItem(STORAGE_KEY);
       return null;
     }

@@ -2274,6 +2274,11 @@
   margin-bottom: 20px;
   overflow: hidden;
   box-shadow: var(--shadow-sm);
+  transition: all 0.3s ease;
+}
+
+.rules-page .debug-preview.collapsed {
+  max-height: 64px;
 }
 
 .rules-page .debug-preview-header {

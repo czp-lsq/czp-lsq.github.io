@@ -1,4 +1,4 @@
-const APP_VERSION = "czp-1.17.0";
+const APP_VERSION = "czp-1.18.0";
 const DATA_VERSION = "8.0.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
@@ -11,21 +11,18 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
-  { version: "czp-1.17.0", date: "2026-07-13 04:39:26",
-    summary: "数据持久化修复与工作区交互优化",
+  { version: "czp-1.18.0", date: "2026-07-13 04:50:00",
+    summary: "数据恢复增强与版本时间优化",
     changes: [
-      { type: "feature", text: "修复已上传数据刷新后丢失问题，优化存储初始化顺序" },
-      { type: "feature", text: "修复修改备注点击没反应问题，添加持久化与成功提示" },
-      { type: "feature", text: "修复计算步骤弹窗卡片选不中问题，添加字段选择提示" },
-      { type: "feature", text: "修复工作区滑动不了问题，添加步骤列表滚动支持" },
-      { type: "feature", text: "版本更新时间统一为git提交时间，确保时间准确性" },
-      { type: "optimize", text: "更新检测机制增强，页面可见/获得焦点时自动检测" },
+      { type: "feature", text: "压缩数据损坏时自动从备份/快照恢复，提升数据安全性" },
+      { type: "feature", text: "版本更新时间统一为检测到更新时间，确保时间准确性" },
+      { type: "feature", text: "计算规则页面调试模式支持折叠，降低对操作区的影响" },
+      { type: "feature", text: "修复计算规则模块语法错误导致的页面打不开问题" },
     ],
     bugfixes: [
-      { text: "修复已上传数据刷新后丢失问题" },
-      { text: "修复修改备注点击没反应问题" },
-      { text: "修复计算步骤弹窗卡片选不中问题" },
-      { text: "修复工作区滑动不了问题" },
+      { text: "修复压缩数据损坏导致的数据丢失问题" },
+      { text: "修复计算规则模块语法错误导致的页面打不开问题" },
+      { text: "修复版本更新时间显示不一致的问题" },
     ],
   },
   { version: "czp-1.16.0", date: "2026-07-13 04:37:39",
