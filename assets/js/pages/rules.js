@@ -6552,10 +6552,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                     ),
                                   ),
                                 ),
-                              renderStepConfig(step, activeField),
+                              renderStepConfig(step, activeField)
                             ),
-                        );
-                      }),
                 ),
               ),
             !activeField &&
