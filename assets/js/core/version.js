@@ -1,8 +1,23 @@
-const APP_VERSION = "czp-1.12.0";
-const DATA_VERSION = "6.0.0";
+const APP_VERSION = "czp-1.13.0";
+const DATA_VERSION = "7.0.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
 const UPDATE_LOG = [
+  { version: "czp-1.13.0", date: "2026-07-13 21:00:00",
+    summary: "数据持久化升级与系统稳定性增强",
+    changes: [
+      { type: "feature", text: "新增 IndexedDB 数据持久化存储，支持大容量数据存储" },
+      { type: "feature", text: "数据自动备份机制，保留最近20个历史备份版本" },
+      { type: "feature", text: "一键数据导出/导入功能，支持合并和替换两种模式" },
+      { type: "feature", text: "localStorage + IndexedDB 双层缓存，提升读取性能" },
+      { type: "feature", text: "跨标签页数据同步，多标签页实时同步数据变更" },
+      { type: "optimize", text: "数据存储方案重构，为多设备云同步奠定基础" },
+    ],
+    bugfixes: [
+      { text: "修复计算规则页面语法错误导致的页面加载失败问题" },
+      { text: "修复数据意外丢失后无法恢复的问题" },
+    ],
+  },
   { version: "czp-1.12.0", date: "2026-07-13 20:00:00",
     summary: "功能优化与数据持久化增强",
     changes: [

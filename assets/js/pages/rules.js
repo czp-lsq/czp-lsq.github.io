@@ -86,8 +86,6 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   const [debugMode, setDebugMode] = useState(true);
   const [confirmDialog, setConfirmDialog] = useState(null);
   const [showAddStepModal, setShowAddStepModal] = useState(false);
-  const [stepSearchQuery, setStepSearchQuery] = useState("");
-  const [stepCategory, setStepCategory] = useState("all");
   const platform = state.platforms.find((p) => p.id === currentPlatform);
   const template = state.templates[currentPlatform];
   const savedRules = state.rules[currentPlatform] || {};
@@ -5907,8 +5905,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "card-scroll" },
-            activeField
-              ? /*#__PURE__*/ React.createElement(
+            activeField &&
+              /*#__PURE__*/ React.createElement(
                 React.Fragment,
                 null,
                 /*#__PURE__*/ React.createElement(
@@ -6552,8 +6550,11 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                     ),
                                   ),
                                 ),
-                              renderStepConfig(step, activeField)
+                              renderStepConfig(step, activeField),
                             ),
+                        );
+                      }),
+                ),
               ),
             !activeField &&
               /*#__PURE__*/ React.createElement(
@@ -6683,25 +6684,6 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 }),
               ),
           ),
-        )
-        : /*#__PURE__*/ React.createElement(
-          "div",
-          { className: "rules-empty-state" },
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "rules-empty-icon" },
-            /*#__PURE__*/ React.createElement(Icons.ArrowLeft, null),
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "rules-empty-title" },
-            "请选择左侧字段",
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "rules-empty-desc" },
-            "选择字段后可配置对应的计算规则",
-          ),
         ),
     ),
     confirmDialog &&
@@ -6717,53 +6699,17 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
         Modal,
         {
           title: "\u6DFB\u52A0\u8BA1\u7B97\u6B65\u9AA4",
-          width: "800px",
-          onClose: () => { setShowAddStepModal(false); setStepSearchQuery(""); },
+          width: "720px",
+          onClose: () => setShowAddStepModal(false),
           footer: /*#__PURE__*/ React.createElement(
             Button,
-            { onClick: () => { setShowAddStepModal(false); setStepSearchQuery(""); } },
+            { onClick: () => setShowAddStepModal(false) },
             "\u53D6\u6D88",
           ),
         },
         /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-type-modal" },
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "step-type-search" },
-            /*#__PURE__*/ React.createElement(
-              Icons.Search,
-              { style: { width: 16, height: 16, color: "var(--color-text-tertiary)" } },
-            ),
-            /*#__PURE__*/ React.createElement("input", {
-              type: "text",
-              className: "step-type-search-input",
-              placeholder: "搜索计算步骤（如：求和、筛选、日期）...",
-              value: stepSearchQuery,
-              onChange: (e) => setStepSearchQuery(e.target.value),
-            }),
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "step-type-categories" },
-            [
-              { id: "all", name: "全部", icon: "📋" },
-              { id: "input", name: "数据输入", icon: "📥" },
-              { id: "filter", name: "数据筛选", icon: "🔍" },
-              { id: "transform", name: "数据转换", icon: "🔄" },
-              { id: "compute", name: "计算聚合", icon: "🧮" },
-              { id: "join", name: "跨表关联", icon: "🔗" },
-            ].map((cat) => /*#__PURE__*/ React.createElement(
-              "button",
-              {
-                key: cat.id,
-                className: `step-type-category-tab ${stepCategory === cat.id ? "active" : ""}`,
-                onClick: () => setStepCategory(cat.id),
-              },
-              cat.icon,
-              cat.name,
-            )),
-          ),
           [
             {
               id: "input",
@@ -6800,15 +6746,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               types: ["join", "union", "crossMatch", "intersect"],
               color: "var(--color-accent)",
             },
-          ].filter((group) => stepCategory === "all" || group.id === stepCategory).map((group) => {
-            const filteredTypes = group.types.filter((type) => {
-              if (!stepSearchQuery) return true;
-              const info = getStepTypeInfo(type);
-              const query = stepSearchQuery.toLowerCase();
-              return info.name.toLowerCase().includes(query) || info.desc.toLowerCase().includes(query);
-            });
-            if (filteredTypes.length === 0) return null;
-            return /*#__PURE__*/ React.createElement(
+          ].map((group) =>
+            /*#__PURE__*/ React.createElement(
               "div",
               { key: group.id, className: "step-type-group" },
               /*#__PURE__*/ React.createElement(
@@ -6835,14 +6774,14 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               /*#__PURE__*/ React.createElement(
                 "div",
                 { className: "step-type-grid" },
-                filteredTypes.map((type) => {
+                group.types.map((type) => {
                   const info = getStepTypeInfo(type);
                   return /*#__PURE__*/ React.createElement(
                     "button",
                     {
                       key: type,
                       className: "step-type-card",
-                      onClick: () => { addStep(type); setShowAddStepModal(false); setStepSearchQuery(""); },
+                      onClick: () => addStep(type),
                       title: info.desc,
                     },
                     /*#__PURE__*/ React.createElement(
@@ -6866,8 +6805,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   );
                 }),
               ),
-            );
-          }),
+            ),
+          ),
         ),
       ),
   );
