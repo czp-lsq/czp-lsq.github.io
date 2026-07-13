@@ -6554,7 +6554,6 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                 ),
                               renderStepConfig(step, activeField)
                             ),
-                ),
               ),
             !activeField &&
               /*#__PURE__*/ React.createElement(
