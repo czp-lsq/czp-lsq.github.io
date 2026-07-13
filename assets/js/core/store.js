@@ -890,6 +890,37 @@ const Store = (() => {
     }
   };
 
+  // 安全加载：检测并清理损坏的数据
+  const safeLoadState = () => {
+    try {
+      const saved = localStorage.getItem(STORAGE_KEY);
+      if (!saved) return null;
+
+      // 检查数据是否明显损坏
+      if (saved.startsWith(COMPRESSED_MARKER)) {
+        try {
+          const compressed = saved.slice(COMPRESSED_MARKER.length);
+          const decompressed = LZString.decompressFromUTF16(compressed);
+          if (!decompressed || decompressed.length < 10) {
+            throw new Error("Compressed data is invalid");
+          }
+          return JSON.parse(decompressed);
+        } catch (e) {
+          console.error("Compressed data is corrupted, cleaning up:", e);
+          localStorage.removeItem(STORAGE_KEY);
+          return null;
+        }
+      }
+
+      // 未压缩数据
+      return JSON.parse(saved);
+    } catch (e) {
+      console.error("LocalStorage data is corrupted, cleaning up:", e);
+      localStorage.removeItem(STORAGE_KEY);
+      return null;
+    }
+  };
+
   // 备份最近一次成功保存的状态
   const backup = (serialized) => {
     try {
@@ -944,9 +975,8 @@ const Store = (() => {
     if (_loadedState) return _loadedState;
     
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      if (saved) {
-        let state = decompressData(saved);
+      const state = safeLoadState();
+      if (state) {
         let version = state._version || "1.0.0";
 
         // 确保基本结构存在

@@ -1880,7 +1880,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   { value: "", label: "全部列" },
                   ...firstSelectedTableHeaders.map((h) => ({ value: h, label: h }))
                 ],
-                placeholder: selectedTables.length > 0 ? "选择列或获取全部" : "请先选择数据表",
+                placeholder: selectedTables.length > 0 ? "选择列" : "请先选择数据表",
                 disabled: selectedTables.length === 0,
               })
             )
