@@ -1,4 +1,4 @@
-const APP_VERSION = "czp-1.23.0";
+const APP_VERSION = "czp-1.24.0";
 const DATA_VERSION = "8.0.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
@@ -11,6 +11,16 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-1.24.0", date: "2026-07-13 07:00:00",
+    summary: "下拉框智能定位优化",
+    changes: [
+      { type: "optimize", text: "下拉框位置计算增加空间检测，底部空间不足时自动向上展开" },
+      { type: "optimize", text: "下拉框左右边界约束，确保不会超出视口" },
+    ],
+    bugfixes: [
+      { text: "修复下拉框在页面底部被锁死看不见值的问题" },
+    ],
+  },
   { version: "czp-1.23.0", date: "2026-07-13 06:30:00",
     summary: "下拉框Portal渲染与滚动修复",
     changes: [

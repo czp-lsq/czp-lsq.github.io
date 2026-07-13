@@ -275,10 +275,34 @@ const SearchableSelect = ({
   const updateDropdownPosition = () => {
     if (!containerRef.current) return;
     const rect = containerRef.current.getBoundingClientRect();
+    const dropdownMaxHeight = 320;
+    const spacing = 4;
+    const viewportHeight = window.innerHeight;
+    const viewportWidth = window.innerWidth;
+    
+    let top = rect.bottom + spacing;
+    let shouldFlip = false;
+    
+    if (top + dropdownMaxHeight > viewportHeight) {
+      const spaceAbove = rect.top;
+      const spaceBelow = viewportHeight - rect.bottom;
+      
+      if (spaceAbove > spaceBelow && spaceAbove >= dropdownMaxHeight) {
+        top = rect.top - dropdownMaxHeight - spacing;
+        shouldFlip = true;
+      } else {
+        top = viewportHeight - dropdownMaxHeight - spacing;
+      }
+    }
+    
+    const maxLeft = viewportWidth - rect.width;
+    const left = Math.max(0, Math.min(rect.left, maxLeft));
+    
     setDropdownPos({
-      top: rect.bottom + 4,
-      left: rect.left,
+      top,
+      left,
       width: rect.width,
+      shouldFlip,
     });
   };
 
