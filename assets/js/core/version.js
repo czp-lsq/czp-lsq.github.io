@@ -1,4 +1,4 @@
-const APP_VERSION = "czp-1.20.0";
+const APP_VERSION = "czp-1.21.0";
 const DATA_VERSION = "8.0.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
@@ -11,6 +11,18 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-1.21.0", date: "2026-07-13 05:30:00",
+    summary: "页面滚动修复与布局优化",
+    changes: [
+      { type: "feature", text: "还原关于系统页面的技术支持卡片信息" },
+      { type: "feature", text: "删除关于系统页面底部的技术支持模块" },
+      { type: "optimize", text: "计算规则页面滚动布局重构，修复步骤配置时页面不可滑动的问题" },
+      { type: "optimize", text: "添加步骤弹窗滚动优化，消除嵌套滚动冲突" },
+    ],
+    bugfixes: [
+      { text: "修复计算规则步骤配置时页面不可滑动导致无法配置的错误" },
+    ],
+  },
   { version: "czp-1.20.0", date: "2026-07-13 05:10:00",
     summary: "弹窗功能增强与页面优化",
     changes: [
