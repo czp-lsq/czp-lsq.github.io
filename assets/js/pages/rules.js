@@ -1799,7 +1799,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                             { className: "table-select-item-name" },
                             t.name
                           ),
-                          t.originalName && /*#__PURE__*/ React.createElement(
+                          t.originalName && t.name === t.originalName && /*#__PURE__*/ React.createElement(
                             "span",
                             { className: "table-select-item-desc" },
                             t.originalName
