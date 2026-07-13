@@ -1344,6 +1344,10 @@ const Store = (() => {
         }
       }
     }
+  } catch (e) {
+    console.error("Failed to save state:", e);
+      StorageEvents.emit("error", { source: "save", error: e });
+    }
   };
 
   const defaultState = {

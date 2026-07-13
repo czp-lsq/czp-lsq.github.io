@@ -473,7 +473,18 @@ const App = () => {
     addToastRef.current = addToast;
   }, [addToast]);
 
+  // 防抖：避免短时间内重复弹窗
+  const _updateCheckingRef = React.useRef(false);
+  const _lastCheckTimeRef = React.useRef(0);
+
   const checkForUpdate = useCallback(async (showToast = false) => {
+    // 防止并发检查
+    if (_updateCheckingRef.current) return;
+    // 防止过于频繁检查（至少间隔30秒）
+    const nowTime = Date.now();
+    if (nowTime - _lastCheckTimeRef.current < 30000) return;
+    _lastCheckTimeRef.current = nowTime;
+
     try {
       if (window.location.protocol === "file:") {
         return;
@@ -481,6 +492,12 @@ const App = () => {
       if (!navigator.onLine) {
         return;
       }
+      // 如果弹窗已经显示，不再重复弹窗
+      if (showUpdateModal) {
+        return;
+      }
+
+      _updateCheckingRef.current = true;
       const res = await fetch(`index.html?_=${Date.now()}`, {
         cache: "no-store",
       });
@@ -504,6 +521,12 @@ const App = () => {
       setUpdateDetectedAt(now);
 
       if (remoteVersion && remoteVersion !== APP_VERSION) {
+        // 检查用户是否已经看过这个远程版本
+        const seenVersions = getSeenVersions();
+        if (seenVersions.includes(remoteVersion)) {
+          return;
+        }
+
         setUpdateInfo({
           version: remoteVersion,
           date: detectedAtStr,
@@ -520,34 +543,38 @@ const App = () => {
         }
       }
     } catch (e) {
+    } finally {
+      _updateCheckingRef.current = false;
     }
-  }, []);
+  }, [showUpdateModal]);
 
   useEffect(() => {
     checkForUpdate(false);
   }, [checkForUpdate]);
 
+  // 后台定时检查：改为每5分钟一次，且只在页面可见时检查
   useEffect(() => {
     if (window.location.protocol === "file:") return;
-    const timer = setInterval(() => checkForUpdate(true), 60 * 1000);
+    const timer = setInterval(() => {
+      if (document.visibilityState === "visible") {
+        checkForUpdate(true);
+      }
+    }, 5 * 60 * 1000);
     return () => clearInterval(timer);
   }, [checkForUpdate]);
 
+  // 页面重新可见时检查（但使用防抖，避免快速切换时多次触发）
   useEffect(() => {
     if (window.location.protocol === "file:") return;
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
-        checkForUpdate(true);
+        // 延迟500ms检查，避免快速切换标签页时频繁触发
+        setTimeout(() => checkForUpdate(true), 500);
       }
     };
-    const handleFocus = () => {
-      checkForUpdate(true);
-    };
     document.addEventListener("visibilitychange", handleVisibility);
-    window.addEventListener("focus", handleFocus);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
-      window.removeEventListener("focus", handleFocus);
     };
   }, [checkForUpdate]);
 
@@ -1868,7 +1895,20 @@ const App = () => {
                 className: "btn btn-primary",
                 onClick: () => {
                   handleUpdateModalClose();
-                  window.location.reload();
+                  // 强制刷新：绕过缓存，确保加载最新版本
+                  try {
+                    const url = new URL(window.location.href);
+                    url.searchParams.set("_", Date.now().toString());
+                    window.location.replace(url.toString());
+                  } catch (e) {
+                    // 降级策略：如果 replace 失败，尝试 reload
+                    try {
+                      window.location.reload(true);
+                    } catch (e2) {
+                      // 如果 reload 也失败，提示用户手动刷新
+                      addToastRef.current("warning", "自动刷新失败", "请按 F5 或 Ctrl+R 手动刷新页面", 8000);
+                    }
+                  }
                 },
               },
               /*#__PURE__*/ React.createElement(Icons.RefreshCw, null),
