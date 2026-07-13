@@ -130,9 +130,11 @@ const SearchableSelect = ({
   const [debouncedQuery, setDebouncedQuery] = useState("");
   const [selectedIndex, setSelectedIndex] = useState(-1);
   const [focusedGroupIndex, setFocusedGroupIndex] = useState(-1);
+  const [dropdownPos, setDropdownPos] = useState(null);
   const containerRef = useRef(null);
   const inputRef = useRef(null);
   const optionsRef = useRef(null);
+  const dropdownContainerRef = useRef(null);
 
   const safeOptions = Array.isArray(options) ? options : [];
   const safeGroups = Array.isArray(groups) ? groups : null;
@@ -270,9 +272,38 @@ const SearchableSelect = ({
     return opt ? (typeof opt === "object" ? opt.label : opt) : value;
   }, [value, safeOptions, safeGroups, processedGroups]);
 
+  const updateDropdownPosition = () => {
+    if (!containerRef.current) return;
+    const rect = containerRef.current.getBoundingClientRect();
+    setDropdownPos({
+      top: rect.bottom + 4,
+      left: rect.left,
+      width: rect.width,
+    });
+  };
+
+  useEffect(() => {
+    if (isOpen) {
+      updateDropdownPosition();
+      const handleScroll = () => updateDropdownPosition();
+      const handleResize = () => updateDropdownPosition();
+      window.addEventListener("scroll", handleScroll, true);
+      window.addEventListener("resize", handleResize);
+      return () => {
+        window.removeEventListener("scroll", handleScroll, true);
+        window.removeEventListener("resize", handleResize);
+      };
+    }
+  }, [isOpen]);
+
   useEffect(() => {
     const handleClickOutside = (e) => {
-      if (containerRef.current && !containerRef.current.contains(e.target)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target) &&
+        dropdownContainerRef.current &&
+        !dropdownContainerRef.current.contains(e.target)
+      ) {
         setIsOpen(false);
         setSearchQuery("");
         setDebouncedQuery("");
@@ -289,6 +320,100 @@ const SearchableSelect = ({
       setSelectedIndex(-1);
     }
   }, [isOpen]);
+
+  const getDropdownContent = () => {
+    if (!isOpen) return null;
+    const pos = dropdownPos || { top: 0, left: 0, width: 0 };
+    return React.createElement(
+      "div",
+      {
+        ref: dropdownContainerRef,
+        className: "searchable-select-dropdown searchable-select-dropdown-portal",
+        style: {
+          position: "fixed",
+          top: pos.top,
+          left: pos.left,
+          width: pos.width,
+          zIndex: 9999,
+        },
+      },
+      value && displayValue && React.createElement(
+        "div",
+        { className: "searchable-select-current" },
+        React.createElement("span", { className: "searchable-select-current-label" }, "当前选择"),
+        React.createElement("span", { className: "searchable-select-current-value" }, displayValue)
+      ),
+      React.createElement(
+        "div",
+        { className: "searchable-select-search" },
+        React.createElement(
+          "svg",
+          {
+            width: "14",
+            height: "14",
+            viewBox: "0 0 24 24",
+            fill: "none",
+            stroke: "currentColor",
+            strokeWidth: "2",
+            strokeLinecap: "round",
+            strokeLinejoin: "round",
+            className: "search-icon",
+          },
+          React.createElement("circle", { cx: "11", cy: "11", r: "8" }),
+          React.createElement("line", { x1: "21", y1: "21", x2: "16.65", y2: "16.65" }),
+        ),
+        React.createElement("input", {
+          ref: inputRef,
+          type: "text",
+          className: "search-input",
+          value: searchQuery,
+          onChange: (e) => setSearchQuery(e.target.value),
+          onKeyDown: handleKeyDown,
+          placeholder: "搜索选项（支持拼音）...",
+        }),
+        searchQuery && React.createElement(
+          "span",
+          {
+            className: "search-clear",
+            onClick: () => {
+              setSearchQuery("");
+              setDebouncedQuery("");
+              setSelectedIndex(-1);
+            },
+          },
+          "×"
+        ),
+      ),
+      React.createElement(
+        "div",
+        { 
+          className: "searchable-select-options", 
+          ref: optionsRef,
+          style: enableVirtualScroll ? {} : { maxHeight: '320px', overflow: 'auto' }
+        },
+        selectableOptions.length === 0 ? React.createElement(
+          "div",
+          { className: "searchable-select-empty" },
+          allowCreate ? "无匹配项，按回车创建" : "无匹配项",
+        ) : enableVirtualScroll ? React.createElement(
+          VirtualList,
+          {
+            items: processedOptions,
+            itemHeight: 36,
+            containerHeight: getListHeight(),
+            renderItem: renderOption,
+            onSelect: handleSelect,
+            selectedIndex: selectedIndex,
+          }
+        ) : processedOptions.map((item, idx) => renderOption(item, idx)),
+      ),
+      selectableOptions.length > 0 && React.createElement(
+        "div",
+        { className: "searchable-select-hint" },
+        React.createElement("span", null, "↑↓ 导航 | Enter 选择 | Esc 关闭"),
+      ),
+    );
+  };
 
   const handleSelect = (optValue) => {
     onChange(optValue);
@@ -397,121 +522,51 @@ const SearchableSelect = ({
     return Math.max(120, estimatedHeight);
   };
 
+  const dropdownContent = getDropdownContent();
+
   return React.createElement(
-    "div",
-    {
-      className: `searchable-select ${className} ${isOpen ? "open" : ""} ${disabled ? "disabled" : ""} size-${size}`,
-      ref: containerRef,
-    },
+    React.Fragment,
+    null,
     React.createElement(
       "div",
       {
-        className: "searchable-select-trigger",
-        onClick: () => !disabled && setIsOpen(!isOpen),
+        className: `searchable-select ${className} ${isOpen ? "open" : ""} ${disabled ? "disabled" : ""} size-${size}`,
+        ref: containerRef,
       },
       React.createElement(
-        "span",
-        { className: `searchable-select-value ${!value ? "placeholder" : ""}` },
-        displayValue || placeholder,
-      ),
-      React.createElement(
-        "span",
-        { className: "searchable-select-arrow" },
-        React.createElement(
-          "svg",
-          {
-            width: "14",
-            height: "14",
-            viewBox: "0 0 24 24",
-            fill: "none",
-            stroke: "currentColor",
-            strokeWidth: "2",
-            strokeLinecap: "round",
-            strokeLinejoin: "round",
-          },
-          React.createElement("polyline", { points: "6 9 12 15 18 9" }),
-        ),
-      ),
-    ),
-    isOpen && React.createElement(
-      "div",
-      { className: "searchable-select-dropdown" },
-      value && displayValue && React.createElement(
         "div",
-        { className: "searchable-select-current" },
-        React.createElement("span", { className: "searchable-select-current-label" }, "当前选择"),
-        React.createElement("span", { className: "searchable-select-current-value" }, displayValue)
-      ),
-      React.createElement(
-        "div",
-        { className: "searchable-select-search" },
-        React.createElement(
-          "svg",
-          {
-            width: "14",
-            height: "14",
-            viewBox: "0 0 24 24",
-            fill: "none",
-            stroke: "currentColor",
-            strokeWidth: "2",
-            strokeLinecap: "round",
-            strokeLinejoin: "round",
-            className: "search-icon",
-          },
-          React.createElement("circle", { cx: "11", cy: "11", r: "8" }),
-          React.createElement("line", { x1: "21", y1: "21", x2: "16.65", y2: "16.65" }),
-        ),
-        React.createElement("input", {
-          ref: inputRef,
-          type: "text",
-          className: "search-input",
-          value: searchQuery,
-          onChange: (e) => setSearchQuery(e.target.value),
-          onKeyDown: handleKeyDown,
-          placeholder: "搜索选项（支持拼音）...",
-        }),
-        searchQuery && React.createElement(
-          "span",
-          {
-            className: "search-clear",
-            onClick: () => {
-              setSearchQuery("");
-              setDebouncedQuery("");
-              setSelectedIndex(-1);
-            },
-          },
-          "×"
-        ),
-      ),
-      React.createElement(
-        "div",
-        { 
-          className: "searchable-select-options", 
-          ref: optionsRef,
-          style: enableVirtualScroll ? {} : { maxHeight: '320px', overflow: 'auto' }
+        {
+          className: "searchable-select-trigger",
+          onClick: () => !disabled && setIsOpen(!isOpen),
         },
-        selectableOptions.length === 0 ? React.createElement(
-          "div",
-          { className: "searchable-select-empty" },
-          allowCreate ? "无匹配项，按回车创建" : "无匹配项",
-        ) : enableVirtualScroll ? React.createElement(
-          VirtualList,
-          {
-            items: processedOptions,
-            itemHeight: 36,
-            containerHeight: getListHeight(),
-            renderItem: renderOption,
-            onSelect: handleSelect,
-            selectedIndex: selectedIndex,
-          }
-        ) : processedOptions.map((item, idx) => renderOption(item, idx)),
-      ),
-      selectableOptions.length > 0 && React.createElement(
-        "div",
-        { className: "searchable-select-hint" },
-        React.createElement("span", null, "↑↓ 导航 | Enter 选择 | Esc 关闭"),
+        React.createElement(
+          "span",
+          { className: `searchable-select-value ${!value ? "placeholder" : ""}` },
+          displayValue || placeholder,
+        ),
+        React.createElement(
+          "span",
+          { className: "searchable-select-arrow" },
+          React.createElement(
+            "svg",
+            {
+              width: "14",
+              height: "14",
+              viewBox: "0 0 24 24",
+              fill: "none",
+              stroke: "currentColor",
+              strokeWidth: "2",
+              strokeLinecap: "round",
+              strokeLinejoin: "round",
+            },
+            React.createElement("polyline", { points: "6 9 12 15 18 9" }),
+          ),
+        ),
       ),
     ),
+    dropdownContent && typeof ReactDOM !== "undefined" && ReactDOM.createPortal
+      ? ReactDOM.createPortal(dropdownContent, document.body)
+      : dropdownContent,
   );
 };
 
