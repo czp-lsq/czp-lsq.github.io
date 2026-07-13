@@ -178,7 +178,7 @@ const StoragePage = ({ state, setState }) => {
       const data = JSON.parse(decoded);
       
       if (isConfig) {
-        setState((prev) => ({
+        Store.set((prev) => ({
           ...prev,
           platforms: data.platforms || prev.platforms,
           templates: data.templates || prev.templates,
@@ -187,6 +187,7 @@ const StoragePage = ({ state, setState }) => {
           externals: data.externals || prev.externals,
           settings: data.settings || prev.settings,
         }));
+        Store.flush();
       } else {
         Store.importData(data);
       }
@@ -215,7 +216,7 @@ const StoragePage = ({ state, setState }) => {
           message: `文件：${file.name}\n导入模式：${modeText}\n\n确定要继续吗？`,
           type: "warning",
           onConfirm: () => {
-            setState((prev) => {
+            Store.set((prev) => {
               if (importMode === "replace") {
                 return { ...prev, ...importedData };
               }
@@ -229,6 +230,7 @@ const StoragePage = ({ state, setState }) => {
               if (importedData.platforms) merged.platforms = importedData.platforms;
               return merged;
             });
+            Store.flush();
             addToast("success", "导入成功", `数据已${importMode === "merge" ? "合并" : "替换"}到系统中`, 3000, { notificationType: "importComplete" });
             ActivityLogger.add("数据导入", `${file.name} (${importMode})`);
             setActivityLogs(ActivityLogger.get().slice(0, 10));

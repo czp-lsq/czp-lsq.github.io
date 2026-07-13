@@ -922,7 +922,8 @@ const Store = (() => {
   // 安全加载：检测并清理损坏的数据
   const safeLoadState = () => {
     try {
-      const saved = localStorage.getItem(STORAGE_KEY);
+      // 优先读取缓存键（IndexedDB 模式下的最新数据），fallback 到旧键
+      const saved = localStorage.getItem(STORAGE_KEY + "_cache") || localStorage.getItem(STORAGE_KEY);
       if (!saved) return null;
 
       if (saved.startsWith(COMPRESSED_MARKER)) {
@@ -1050,18 +1051,19 @@ const Store = (() => {
         const cachedRaw = localStorage.getItem(STORAGE_KEY + "_cache");
         if (cachedRaw) {
           try {
-            const state = decompressData(cachedRaw);
-            if (state && validate(state)) {
+            const cachedState = decompressData(cachedRaw);
+            if (cachedState && validate(cachedState)) {
               // 异步从IndexedDB拉取最新数据
               idbGet(STORAGE_KEY).then((idbData) => {
                 if (idbData && validate(idbData)) {
                   // 比较时间戳，IDB 更新
                   const idbTime = new Date(idbData._lastSaved || 0).getTime();
-                  const cacheTime = new Date(state._lastSaved || 0).getTime();
+                  const cacheTime = new Date(cachedState._lastSaved || 0).getTime();
                   if (idbTime > cacheTime) {
                     // 使用 IndexedDB 的更新数据
                     _loadedState = idbData;
                     _stateCache = idbData;
+                    state = idbData;
                     // 同步更新 localStorage 缓存
                     try {
                       const serialized = compressData(idbData);
@@ -1072,15 +1074,28 @@ const Store = (() => {
                   }
                 }
               }).catch(() => {});
-              
-              _loadedState = state;
-              _stateCache = state;
-              return state;
+
+              _loadedState = cachedState;
+              _stateCache = cachedState;
+              return cachedState;
             }
           } catch (e) {}
         }
         
-        // localStorage 缓存不存在，尝试从 IndexedDB 同步加载（这里使用 promise 不可行，回退到 localStorage）
+        // localStorage 缓存不存在，启动 IndexedDB 异步拉取（页面加载后恢复）
+        idbGet(STORAGE_KEY).then((idbData) => {
+          if (idbData && validate(idbData)) {
+            _loadedState = idbData;
+            _stateCache = idbData;
+            state = idbData;
+            try {
+              const serialized = compressData(idbData);
+              localStorage.setItem(STORAGE_KEY + "_cache", serialized);
+            } catch (e) {}
+            subs.forEach((s) => s(idbData));
+            StorageEvents.emit("restored", { source: "indexeddb" });
+          }
+        }).catch(() => {});
       } catch (e) {}
     }
     
@@ -1145,38 +1160,39 @@ const Store = (() => {
       idbGet(STORAGE_KEY).then((idbData) => {
         if (idbData) {
           try {
-            let state = idbData;
-            let version = state._version || "1.0.0";
-            
+            let loadedState = idbData;
+            let version = loadedState._version || "1.0.0";
+
             // 确保基本结构存在
-            if (!state.platforms || !Array.isArray(state.platforms)) {
-              state.platforms = [
+            if (!loadedState.platforms || !Array.isArray(loadedState.platforms)) {
+              loadedState.platforms = [
                 { id: "pdd", name: "拼多多", emoji: "🍊", shops: [] },
                 { id: "tb", name: "淘宝", emoji: "🛒", shops: [] },
                 { id: "dy", name: "抖音", emoji: "🎵", shops: [] },
               ];
             }
-            if (!state.templates || typeof state.templates !== "object") state.templates = {};
-            if (!state.samples || typeof state.samples !== "object") state.samples = {};
-            if (!state.rules || typeof state.rules !== "object") state.rules = {};
-            if (!state.externals || !Array.isArray(state.externals)) state.externals = [];
-            if (!state.batchData || typeof state.batchData !== "object") state.batchData = {};
-            if (!state.calcHistory || !Array.isArray(state.calcHistory)) state.calcHistory = [];
-            if (!state.userSettings || typeof state.userSettings !== "object") {
-              state.userSettings = { theme: "light", language: "zh-CN", autoSave: true };
+            if (!loadedState.templates || typeof loadedState.templates !== "object") loadedState.templates = {};
+            if (!loadedState.samples || typeof loadedState.samples !== "object") loadedState.samples = {};
+            if (!loadedState.rules || typeof loadedState.rules !== "object") loadedState.rules = {};
+            if (!loadedState.externals || !Array.isArray(loadedState.externals)) loadedState.externals = [];
+            if (!loadedState.batchData || typeof loadedState.batchData !== "object") loadedState.batchData = {};
+            if (!loadedState.calcHistory || !Array.isArray(loadedState.calcHistory)) loadedState.calcHistory = [];
+            if (!loadedState.userSettings || typeof loadedState.userSettings !== "object") {
+              loadedState.userSettings = { theme: "light", language: "zh-CN", autoSave: true };
             }
-            
+
             if (version !== CURRENT_VERSION) {
-              state = runMigrations(state, version);
-              state._version = CURRENT_VERSION;
+              loadedState = runMigrations(loadedState, version);
+              loadedState._version = CURRENT_VERSION;
             }
-            
-            _loadedState = state;
-            _stateCache = state;
-            
+
+            _loadedState = loadedState;
+            _stateCache = loadedState;
+            state = loadedState;
+
             StorageEvents.emit("restored", { source: "indexeddb" });
-            save(state, true);
-            subs.forEach((s) => s(state));
+            save(loadedState, true);
+            subs.forEach((s) => s(loadedState));
           } catch (e) {
             console.error("Failed to load from IndexedDB:", e);
           }
