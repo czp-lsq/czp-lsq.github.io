@@ -302,22 +302,25 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
       addToast("warning", "复制失败", "源字段尚未配置规则");
       return;
     }
-    Store.set((s) => ({
-      ...s,
-      rules: {
-        ...s.rules,
-        [currentPlatform]: {
-          ...savedRules,
-          [targetId]: {
-            ...savedRules[targetId],
-            steps: sourceRule.steps.map((step, i) => ({
-              ...step,
-              id: `step_${Date.now()}_${i}`,
-            })),
+    Store.set((s) => {
+      const platformRules = s.rules[currentPlatform] || {};
+      return {
+        ...s,
+        rules: {
+          ...s.rules,
+          [currentPlatform]: {
+            ...platformRules,
+            [targetId]: {
+              ...platformRules[targetId],
+              steps: sourceRule.steps.map((step, i) => ({
+                ...step,
+                id: `step_${Date.now()}_${i}`,
+              })),
+            },
           },
         },
-      },
-    }));
+      };
+    });
     addToast("success", "复制成功", `已复制规则到目标字段`);
     setShowCopyModal(false);
     setCopySourceFieldId("");
@@ -328,16 +331,19 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
       message: "确认清空此字段的计算规则？此操作不可撤销。",
       type: "warning",
       onConfirm: () => {
-        Store.set((s) => ({
-          ...s,
-          rules: {
-            ...s.rules,
-            [currentPlatform]: {
-              ...savedRules,
-              [fieldId]: { steps: [], saved: false },
+        Store.set((s) => {
+          const platformRules = s.rules[currentPlatform] || {};
+          return {
+            ...s,
+            rules: {
+              ...s.rules,
+              [currentPlatform]: {
+                ...platformRules,
+                [fieldId]: { steps: [], saved: false },
+              },
             },
-          },
-        }));
+          };
+        });
         addToast("info", "已清空", "字段规则已重置");
         setConfirmDialog(null);
       },
@@ -358,20 +364,23 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
       addToast("warning", "保存失败", `规则配置不完整：${validation.msg}`);
       return;
     }
-    Store.set((s) => ({
-      ...s,
-      rules: {
-        ...s.rules,
-        [currentPlatform]: {
-          ...savedRules,
-          [fieldId]: {
-            ...rule,
-            saved: true,
-            savedAt: new Date().toISOString(),
+    Store.set((s) => {
+      const platformRules = s.rules[currentPlatform] || {};
+      return {
+        ...s,
+        rules: {
+          ...s.rules,
+          [currentPlatform]: {
+            ...platformRules,
+            [fieldId]: {
+              ...rule,
+              saved: true,
+              savedAt: new Date().toISOString(),
+            },
           },
         },
-      },
-    }));
+      };
+    });
     addToast("success", "保存成功", "字段规则已保存");
   };
   const getSavedFieldValues = () => {
@@ -908,30 +917,35 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   const summarizeStep = __stepMeta.summarizeStep || function() { return ""; };
   const duplicateStep = (stepId) => {
     if (!activeField || !currentRule) return;
-    const idx = currentRule.steps.findIndex((s) => s.id === stepId);
-    if (idx === -1) return;
-    const orig = currentRule.steps[idx];
-    const newStep = {
-      ...orig,
-      id: `step_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
-      config: { ...orig.config },
-    };
-    const newSteps = [
-      ...currentRule.steps.slice(0, idx + 1),
-      newStep,
-      ...currentRule.steps.slice(idx + 1),
-    ];
-    Store.set((s) => ({
-      ...s,
-      rules: {
-        ...s.rules,
-        [currentPlatform]: {
-          ...savedRules,
-          [activeField.id]: { ...savedRules[activeField.id], steps: newSteps },
+    Store.set((s) => {
+      const platformRules = s.rules[currentPlatform] || {};
+      const fieldRule = platformRules[activeField.id];
+      if (!fieldRule || !fieldRule.steps) return s;
+      const idx = fieldRule.steps.findIndex((st) => st.id === stepId);
+      if (idx === -1) return s;
+      const orig = fieldRule.steps[idx];
+      const newStep = {
+        ...orig,
+        id: `step_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
+        config: { ...orig.config },
+      };
+      const newSteps = [
+        ...fieldRule.steps.slice(0, idx + 1),
+        newStep,
+        ...fieldRule.steps.slice(idx + 1),
+      ];
+      return {
+        ...s,
+        rules: {
+          ...s.rules,
+          [currentPlatform]: {
+            ...platformRules,
+            [activeField.id]: { ...fieldRule, steps: newSteps },
+          },
         },
-      },
-    }));
-    setExpandedStep(newStep.id);
+      };
+    });
+    setExpandedStep(stepId);
     addToast("success", "克隆成功", "已克隆该步骤");
   };
   const addStep = (type) => {
@@ -1059,19 +1073,24 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
       type,
       config: defaultConfigs[type] || {},
     };
-    Store.set((s) => ({
-      ...s,
-      rules: {
-        ...s.rules,
-        [currentPlatform]: {
-          ...savedRules,
-          [activeField.id]: {
-            ...savedRules[activeField.id],
-            steps: [...currentSteps, newStep],
+    Store.set((s) => {
+      const platformRules = s.rules[currentPlatform] || {};
+      const fieldRule = platformRules[activeField.id] || { steps: [] };
+      const currentSteps = fieldRule.steps || [];
+      return {
+        ...s,
+        rules: {
+          ...s.rules,
+          [currentPlatform]: {
+            ...platformRules,
+            [activeField.id]: {
+              ...fieldRule,
+              steps: [...currentSteps, newStep],
+            },
           },
         },
-      },
-    }));
+      };
+    });
     setExpandedStep(newStep.id);
     setShowAddStepModal(false);
     addToast(
@@ -1110,17 +1129,22 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
       message: `确认删除「${getStepTypeInfo(step.type).name}」步骤？此操作不可撤销。`,
       type: "danger",
       onConfirm: () => {
-        const newSteps = currentRule.steps.filter((s) => s.id !== stepId);
-        Store.set((s) => ({
-          ...s,
-          rules: {
-            ...s.rules,
-            [currentPlatform]: {
-              ...savedRules,
-              [activeField.id]: { ...savedRules[activeField.id], steps: newSteps },
+        Store.set((s) => {
+          const platformRules = s.rules[currentPlatform] || {};
+          const fieldRule = platformRules[activeField.id];
+          if (!fieldRule || !fieldRule.steps) return s;
+          const newSteps = fieldRule.steps.filter((st) => st.id !== stepId);
+          return {
+            ...s,
+            rules: {
+              ...s.rules,
+              [currentPlatform]: {
+                ...platformRules,
+                [activeField.id]: { ...fieldRule, steps: newSteps },
+              },
             },
-          },
-        }));
+          };
+        });
         addToast("info", "删除步骤", "已删除计算步骤");
         setConfirmDialog(null);
       },
@@ -1129,41 +1153,50 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   };
   const moveStep = (stepId, direction) => {
     if (!activeField || !currentRule) return;
-    const steps = [...currentRule.steps];
-    const idx = steps.findIndex((s) => s.id === stepId);
-    if (idx === -1) return;
-    const newIdx = direction === "up" ? idx - 1 : idx + 1;
-    if (newIdx < 0 || newIdx >= steps.length) return;
-    [steps[idx], steps[newIdx]] = [steps[newIdx], steps[idx]];
-    Store.set((s) => ({
-      ...s,
-      rules: {
-        ...s.rules,
-        [currentPlatform]: {
-          ...savedRules,
-          [activeField.id]: { ...savedRules[activeField.id], steps },
+    Store.set((s) => {
+      const platformRules = s.rules[currentPlatform] || {};
+      const fieldRule = platformRules[activeField.id];
+      if (!fieldRule || !fieldRule.steps) return s;
+      const steps = [...fieldRule.steps];
+      const idx = steps.findIndex((st) => st.id === stepId);
+      if (idx === -1) return s;
+      const newIdx = direction === "up" ? idx - 1 : idx + 1;
+      if (newIdx < 0 || newIdx >= steps.length) return s;
+      [steps[idx], steps[newIdx]] = [steps[newIdx], steps[idx]];
+      return {
+        ...s,
+        rules: {
+          ...s.rules,
+          [currentPlatform]: {
+            ...platformRules,
+            [activeField.id]: { ...fieldRule, steps },
+          },
         },
-      },
-    }));
+      };
+    });
   };
   const applyPreset = (preset) => {
     if (!activeField) return;
-    Store.set((s) => ({
-      ...s,
-      rules: {
-        ...s.rules,
-        [currentPlatform]: {
-          ...savedRules,
-          [activeField.id]: {
-            ...savedRules[activeField.id],
-            steps: preset.steps.map((s, i) => ({
-              ...s,
-              id: `step_${Date.now()}_${i}`,
-            })),
+    Store.set((s) => {
+      const platformRules = s.rules[currentPlatform] || {};
+      const fieldRule = platformRules[activeField.id] || {};
+      return {
+        ...s,
+        rules: {
+          ...s.rules,
+          [currentPlatform]: {
+            ...platformRules,
+            [activeField.id]: {
+              ...fieldRule,
+              steps: preset.steps.map((st, i) => ({
+                ...st,
+                id: `step_${Date.now()}_${i}`,
+              })),
+            },
           },
         },
-      },
-    }));
+      };
+    });
     addToast("success", "套用模板", `已应用「${preset.name}」模板`);
   };
 
@@ -5193,6 +5226,28 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               null,
               /*#__PURE__*/ React.createElement(
                 "div",
+                { className: "field-search-box" },
+                /*#__PURE__*/ React.createElement(Icons.Search, null),
+                /*#__PURE__*/ React.createElement("input", {
+                  type: "text",
+                  className: "field-search-input",
+                  placeholder: "搜索字段名称或单元格...",
+                  value: fieldSearch,
+                  onChange: (e) => setFieldSearch(e.target.value),
+                }),
+                fieldSearch &&
+                  /*#__PURE__*/ React.createElement(
+                    "button",
+                    {
+                      className: "field-search-clear",
+                      onClick: () => setFieldSearch(""),
+                      title: "清除搜索",
+                    },
+                    /*#__PURE__*/ React.createElement(Icons.X, null),
+                  ),
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
                 { className: "field-filter-tabs" },
                 [
                   { key: "all", label: "全部", count: fields.length },
@@ -5398,92 +5453,58 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             activeField &&
               /*#__PURE__*/ React.createElement(
                 "div",
-                { style: { display: "flex", gap: 8, alignItems: "center" } },
+                { className: "card-header-actions" },
                 /*#__PURE__*/ React.createElement(
-                  "button",
-                  {
-                    className: "btn-icon",
-                    onClick: () => {
-                      const idx = filteredFields.findIndex(
-                        (f) => f.id === activeField.id,
-                      );
-                      if (idx > 0) setActiveField(filteredFields[idx - 1]);
+                  "div",
+                  { className: "field-nav" },
+                  /*#__PURE__*/ React.createElement(
+                    "button",
+                    {
+                      className: "field-nav-btn",
+                      onClick: () => {
+                        const idx = filteredFields.findIndex(
+                          (f) => f.id === activeField.id,
+                        );
+                        if (idx > 0) setActiveField(filteredFields[idx - 1]);
+                      },
+                      disabled:
+                        filteredFields.findIndex(
+                          (f) => f.id === activeField.id,
+                        ) <= 0,
+                      title: "\u4E0A\u4E00\u4E2A\u5B57\u6BB5",
                     },
-                    disabled:
-                      filteredFields.findIndex(
-                        (f) => f.id === activeField.id,
-                      ) <= 0,
-                    title: "\u4E0A\u4E00\u4E2A\u5B57\u6BB5",
-                    style: {
-                      width: 28,
-                      height: 28,
-                      borderRadius: 6,
-                      border: "1px solid var(--color-border)",
-                      background: "var(--color-bg-secondary)",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "var(--color-text-secondary)",
-                      fontSize: 12,
+                    "\u2039",
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "field-nav-count" },
+                    filteredFields.findIndex((f) => f.id === activeField.id) + 1,
+                    "/",
+                    filteredFields.length,
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "button",
+                    {
+                      className: "field-nav-btn",
+                      onClick: () => {
+                        const idx = filteredFields.findIndex(
+                          (f) => f.id === activeField.id,
+                        );
+                        if (idx < filteredFields.length - 1)
+                          setActiveField(filteredFields[idx + 1]);
+                      },
+                      disabled:
+                        filteredFields.findIndex(
+                          (f) => f.id === activeField.id,
+                        ) >=
+                        filteredFields.length - 1,
+                      title: "\u4E0B\u4E00\u4E2A\u5B57\u6BB5",
                     },
-                  },
-                  "\u2039",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "span",
-                  {
-                    style: {
-                      fontSize: 11,
-                      color: "var(--color-text-tertiary)",
-                      minWidth: 40,
-                      textAlign: "center",
-                    },
-                  },
-                  filteredFields.findIndex((f) => f.id === activeField.id) + 1,
-                  "/",
-                  filteredFields.length,
-                ),
-                /*#__PURE__*/ React.createElement(
-                  "button",
-                  {
-                    className: "btn-icon",
-                    onClick: () => {
-                      const idx = filteredFields.findIndex(
-                        (f) => f.id === activeField.id,
-                      );
-                      if (idx < filteredFields.length - 1)
-                        setActiveField(filteredFields[idx + 1]);
-                    },
-                    disabled:
-                      filteredFields.findIndex(
-                        (f) => f.id === activeField.id,
-                      ) >=
-                      filteredFields.length - 1,
-                    title: "\u4E0B\u4E00\u4E2A\u5B57\u6BB5",
-                    style: {
-                      width: 28,
-                      height: 28,
-                      borderRadius: 6,
-                      border: "1px solid var(--color-border)",
-                      background: "var(--color-bg-secondary)",
-                      cursor: "pointer",
-                      display: "flex",
-                      alignItems: "center",
-                      justifyContent: "center",
-                      color: "var(--color-text-secondary)",
-                      fontSize: 12,
-                    },
-                  },
-                  "\u203A",
+                    "\u203A",
+                  ),
                 ),
                 /*#__PURE__*/ React.createElement("div", {
-                  style: {
-                    width: 1,
-                    height: 20,
-                    background: "var(--color-border-light)",
-                    margin: "0 4px",
-                  },
+                  className: "header-divider",
                 }),
                 currentRule?.steps?.length > 0 &&
                   /*#__PURE__*/ React.createElement(
@@ -6284,7 +6305,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                           isExpanded &&
                             /*#__PURE__*/ React.createElement(
                               "div",
-                              null,
+                              { className: "step-body" },
                               !stepValidation.valid &&
                                 /*#__PURE__*/ React.createElement(
                                   "div",

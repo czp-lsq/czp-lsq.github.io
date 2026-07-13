@@ -1,4 +1,4 @@
-const APP_VERSION = "czp-1.25.0";
+const APP_VERSION = "czp-1.26.0";
 const DATA_VERSION = "8.0.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
@@ -11,6 +11,18 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-1.26.0", date: "2026-07-13 09:00:00",
+    summary: "计算规则页面Bug修复与样式优化",
+    changes: [
+      { type: "optimize", text: "优化计算规则页面整体布局与间距，视觉层次更清晰" },
+      { type: "optimize", text: "字段列表和步骤列表统一细滚动条样式，滚动更顺滑" },
+      { type: "optimize", text: "步骤卡片展开区域增加分隔线和背景色，结构更分明" },
+      { type: "optimize", text: "右侧卡片头部导航按钮样式优化，交互反馈更明显" },
+    ],
+    bugfixes: [
+      { text: "修复计算规则页面删除步骤时误删全局数据的严重Bug" },
+    ],
+  },
   { version: "czp-1.25.0", date: "2026-07-13 08:00:00",
     summary: "计算规则功能增强与优化",
     changes: [
