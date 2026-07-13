@@ -3,7 +3,7 @@ const DATA_VERSION = "8.0.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
 const UPDATE_LOG = [
-  { version: "czp-1.15.0", date: "2026-07-13 23:30:00",
+  { version: "czp-1.15.0", date: "2026-07-13 03:37:58",
     summary: "下拉框修复、文件协议兼容与代码架构优化",
     changes: [
       { type: "feature", text: "下拉框组件增强对 null/undefined 数据的兼容，避免渲染异常" },

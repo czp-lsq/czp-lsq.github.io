@@ -873,15 +873,21 @@ const Store = (() => {
   // 解压缩数据
   const decompressData = (raw) => {
     if (!raw) return null;
-    if (raw.startsWith(COMPRESSED_MARKER)) {
-      const compressed = raw.slice(COMPRESSED_MARKER.length);
-      const decompressed = LZString.decompressFromUTF16(compressed);
-      if (!decompressed) {
-        throw new Error("Decompression failed");
+    try {
+      if (raw.startsWith(COMPRESSED_MARKER)) {
+        const compressed = raw.slice(COMPRESSED_MARKER.length);
+        const decompressed = LZString.decompressFromUTF16(compressed);
+        if (!decompressed) {
+          throw new Error("Decompression failed");
+        }
+        return JSON.parse(decompressed);
       }
-      return JSON.parse(decompressed);
+      return JSON.parse(raw);
+    } catch (e) {
+      console.error("Failed to parse/decompress data:", e);
+      console.error("Raw data preview:", raw.substring(0, 100));
+      throw e;
     }
-    return JSON.parse(raw);
   };
 
   // 备份最近一次成功保存的状态

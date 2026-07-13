@@ -1792,7 +1792,8 @@ const App = () => {
           // Bug修复 - 合并 changes 中 type==="bugfix" 的项和 bugfixes 数组
           (() => {
             const bugfixChanges = (updateInfo.changes || []).filter(c => c.type === 'bugfix').map(c => c.text);
-            const bugfixes = [...bugfixChanges, ...(updateInfo.bugfixes || [])];
+            const bugfixesFromBugfixesArray = (updateInfo.bugfixes || []).map(b => typeof b === 'string' ? b : (b.text || ''));
+            const bugfixes = [...bugfixChanges, ...bugfixesFromBugfixesArray].filter(Boolean);
             if (bugfixes.length === 0) return null;
             return /*#__PURE__*/ React.createElement(
               "div",

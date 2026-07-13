@@ -987,7 +987,17 @@ const ChangelogPage = ({ updateLog, appVersion }) => {
         var bugfixFromChanges = (entry.changes || []).filter(function(c) { return c && c.type === "bugfix" && c.text; }).map(function(c) { return c.text; });
         var bugfixItems = [].concat(bugfixFromChanges).concat(Array.isArray(entry.bugfixes) ? entry.bugfixes : []);
         // 优先使用 detectedAt 真实检测时间，否则使用 date 字段
-        var displayDate = entry.detectedAt ? entry.detectedAt : (entry.date || "");
+        var displayDate = "";
+        if (entry.detectedAt) {
+          if (typeof entry.detectedAt === "string") {
+            displayDate = entry.detectedAt;
+          } else if (entry.detectedAt instanceof Date && !isNaN(entry.detectedAt.getTime())) {
+            displayDate = entry.detectedAt.toLocaleString();
+          }
+        }
+        if (!displayDate) {
+          displayDate = entry.date || "";
+        }
         return React.createElement("div", { key: entry.version, className: "changelog-item" + (isCurrent ? " changelog-current" : "") },
           React.createElement("div", { className: "changelog-item-marker" },
             React.createElement("div", { className: "changelog-dot" + (isCurrent ? " changelog-dot-current" : "") })
