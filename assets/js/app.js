@@ -291,10 +291,26 @@ const App = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const loadingRef = useRef(null);
 
-  const APP_VERSION = "czp-1.10.0";
+  const APP_VERSION = "czp-1.11.0";
   const VERSION_KEY = "app_version_seen";
   const VERSION_HISTORY_KEY = "app_version_history";
   const UPDATE_LOG = [
+    { version: "czp-1.11.0", date: "2026-07-13 19:30:00",
+      summary: "样式优化与交互体验提升",
+      changes: [
+        { type: "feature", text: "数据源选取表格样式优化，支持长文件名换行显示" },
+        { type: "feature", text: "版本号前缀 v 移除，统一显示为 czp-x.x.x" },
+        { type: "feature", text: "账号管理页面操作按钮优化为图标形式，节省空间" },
+        { type: "feature", text: "下拉框组件搜索逻辑优化，修复选项索引映射错误" },
+        { type: "feature", text: "下拉框展开时显示当前选中值，提升操作体验" },
+        { type: "optimize", text: "配置中心上传按钮组布局优化" },
+        { type: "optimize", text: "关于系统页面收款码功能删除" },
+      ],
+      bugfixes: [
+        { text: "修复下拉框选项焦点索引与实际选项不匹配的问题" },
+        { text: "修复表格名称过长导致的布局错乱问题" },
+      ],
+    },
     { version: "czp-1.10.0", date: "2026-07-13 19:00:00",
       summary: "功能精简与版本号格式统一",
       changes: [
