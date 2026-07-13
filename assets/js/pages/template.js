@@ -21,12 +21,6 @@ const TemplatePage = ({ state, currentPlatform }) => {
   const [isParsing, setIsParsing] = useState(false);
   const [previewExpanded, setPreviewExpanded] = useState(true);
   const fileInputRef = useRef(null);
-  const folderInputRef = useRef(null);
-  // 文件夹上传相关状态
-  const [batchFiles, setBatchFiles] = useState([]);
-  const [batchProgress, setBatchProgress] = useState(0);
-  const [isBatchParsing, setIsBatchParsing] = useState(false);
-  const [showBatchModal, setShowBatchModal] = useState(false);
   const platform = state.platforms.find((p) => p.id === currentPlatform);
   const savedTemplate = state.templates[currentPlatform];
   useEffect(() => {
@@ -75,135 +69,7 @@ const TemplatePage = ({ state, currentPlatform }) => {
     }
   };
 
-  // 处理文件夹上传
-  const handleFolderUpload = async (e) => {
-    const files = Array.from(e.target.files || []);
-    if (files.length === 0) return;
-
-    // 过滤出Excel文件
-    const excelFiles = files.filter(file => 
-      /\.(xlsx|xls|csv)$/i.test(file.name)
-    );
-
-    if (excelFiles.length === 0) {
-      addToast("warning", "未找到Excel文件", "所选文件夹中没有Excel文件");
-      return;
-    }
-
-    setIsBatchParsing(true);
-    setBatchProgress(0);
-    setBatchFiles(excelFiles.map(file => ({
-      file,
-      name: file.name,
-      path: file.webkitRelativePath || file.name,
-      status: 'pending',
-      data: null,
-      parseResult: null,
-      selected: true,
-    })));
-
-    const parsedFiles = [];
-
-    for (let i = 0; i < excelFiles.length; i++) {
-      const file = excelFiles[i];
-      try {
-        const result = await ExcelUtils.parse(file);
-        const firstSheetName = Object.keys(result.sheets)[0];
-        const sheet = result.sheets[firstSheetName];
-        const fieldsResult = TemplateParser.findFields(sheet.aoa, sheet.worksheet);
-
-        parsedFiles.push({
-          file,
-          name: file.name,
-          path: file.webkitRelativePath || file.name,
-          status: 'success',
-          data: {
-            fileName: file.name,
-            sheetName: firstSheetName,
-            aoa: sheet.aoa,
-            headers: sheet.headers,
-            rows: sheet.rows,
-          },
-          parseResult: fieldsResult,
-          selected: true,
-        });
-      } catch (err) {
-        parsedFiles.push({
-          file,
-          name: file.name,
-          path: file.webkitRelativePath || file.name,
-          status: 'error',
-          error: err.message,
-          data: null,
-          parseResult: null,
-          selected: false,
-        });
-      }
-
-      setBatchProgress(Math.round(((i + 1) / excelFiles.length) * 100));
-      setBatchFiles(prev => prev.map((f, idx) => 
-        idx < parsedFiles.length ? parsedFiles[idx] : f
-      ));
-    }
-
-    setIsBatchParsing(false);
-    const successCount = parsedFiles.filter(f => f.status === 'success').length;
-    
-    if (successCount > 0) {
-      setShowBatchModal(true);
-      addToast("success", "解析完成", `成功解析 ${successCount}/${excelFiles.length} 个文件`);
-    } else {
-      addToast("error", "解析失败", "所有文件解析失败");
-    }
-  };
-
-  // 选择单个文件作为主模板
-  const selectFileAsMain = (fileItem) => {
-    if (fileItem.status !== 'success') return;
-    setTemplateData(fileItem.data);
-    setParseResult(fileItem.parseResult);
-    setShowBatchModal(false);
-    addToast("success", "已选择模板", `已选择「${fileItem.name}」作为主模板`);
-  };
-
-  // 切换文件选择状态
-  const toggleFileSelection = (index) => {
-    setBatchFiles(prev => prev.map((f, i) => 
-      i === index ? { ...f, selected: !f.selected } : f
-    ));
-  };
-
-  // 合并选中的文件数据
-  const mergeSelectedFiles = () => {
-    const selectedFiles = batchFiles.filter(f => f.selected && f.status === 'success');
-    if (selectedFiles.length === 0) {
-      addToast("warning", "请选择文件", "请至少选择一个有效文件");
-      return;
-    }
-
-    // 使用第一个选中文件作为主模板
-    const mainFile = selectedFiles[0];
-    setTemplateData(mainFile.data);
-    setParseResult(mainFile.parseResult);
-
-    // 将所有选中文件保存为样表
-    const newSamples = selectedFiles.map(f => ({
-      ...f.data,
-      alias: f.name.replace(/\.(xlsx|xls|csv)$/i, ''),
-      sheets: { [f.data.sheetName]: { aoa: f.data.aoa, headers: f.data.headers, rows: f.data.rows } }
-    }));
-
-    Store.set((s) => ({
-      ...s,
-      samples: {
-        ...s.samples,
-        [currentPlatform]: [...(s.samples[currentPlatform] || []), ...newSamples]
-      }
-    }));
-
-    setShowBatchModal(false);
-    addToast("success", "合并完成", `已选择「${mainFile.name}」作为模板，${selectedFiles.length} 个文件已保存为样表`);
-  };
+  
   const handleSaveTemplate = () => {
     if (!templateData || !parseResult) {
       addToast("warning", "请先上传模板", "上传模板后才能保存");
@@ -443,29 +309,11 @@ const TemplatePage = ({ state, currentPlatform }) => {
               /*#__PURE__*/ React.createElement(Icons.Upload, null),
               savedTemplate ? "重新上传模板" : "上传模板",
             ),
-            /*#__PURE__*/ React.createElement(
-              Button,
-              {
-                onClick: () => folderInputRef.current?.click(),
-                loading: isBatchParsing,
-              },
-              /*#__PURE__*/ React.createElement(Icons.Folder, null),
-              " 上传文件夹",
-            ),
             /*#__PURE__*/ React.createElement("input", {
               ref: fileInputRef,
               type: "file",
               accept: ".xlsx,.xls,.csv,.zip",
               onChange: handleTemplateUpload,
-              style: { display: "none" },
-            }),
-            /*#__PURE__*/ React.createElement("input", {
-              ref: folderInputRef,
-              type: "file",
-              webkitdirectory: "true",
-              directory: "",
-              multiple: true,
-              onChange: handleFolderUpload,
               style: { display: "none" },
             }),
           ),
@@ -928,74 +776,5 @@ const TemplatePage = ({ state, currentPlatform }) => {
         ),
     ),
     // 批量文件选择模态框
-    showBatchModal && /*#__PURE__*/ React.createElement(
-      "div",
-      { className: "modal-mask", onClick: (e) => e.target === e.currentTarget && setShowBatchModal(false) },
-      /*#__PURE__*/ React.createElement(
-        "div",
-        { className: "modal", style: { maxWidth: "800px" } },
-        /*#__PURE__*/ React.createElement(
-          "div",
-          { className: "modal-header" },
-          /*#__PURE__*/ React.createElement("div", { className: "modal-title" }, /*#__PURE__*/ React.createElement(Icons.Folder, null), " 选择模板文件"),
-          /*#__PURE__*/ React.createElement("button", { className: "modal-close", onClick: () => setShowBatchModal(false) }, /*#__PURE__*/ React.createElement(Icons.X, null))
-        ),
-        /*#__PURE__*/ React.createElement(
-          "div",
-          { className: "modal-body" },
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { style: { marginBottom: 16 } },
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { style: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 8 } },
-              /*#__PURE__*/ React.createElement("span", { style: { fontSize: 13, color: "var(--color-text-secondary)" } }, "共发现 ", batchFiles.length, " 个Excel文件，", batchFiles.filter(f => f.status === "success").length, " 个解析成功"),
-              /*#__PURE__*/ React.createElement("span", { style: { fontSize: 12, color: "var(--color-text-tertiary)" } }, "点击行选择作为主模板")
-            )
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "data-table-container", style: { maxHeight: 400, overflow: "auto" } },
-            /*#__PURE__*/ React.createElement(
-              "table",
-              { className: "table" },
-              /*#__PURE__*/ React.createElement(
-                "thead",
-                null,
-                /*#__PURE__*/ React.createElement("tr", null,
-                  /*#__PURE__*/ React.createElement("th", { style: { width: 40 } }, /*#__PURE__*/ React.createElement("input", { type: "checkbox", checked: batchFiles.filter(f => f.status === "success").every(f => f.selected), onChange: (e) => setBatchFiles(prev => prev.map(f => f.status === "success" ? { ...f, selected: e.target.checked } : f)) })),
-                  /*#__PURE__*/ React.createElement("th", null, "文件路径"),
-                  /*#__PURE__*/ React.createElement("th", { style: { width: 80 } }, "状态"),
-                  /*#__PURE__*/ React.createElement("th", { style: { width: 100 } }, "字段数"),
-                  /*#__PURE__*/ React.createElement("th", { style: { width: 80 } }, "操作")
-                )
-              ),
-              /*#__PURE__*/ React.createElement(
-                "tbody",
-                null,
-                batchFiles.map((fileItem, idx) => /*#__PURE__*/ React.createElement("tr", {
-                  key: idx,
-                  className: fileItem.selected ? "highlight" : "",
-                  style: { cursor: fileItem.status === "success" ? "pointer" : "default" },
-                  onClick: () => fileItem.status === "success" && selectFileAsMain(fileItem)
-                },
-                  /*#__PURE__*/ React.createElement("td", null, fileItem.status === "success" && /*#__PURE__*/ React.createElement("input", { type: "checkbox", checked: fileItem.selected, onChange: (e) => { e.stopPropagation(); toggleFileSelection(idx); }, onClick: (e) => e.stopPropagation() })),
-                  /*#__PURE__*/ React.createElement("td", null, /*#__PURE__*/ React.createElement("div", { style: { display: "flex", alignItems: "center", gap: 8 } }, /*#__PURE__*/ React.createElement(Icons.FileSpreadsheet, null), /*#__PURE__*/ React.createElement("span", { style: { fontSize: 13 } }, fileItem.path))),
-                  /*#__PURE__*/ React.createElement("td", null, fileItem.status === "success" ? /*#__PURE__*/ React.createElement("span", { className: "tag tag-success" }, "成功") : /*#__PURE__*/ React.createElement("span", { className: "tag tag-danger" }, "失败")),
-                  /*#__PURE__*/ React.createElement("td", null, fileItem.parseResult ? fileItem.parseResult.fields.length : "-"),
-                  /*#__PURE__*/ React.createElement("td", null, fileItem.status === "success" && /*#__PURE__*/ React.createElement("button", { className: "btn-link", onClick: (e) => { e.stopPropagation(); selectFileAsMain(fileItem); } }, "选择"))
-                ))
-              )
-            )
-          )
-        ),
-        /*#__PURE__*/ React.createElement(
-          "div",
-          { className: "modal-footer" },
-          /*#__PURE__*/ React.createElement("button", { className: "btn btn-default", onClick: () => setShowBatchModal(false) }, "取消"),
-          /*#__PURE__*/ React.createElement("button", { className: "btn btn-primary", onClick: mergeSelectedFiles }, /*#__PURE__*/ React.createElement(Icons.Check, null), " 合并选中文件")
-        )
-      )
-    )
-  );
+      );
 };

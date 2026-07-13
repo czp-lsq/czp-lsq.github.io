@@ -445,11 +445,12 @@ const DataPage = ({ state, currentPlatform }) => {
               /*#__PURE__*/ React.createElement(
                 Button,
                 {
+                  type: "default",
                   onClick: () => document.getElementById("folder-upload-input")?.click(),
                   disabled: isUploading,
                 },
-                /*#__PURE__*/ React.createElement(Icons.Folder, null),
-                " 选择文件夹",
+                /*#__PURE__*/ React.createElement(Icons.FolderOpen, null),
+                " 上传文件夹",
               ),
             ),
           ),
