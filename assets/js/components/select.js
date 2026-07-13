@@ -185,6 +185,7 @@ const SearchableSelect = ({
 
   const processedOptions = useMemo(() => {
     const useGroups = processedGroups || groups;
+    let selectableIdx = -1;
     if (useGroups) {
       const result = [];
       useGroups.forEach((group, groupIdx) => {
@@ -197,21 +198,27 @@ const SearchableSelect = ({
         const groupOptions = group.options || [];
         const filtered = filterOptions(groupOptions, debouncedQuery);
         filtered.forEach((opt) => {
+          selectableIdx++;
           result.push({
             ...opt,
             type: 'option',
             groupId: group.id,
             groupIndex: groupIdx,
+            selectableIndex: selectableIdx,
           });
         });
       });
       return result;
     } else {
-      return filterOptions(options, debouncedQuery).map((opt, idx) => ({
-        ...opt,
-        type: 'option',
-        index: idx,
-      }));
+      return filterOptions(options, debouncedQuery).map((opt, idx) => {
+        selectableIdx++;
+        return {
+          ...opt,
+          type: 'option',
+          index: idx,
+          selectableIndex: selectableIdx,
+        };
+      });
     }
   }, [processedGroups, groups, options, debouncedQuery]);
 
@@ -329,7 +336,7 @@ const SearchableSelect = ({
     const optValue = typeof item === "object" ? item.value : item;
     const optLabel = typeof item === "object" ? (item.label || item.value) : String(item);
     const isSelected = optValue === value;
-    const isFocused = index === selectedIndex;
+    const isFocused = item.selectableIndex === selectedIndex;
     
     return React.createElement(
       'div',
@@ -395,6 +402,12 @@ const SearchableSelect = ({
     isOpen && React.createElement(
       "div",
       { className: "searchable-select-dropdown" },
+      value && displayValue && React.createElement(
+        "div",
+        { className: "searchable-select-current" },
+        React.createElement("span", { className: "searchable-select-current-label" }, "当前选择"),
+        React.createElement("span", { className: "searchable-select-current-value" }, displayValue)
+      ),
       React.createElement(
         "div",
         { className: "searchable-select-search" },
@@ -421,7 +434,7 @@ const SearchableSelect = ({
           value: searchQuery,
           onChange: (e) => setSearchQuery(e.target.value),
           onKeyDown: handleKeyDown,
-          placeholder: "搜索（支持拼音）...",
+          placeholder: "搜索选项（支持拼音）...",
         }),
         searchQuery && React.createElement(
           "span",

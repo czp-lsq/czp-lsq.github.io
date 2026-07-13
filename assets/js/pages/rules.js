@@ -2111,14 +2111,18 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                           },
                         }),
                         /*#__PURE__*/ React.createElement(
-                          "span",
-                          { className: "table-select-item-name" },
-                          t.name
-                        ),
-                        t.originalName && /*#__PURE__*/ React.createElement(
-                          "span",
-                          { className: "table-select-item-desc" },
-                          t.originalName
+                          "div",
+                          { className: "table-select-item-info" },
+                          /*#__PURE__*/ React.createElement(
+                            "span",
+                            { className: "table-select-item-name" },
+                            t.name
+                          ),
+                          t.originalName && /*#__PURE__*/ React.createElement(
+                            "span",
+                            { className: "table-select-item-desc" },
+                            t.originalName
+                          )
                         )
                       )
                     )
@@ -2153,9 +2157,13 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                           },
                         }),
                         /*#__PURE__*/ React.createElement(
-                          "span",
-                          { className: "table-select-item-name" },
-                          t.name
+                          "div",
+                          { className: "table-select-item-info" },
+                          /*#__PURE__*/ React.createElement(
+                            "span",
+                            { className: "table-select-item-name" },
+                            t.name
+                          )
                         )
                       )
                     )

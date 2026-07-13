@@ -3048,6 +3048,11 @@
   gap: 8px;
 }
 
+.data-page .upload-btn-group {
+  display: flex;
+  gap: 8px;
+}
+
 @media (max-width: 1200px) {
   .data-page .stats-grid {
     grid-template-columns: repeat(2, 1fr);
@@ -5997,12 +6002,12 @@
 .table-select-items {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 8px;
+  gap: 10px;
 }
 
 .table-select-item {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   gap: 10px;
   padding: 10px 12px;
   background: var(--color-bg-secondary);
@@ -6027,26 +6032,53 @@
   flex-shrink: 0;
   width: 16px;
   height: 16px;
+  margin-top: 2px;
   accent-color: var(--color-primary);
 }
 
-.table-select-item-name {
+.table-select-item-info {
   flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.table-select-item-name {
   font-size: 13px;
   font-weight: 500;
   color: var(--color-text-primary);
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
+  word-break: break-all;
+  line-height: 1.4;
 }
 
 .table-select-item-desc {
   font-size: 11px;
   color: var(--color-text-tertiary);
+  word-break: break-all;
+  line-height: 1.3;
+}
+
+.settings-accounts-table .account-username {
+  font-weight: 500;
+  color: var(--color-text-primary);
+}
+
+.settings-accounts-table .account-email {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  display: inline-block;
+  max-width: 180px;
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
-  max-width: 100%;
+  vertical-align: middle;
+}
+
+@media (max-width: 768px) {
+  .settings-accounts-table .account-email {
+    max-width: 120px;
+  }
 }
 
 /* 响应式调整 */

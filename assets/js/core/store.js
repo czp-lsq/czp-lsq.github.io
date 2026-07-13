@@ -1171,11 +1171,6 @@ const Store = (() => {
       subs.forEach((s) => s(state));
     },
     getVersion: () => CURRENT_VERSION,
-    getPaymentQR: () => state.paymentQR || null,
-    setPaymentQR: (qr) => {
-      state.paymentQR = qr;
-      save(state);
-    },
     getStorageInfo,
     exportData: () => JSON.stringify(state, null, 2),
     exportDataLite: () => {

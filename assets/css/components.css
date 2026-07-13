@@ -873,6 +873,11 @@ body.dark .table-highlight-row {
   justify-content: flex-end;
 }
 
+.action-btn-group.account-actions {
+  gap: 4px;
+  justify-content: flex-start;
+}
+
 .action-btn {
   padding: 6px 10px;
   border-radius: var(--radius-sm);
@@ -886,6 +891,13 @@ body.dark .table-highlight-row {
   align-items: center;
   gap: 4px;
   white-space: nowrap;
+}
+
+.action-btn.icon-only {
+  padding: 6px;
+  width: 30px;
+  height: 30px;
+  justify-content: center;
 }
 
 .action-btn:hover {

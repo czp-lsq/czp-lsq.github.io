@@ -433,24 +433,28 @@ const DataPage = ({ state, currentPlatform }) => {
                 " 项",
               ),
               /*#__PURE__*/ React.createElement(
-                Button,
-                {
-                  type: "primary",
-                  onClick: () => fileInputRef.current?.click(),
-                  loading: isUploading,
-                },
-                !isUploading && /*#__PURE__*/ React.createElement(Icons.Upload, null),
-                isUploading ? "上传中..." : "上传样表",
-              ),
-              /*#__PURE__*/ React.createElement(
-                Button,
-                {
-                  type: "default",
-                  onClick: () => document.getElementById("folder-upload-input")?.click(),
-                  disabled: isUploading,
-                },
-                /*#__PURE__*/ React.createElement(Icons.FolderOpen, null),
-                " 上传文件夹",
+                "div",
+                { className: "upload-btn-group" },
+                /*#__PURE__*/ React.createElement(
+                  Button,
+                  {
+                    type: "primary",
+                    onClick: () => fileInputRef.current?.click(),
+                    loading: isUploading,
+                  },
+                  !isUploading && /*#__PURE__*/ React.createElement(Icons.Upload, null),
+                  isUploading ? "上传中..." : "上传样表",
+                ),
+                /*#__PURE__*/ React.createElement(
+                  Button,
+                  {
+                    type: "default",
+                    onClick: () => document.getElementById("folder-upload-input")?.click(),
+                    disabled: isUploading,
+                  },
+                  /*#__PURE__*/ React.createElement(Icons.FolderOpen, null),
+                  " 上传文件夹",
+                ),
               ),
             ),
           ),

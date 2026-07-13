@@ -480,7 +480,7 @@ const App = () => {
         });
         setShowUpdateModal(true);
         if (showToast) {
-          addToastRef.current("info", "发现新版本", `v${remoteVersion} 已发布，请刷新页面`, 5000);
+          addToastRef.current("info", "发现新版本", `${remoteVersion} 已发布，请刷新页面`, 5000);
         }
       }
     } catch (e) {}
@@ -1340,7 +1340,7 @@ const App = () => {
               },
               title: "点击查看更新日志",
             },
-            /*#__PURE__*/ React.createElement("span", { className: "sidebar-version-text" }, `v${APP_VERSION}`),
+            /*#__PURE__*/ React.createElement("span", { className: "sidebar-version-text" }, APP_VERSION),
             updateDetectedAt
               ? /*#__PURE__*/ React.createElement("span", { className: "sidebar-version-time" }, updateDetectedAt.toLocaleTimeString())
               : null,
@@ -1664,7 +1664,7 @@ const App = () => {
             { className: "update-modal-icon" },
             /*#__PURE__*/ React.createElement(Icons.Sparkles, null),
           ),
-          /*#__PURE__*/ React.createElement("div", { className: "update-modal-version" }, `v${updateInfo.version}`),
+          /*#__PURE__*/ React.createElement("div", { className: "update-modal-version" }, updateInfo.version),
           /*#__PURE__*/ React.createElement("div", { className: "update-modal-date" }, updateInfo.date),
           updateInfo.summary && /*#__PURE__*/ React.createElement(
             "div",
