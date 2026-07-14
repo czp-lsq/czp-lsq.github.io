@@ -1541,15 +1541,23 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
     const sourceTableId = sourceStep?.config?.table;
     const sourceTableIds = sourceStep?.config?.tables || [];
     const sourceTableHeaders = (() => {
+      const allHeaders = new Set();
       if (sourceTableIds.length > 0) {
-        const allHeaders = new Set();
         sourceTableIds.forEach((tid) => {
           const table = allTables.find((t) => t.id === tid);
           table?.headers?.forEach((h) => allHeaders.add(h));
         });
-        return Array.from(allHeaders);
+      } else {
+        const table = allTables.find((t) => t.id === sourceTableId);
+        table?.headers?.forEach((h) => allHeaders.add(h));
       }
-      return allTables.find((t) => t.id === sourceTableId)?.headers || [];
+      // 添加前面虚拟字段步骤生成的列，使虚拟字段可参与后续计算
+      const virtualSteps = currentRule?.steps?.filter((s) => s.type === "virtual") || [];
+      virtualSteps.forEach((s) => {
+        const targets = (s.config.target || "").split(",").map((t) => t.trim()).filter(Boolean);
+        targets.forEach((t) => allHeaders.add(t));
+      });
+      return Array.from(allHeaders);
     })();
     const getColumnValues = (columnName, tableId) => {
       if (!columnName) return [];
@@ -2862,6 +2870,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
           { value: "trim", label: "去除空格", group: "文本处理" },
           { value: "parseQty", label: "提取数量", group: "文本处理" },
           { value: "parsePieces", label: "条数识别（商品规格）", group: "文本处理" },
+          { value: "parseSize", label: "尺码识别（商品规格）", group: "文本处理" },
+          { value: "costLookup", label: "成本查找（全局表）", group: "高级" },
           { value: "splitPlus", label: "按+号拆分计数", group: "文本处理" },
           { value: "abs", label: "绝对值", group: "数值计算" },
           { value: "round", label: "四舍五入", group: "数值计算" },
@@ -2885,7 +2895,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
           { value: "sumFields", label: "字段之和", group: "数学运算" },
           { value: "diffFields", label: "字段之差", group: "数学运算" },
         ];
-        const quickVirtualRules = ["copy", "toNumber", "abs", "round", "trim", "parsePieces"];
+        const quickVirtualRules = ["copy", "toNumber", "abs", "round", "trim", "parsePieces", "parseSize", "costLookup"];
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
@@ -2911,7 +2921,11 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               /*#__PURE__*/ React.createElement("br", null),
               /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-primary)" } }, "• 转数字"), "：去除货币符号和逗号后转数字，支持百分比(50%→0.5)、提取字符串中第一个数字、中文数字识别",
               /*#__PURE__*/ React.createElement("br", null),
-              /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-primary)" } }, "• 条数识别"), "：从商品规格中自动提取条数，支持「X条装」「X条」「X色各一」「X色各Y条」等模式，也可通过颜色词或+号自动计算"
+              /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-primary)" } }, "• 条数识别"), "：从商品规格中自动提取条数，支持「X条装」「X条」「X色各一」「X色各Y条」等模式，也可通过颜色词或+号自动计算",
+              /*#__PURE__*/ React.createElement("br", null),
+              /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-primary)" } }, "• 尺码识别"), "：从商品规格中自动提取尺码（S/M/L/XL/2XL/3XL等）",
+              /*#__PURE__*/ React.createElement("br", null),
+              /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-primary)" } }, "• 成本查找"), "：根据款号和尺码从全局成本表中匹配单件成本，支持自动按店铺名匹配成本表"
             )
           ),
           /*#__PURE__*/ React.createElement(
@@ -3021,6 +3035,96 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
           ),
           step.config.rule === "mapValue" &&
           /*#__PURE__*/ React.createElement(MapValueEditor, { step: step, updateStepConfig: updateStepConfig }),
+          step.config.rule === "costLookup" &&
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "config-section", style: { marginTop: "12px" } },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "config-section-header" },
+              /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "config-section-title" },
+                /*#__PURE__*/ React.createElement(Icons.Database, null),
+                " 成本表配置"
+              )
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item", style: { marginBottom: "12px" } },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "成本表（全局表）",
+                /*#__PURE__*/ React.createElement("span", { className: "form-label-hint" }, "自动按店铺名匹配")
+              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.costTableId || "",
+                onChange: (val) => updateStepConfig(step.id, "costTableId", val),
+                options: externalTables.map((t) => ({ value: t.id, label: t.name })),
+                placeholder: "请选择全局成本表",
+              })
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "grid-2" },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement(
+                  "label",
+                  { className: "form-label" },
+                  "款号字段",
+                  /*#__PURE__*/ React.createElement("span", { className: "form-label-hint" }, "数据中的款号列")
+                ),
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: step.config.skuField || "",
+                  onChange: (val) => updateStepConfig(step.id, "skuField", val),
+                  options: [
+                    { value: "", label: "请选择" },
+                    ...sourceTableHeaders.map((h) => ({ value: h, label: h })),
+                  ],
+                  placeholder: "选择款号字段",
+                })
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement(
+                  "label",
+                  { className: "form-label" },
+                  "尺码字段",
+                  /*#__PURE__*/ React.createElement("span", { className: "form-label-hint" }, "虚拟字段生成的尺码列")
+                ),
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: step.config.sizeField || "",
+                  onChange: (val) => updateStepConfig(step.id, "sizeField", val),
+                  options: [
+                    { value: "", label: "请选择" },
+                    ...sourceTableHeaders.map((h) => ({ value: h, label: h })),
+                  ],
+                  placeholder: "选择尺码字段",
+                })
+              )
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item", style: { marginTop: "8px" } },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "成本表款号列名",
+                /*#__PURE__*/ React.createElement("span", { className: "form-label-hint" }, "成本表中的款号列，默认"款号"")
+              ),
+              /*#__PURE__*/ React.createElement("input", {
+                type: "text",
+                className: "input",
+                value: step.config.skuCol || "款号",
+                onChange: (e) => updateStepConfig(step.id, "skuCol", e.target.value),
+                placeholder: "款号",
+              })
+            )
+          ),
           [
             "substring",
             "replace",
@@ -3045,6 +3149,9 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
       case "join": {
         const joinTable = allTables.find((t) => t.id === step.config.table);
         const joinHeaders = joinTable?.headers || [];
+        const isExternal = joinTable?.isExternal || false;
+        const shopName = platform?.shops?.[0]?.name || "";
+        const autoMatchedExt = shopName ? externalTables.find((t) => t.name === shopName || t.sheetKey === shopName) : null;
         const joinTableOptions = [
           ...sampleTables.map((t) => ({ value: t.id, label: t.name, group: "样表数据" })),
           ...externalTables.map((t) => ({ value: t.id, label: t.name, group: "全局数据表" }))
@@ -3075,7 +3182,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 /*#__PURE__*/ React.createElement(
                   "span",
                   { className: "form-label-hint" },
-                  "选择要关联的数据表"
+                  isExternal ? "全局数据表" : "选择要关联的数据表"
                 )
               ),
               /*#__PURE__*/ React.createElement(SearchableSelect, {
@@ -3090,7 +3197,17 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 options: joinTableOptions,
                 placeholder: "请选择数据表",
                 groupBy: "group",
-              })
+              }),
+              autoMatchedExt && !step.config.table && /*#__PURE__*/ React.createElement(
+                "div",
+                { style: { marginTop: "8px", padding: "8px 12px", background: "var(--color-primary-50)", borderRadius: "var(--radius-md)", fontSize: "12px", color: "var(--color-primary)", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" },
+                onClick: () => {
+                  updateStepConfig(step.id, "table", autoMatchedExt.id);
+                  updateStepConfig(step.id, "externalId", autoMatchedExt.externalId || "");
+                },
+                /*#__PURE__*/ React.createElement(Icons.Lightbulb, { size: 14 }),
+                `检测到店铺"${shopName}"匹配全局表"${autoMatchedExt.name}"，点击自动关联`,
+              )
             ),
             /*#__PURE__*/ React.createElement(
               "div",
@@ -7406,6 +7523,64 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               },
             ),
           ),
+          (() => {
+            // 智能推荐步骤
+            const steps = currentRule?.steps || [];
+            const hasSource = steps.some((s) => s.type === "source");
+            const hasFilter = steps.some((s) => s.type === "filter");
+            const hasVirtual = steps.some((s) => s.type === "virtual");
+            const hasJoin = steps.some((s) => s.type === "join");
+            const hasFormula = steps.some((s) => s.type === "formula");
+            const hasAggregate = steps.some((s) => s.type === "aggregate");
+            const fieldName = (activeField?.name || "").toLowerCase();
+            const isCostField = fieldName.includes("成本") || fieldName.includes("cost");
+            const isPieceField = fieldName.includes("条") || fieldName.includes("件") || fieldName.includes("piece");
+            const isSizeField = fieldName.includes("尺码") || fieldName.includes("size");
+            const recommendations = [];
+            if (!hasSource) {
+              recommendations.push({ type: "source", reason: "首先需要选择数据源" });
+            } else if (isCostField && !hasVirtual) {
+              recommendations.push({ type: "virtual", reason: "建议先用虚拟字段识别条数和尺码" });
+            } else if (isCostField && hasVirtual && !hasJoin) {
+              recommendations.push({ type: "join", reason: "建议关联全局成本表获取单件成本" });
+            } else if (isCostField && hasJoin && !hasFormula) {
+              recommendations.push({ type: "formula", reason: "建议用公式计算总成本（条数×单件成本）" });
+            } else if (hasSource && !hasFilter) {
+              recommendations.push({ type: "filter", reason: "建议添加筛选条件过滤数据" });
+            } else if (hasSource && !hasAggregate && !hasFormula) {
+              recommendations.push({ type: "aggregate", reason: "建议添加聚合步骤汇总数据" });
+            }
+            if (recommendations.length === 0) return null;
+            return /*#__PURE__*/ React.createElement(
+              "div",
+              { style: { marginBottom: "16px", padding: "12px 16px", background: "var(--color-primary-50)", borderRadius: "var(--radius-lg)", border: "1px solid var(--color-primary-100)" } },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { style: { fontSize: "13px", fontWeight: 700, color: "var(--color-primary)", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" } },
+                /*#__PURE__*/ React.createElement(Icons.Lightbulb, { size: 16 }),
+                "智能推荐",
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { style: { display: "flex", gap: "8px", flexWrap: "wrap" } },
+                recommendations.slice(0, 3).map((rec) => {
+                  const info = getStepTypeInfo(rec.type);
+                  return /*#__PURE__*/ React.createElement(
+                    "button",
+                    {
+                      key: rec.type,
+                      className: "quick-tag",
+                      style: { cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", padding: "6px 12px" },
+                      onClick: () => { addStep(rec.type); setShowAddStepModal(false); },
+                    },
+                    /*#__PURE__*/ React.createElement("span", { style: { fontSize: "14px" } }, info.icon),
+                    info.name,
+                    /*#__PURE__*/ React.createElement("span", { style: { fontSize: "11px", color: "var(--color-text-tertiary)", marginLeft: "4px" } }, rec.reason),
+                  );
+                }),
+              ),
+            );
+          })(),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "step-type-categories" },

@@ -1,5 +1,5 @@
-const APP_VERSION = "czp-1.29.1";
-const DATA_VERSION = "8.4.1";
+const APP_VERSION = "czp-1.30.0";
+const DATA_VERSION = "8.5.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
 const BUILD_TIME = (() => {
@@ -11,6 +11,22 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-1.30.0", date: "2026-07-15 18:00:00",
+    summary: "商品规格智能识别模型、尺码识别、成本查找、全局表自动匹配、智能步骤推荐",
+    changes: [
+      { type: "feature", text: "新增尺码识别虚拟字段规则：从商品规格中自动提取尺码（S/M/L/XL/2XL/3XL等），支持标准尺码+后缀模式和纯尺码模式" },
+      { type: "feature", text: "新增成本查找虚拟字段规则：根据款号和尺码从全局成本表中匹配单件成本，支持自动按店铺名匹配成本表" },
+      { type: "feature", text: "成本表列名智能解析：支持「尺码码成本」（如L码3.4）和「尺码成本」（如XL2.55、ML2.45）两种格式，自动拆分连续尺码" },
+      { type: "feature", text: "全局表自动匹配：join步骤和costLookup步骤支持通过店铺名自动匹配全局表，无需手动选择" },
+      { type: "feature", text: "智能步骤推荐：添加步骤时根据当前字段名称和已有步骤智能推荐下一步（如成本字段推荐虚拟字段→join→公式）" },
+      { type: "feature", text: "虚拟字段列参与计算：sourceTableHeaders现在包含前面虚拟字段步骤生成的列，虚拟字段可被后续步骤引用" },
+      { type: "feature", text: "parsePieces条数识别增强：新增X包装模式、X色各Y条模式" },
+      { type: "feature", text: "join步骤自动匹配提示：当检测到店铺名匹配全局表时，显示一键自动关联提示" },
+      { type: "optimize", text: "虚拟字段帮助说明增强：新增尺码识别和成本查找的详细功能说明" },
+      { type: "optimize", text: "join步骤表选择UI优化：外部表显示「全局数据表」标签，与样表数据清晰区分" },
+    ],
+    bugfixes: [],
+  },
   { version: "czp-1.29.1", date: "2026-07-15 16:00:00",
     summary: "表名重复修复、engine核心错误修复、公式调试增强、toNumber/parsePieces增强、特别致谢优化",
     changes: [

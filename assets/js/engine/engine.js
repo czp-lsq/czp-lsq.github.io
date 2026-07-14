@@ -554,6 +554,124 @@ const CalcEngine = {
                   result = (s.match(/\+/g) || []).length + 1;
                   break;
                 }
+                case "parseSize": {
+                  // 尺码识别：从商品规格中识别尺码（S/M/L/XL/2XL/3XL等）
+                  const s = String(src || "").trim();
+                  if (!s) { result = ""; break; }
+                  // 模式1: 标准尺码+后缀 如 "XL码", "2XL号", "M斤"
+                  const pattern1 = /\b(X{0,2}S|X{0,3}L|\d{0,2}X{0,2}[SL]|M)\s*(码|号|斤)/i;
+                  const m1 = s.match(pattern1);
+                  if (m1) {
+                    result = m1[1].toUpperCase();
+                    break;
+                  }
+                  // 模式2: 纯尺码 如 "XL", "2XL", "M"（前后无中文字符或数字）
+                  const pattern2 = /[^A-Za-z0-9](X{0,2}S|X{0,3}L|\d{0,2}X{0,2}[SL]|M)(?![A-Za-z0-9])/i;
+                  const m2 = s.match(pattern2);
+                  if (m2) {
+                    result = m2[1].toUpperCase();
+                    break;
+                  }
+                  // 模式3: 尺码在开头或结尾
+                  const pattern3 = /^(X{0,2}S|X{0,3}L|\d{0,2}X{0,2}[SL]|M)\b/i;
+                  const m3 = s.match(pattern3);
+                  if (m3) {
+                    result = m3[1].toUpperCase();
+                    break;
+                  }
+                  result = "";
+                  break;
+                }
+                case "costLookup": {
+                  // 成本查找：从全局成本表中匹配单件成本
+                  // config: { costTableId, skuField, sizeField, skuCol }
+                  const cfg = step.config || {};
+                  const skuVal = row[cfg.skuField || "款号"] || "";
+                  const sizeVal = row[cfg.sizeField || "尺码"] || "";
+                  result = 0;
+                  if (!skuVal || !sizeVal) {
+                    result = 0;
+                    break;
+                  }
+                  // 自动匹配成本表：优先使用配置的costTableId，否则按店铺名匹配
+                  let targetTableId = cfg.costTableId;
+                  if (!targetTableId && context.shopName) {
+                    const autoMatch = externals.find((e) =>
+                      e.sheetKey === context.shopName || e.name === context.shopName
+                    );
+                    if (autoMatch) targetTableId = autoMatch.id || autoMatch.sheetKey;
+                  }
+                  if (!targetTableId) {
+                    result = 0;
+                    break;
+                  }
+                  const ext = externals.find((e) =>
+                    e.id === targetTableId || e.sheetKey === targetTableId
+                  );
+                  if (!ext) { result = 0; break; }
+                  const costRows = ext.allData || ext.data || [];
+                  const costHeaders = ext.headers || (costRows.length > 0 ? Object.keys(costRows[0]) : []);
+                  // 解析成本表列名，建立尺码→列名映射
+                  const sizeToCol = {};
+                  const sizeToCost = {};
+                  for (const header of costHeaders) {
+                    if (!header) continue;
+                    const h = String(header).trim();
+                    // 跳过款号列
+                    if (/^(款号|SKU|id|ID|编号)$/i.test(h)) continue;
+                    // 模式A: 尺码码成本 如 "L码3.4", "XL码3.5", "2XL码3.6"
+                    const ma = h.match(/^([X\d]*[SLM])(?:码|号|斤)(\d+\.?\d*)$/i);
+                    if (ma) {
+                      const size = ma[1].toUpperCase();
+                      sizeToCol[size] = h;
+                      sizeToCost[size] = parseFloat(ma[2]);
+                      continue;
+                    }
+                    // 模式B: 字母+数字 如 "XL2.55", "ML2.45", "S3.2", "2XL3.6"
+                    const mb = h.match(/^([A-Z\d]+)(\d+\.?\d*)$/i);
+                    if (mb) {
+                      const letters = mb[1];
+                      const costVal = parseFloat(mb[2]);
+                      // 拆分连续尺码
+                      const sizes = [];
+                      let cur = "";
+                      for (const ch of letters) {
+                        if (ch === "X" || ch === "x") {
+                          cur += ch;
+                        } else if (/\d/.test(ch)) {
+                          cur += ch;
+                        } else if (/[SLM]/i.test(ch)) {
+                          cur += ch;
+                          sizes.push(cur.toUpperCase());
+                          cur = "";
+                        }
+                      }
+                      for (const sz of sizes) {
+                        sizeToCol[sz] = h;
+                        sizeToCost[sz] = costVal;
+                      }
+                    }
+                  }
+                  // 在成本表中查找匹配行
+                  const skuColName = cfg.skuCol || "款号";
+                  const matchedRow = costRows.find((r) => String(r[skuColName] || "").trim() === String(skuVal).trim());
+                  if (matchedRow) {
+                    const targetSize = String(sizeVal).trim().toUpperCase();
+                    // 优先使用预解析的成本值
+                    if (sizeToCost[targetSize] !== undefined) {
+                      result = sizeToCost[targetSize];
+                    } else {
+                      // 回退：直接在行中查找包含尺码的列
+                      for (const [colName, colVal] of Object.entries(matchedRow)) {
+                        if (String(colName).toUpperCase().includes(targetSize)) {
+                          const n = Number(String(colVal).replace(/[¥￥$€£,，]/g, ""));
+                          if (!isNaN(n)) { result = n; break; }
+                        }
+                      }
+                    }
+                  }
+                  break;
+                }
                 case "toNumber": {
                   const s = String(src || "").trim();
                   let n = Number(s.replace(/[,，]/g, "").replace(/[¥￥$€£]/g, ""));
