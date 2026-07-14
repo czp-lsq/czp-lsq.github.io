@@ -965,46 +965,157 @@ const CalcEngine = {
               joinRows.forEach((r) => {
                 lookup[r[step.config.fk]] = r;
               });
-              const parseSizeCostStr = (costStr) => {
-                if (!costStr) return {};
-                const map = {};
-                const s = String(costStr).toLowerCase();
-                const patterns = [
-                  /([a-z]+)(\d+\.?\d*)/g,
-                  /(\d+\.?\d*)([a-z]+)/g,
-                ];
-                for (const pat of patterns) {
-                  let match;
-                  const tempStr = s;
-                  pat.lastIndex = 0;
-                  while ((match = pat.exec(tempStr)) !== null) {
-                    const size = match[1].match(/[a-z]+/) ? match[1] : match[2];
-                    const cost = match[1].match(/\d/) ? match[1] : match[2];
-                    map[size] = parseFloat(cost);
+              const parsePlatformSizeCost = (costStr, platformName) => {
+                if (!costStr) return { unified: null, sizes: {} };
+                const s = String(costStr).trim();
+                const platformKeywords = {
+                  pdd: ["拼多多", "pdd", "PDD", "拼", "多多"],
+                  taobao: ["淘宝", "tb", "TB", "淘", "天猫", "tmall", "TMALL"],
+                  douyin: ["抖音", "dy", "DY", "抖", "抖店"],
+                };
+                let targetPlatform = null;
+                let platformPriority = ["pdd", "taobao", "douyin"];
+                if (platformName) {
+                  const pn = String(platformName).toLowerCase();
+                  for (const [plat, keywords] of Object.entries(platformKeywords)) {
+                    if (keywords.some((kw) => pn.includes(kw.toLowerCase()))) {
+                      targetPlatform = plat;
+                      break;
+                    }
+                  }
+                  if (!targetPlatform) {
+                    targetPlatform = pn;
                   }
                 }
-                return map;
+                const result = { unified: null, sizes: {} };
+                const extractSizeCostPairs = (segment) => {
+                  const pairs = {};
+                  const seg = segment.toLowerCase();
+                  const sizePattern = /(?:^|[^a-z])(xs|s|m|l|xl|xxl|2xl|3xl|4xl|5xl|x{1,3}l|x{0,3}s)(\d+\.?\d*)/gi;
+                  let match;
+                  const found = new Set();
+                  while ((match = sizePattern.exec(seg)) !== null) {
+                    const size = match[1].toLowerCase();
+                    const cost = parseFloat(match[2]);
+                    if (!isNaN(cost) && !found.has(size)) {
+                      pairs[size] = cost;
+                      found.add(size);
+                    }
+                  }
+                  if (Object.keys(pairs).length === 0) {
+                    const numMatch = seg.match(/^(\d+\.?\d*)$/);
+                    if (numMatch) {
+                      return { unified: parseFloat(numMatch[1]) };
+                    }
+                  }
+                  return { sizes: pairs };
+                };
+                let platformSegments = [];
+                const tempStr = s;
+                let hasPlatformPrefix = false;
+                const allKeywords = [];
+                for (const [plat, keywords] of Object.entries(platformKeywords)) {
+                  keywords.forEach((kw) => {
+                    allKeywords.push({ kw: kw.toLowerCase(), plat });
+                  });
+                }
+                allKeywords.sort((a, b) => b.kw.length - a.kw.length);
+                const positions = [];
+                const lowerStr = tempStr.toLowerCase();
+                allKeywords.forEach(({ kw, plat }) => {
+                  let idx = 0;
+                  while ((idx = lowerStr.indexOf(kw, idx)) !== -1) {
+                    positions.push({ start: idx, end: idx + kw.length, plat, kw });
+                    idx += kw.length;
+                  }
+                });
+                positions.sort((a, b) => a.start - b.start);
+                const merged = [];
+                positions.forEach((pos) => {
+                  if (merged.length === 0 || pos.start >= merged[merged.length - 1].end) {
+                    merged.push(pos);
+                  }
+                });
+                if (merged.length > 0) {
+                  hasPlatformPrefix = true;
+                  for (let i = 0; i < merged.length; i++) {
+                    const segStart = merged[i].end;
+                    const segEnd = i + 1 < merged.length ? merged[i + 1].start : tempStr.length;
+                    const segment = tempStr.substring(segStart, segEnd).trim();
+                    if (segment) {
+                      platformSegments.push({ plat: merged[i].plat, segment });
+                    }
+                  }
+                  const beforeFirst = tempStr.substring(0, merged[0].start).trim();
+                  if (beforeFirst) {
+                    platformSegments.unshift({ plat: null, segment: beforeFirst });
+                  }
+                } else {
+                  platformSegments.push({ plat: null, segment: tempStr });
+                }
+                for (const { plat, segment } of platformSegments) {
+                  const parsed = extractSizeCostPairs(segment);
+                  if (targetPlatform && plat === targetPlatform) {
+                    if (parsed.unified !== undefined) {
+                      result.unified = parsed.unified;
+                    }
+                    result.sizes = { ...result.sizes, ...parsed.sizes };
+                  } else if (!plat && !targetPlatform) {
+                    if (parsed.unified !== undefined) {
+                      result.unified = parsed.unified;
+                    }
+                    result.sizes = { ...result.sizes, ...parsed.sizes };
+                  } else if (!targetPlatform && plat) {
+                    if (parsed.unified !== undefined) {
+                      result.unified = parsed.unified;
+                    }
+                    result.sizes = { ...result.sizes, ...parsed.sizes };
+                  }
+                }
+                return result;
+              };
+              const extractSizeFromSpec = (specStr) => {
+                if (!specStr) return "";
+                const s = String(specStr);
+                const sizePatterns = [
+                  /\b(X{1,3}S|X{0,3}L|\d{0,2}X{0,2}[SL]|M)\s*(码|号|斤)?/i,
+                  /(?:尺码|尺寸|规格|size)\s*[:：]?\s*(X{1,3}S|X{0,3}L|\d{0,2}X{0,2}[SL]|M)/i,
+                ];
+                for (const pat of sizePatterns) {
+                  const m = s.match(pat);
+                  if (m) {
+                    return m[1].toLowerCase();
+                  }
+                }
+                const standalone = s.match(/[^A-Za-z0-9](X{1,3}S|X{0,3}L|\d{0,2}X{0,2}[SL]|M)(?![A-Za-z0-9])/i);
+                if (standalone) {
+                  return standalone[1].toLowerCase();
+                }
+                return "";
               };
               data = data.map((row) => {
                 const keyVal = row[step.config.key];
                 const joined = lookup[keyVal];
                 if (joined) {
                   let colVal = joined[step.config.col];
-                  if (step.config.parseSizeCost && step.config.sizeField) {
-                    const sizeCostMap = parseSizeCostStr(colVal);
-                    const sizeVal = String(row[step.config.sizeField] || "").trim().toLowerCase();
+                  if (step.config.parseSizeCost) {
+                    const platformVal = step.config.platformField
+                      ? row[step.config.platformField]
+                      : (context.shopName || "");
+                    const sizeFieldVal = step.config.sizeField
+                      ? row[step.config.sizeField]
+                      : "";
+                    const parsed = parsePlatformSizeCost(colVal, platformVal);
+                    const sizeStr = extractSizeFromSpec(sizeFieldVal);
                     let matchedCost = 0;
-                    if (sizeCostMap[sizeVal] !== undefined) {
-                      matchedCost = sizeCostMap[sizeVal];
-                    } else {
-                      const sizePattern = /[a-z]+/i;
-                      const extractedSize = String(row[step.config.sizeField] || "").match(sizePattern);
-                      if (extractedSize) {
-                        const shortSize = extractedSize[0].toLowerCase();
-                        if (sizeCostMap[shortSize] !== undefined) {
-                          matchedCost = sizeCostMap[shortSize];
-                        }
-                      }
+                    if (sizeStr && parsed.sizes[sizeStr] !== undefined) {
+                      matchedCost = parsed.sizes[sizeStr];
+                    } else if (!sizeStr && parsed.unified !== null) {
+                      matchedCost = parsed.unified;
+                    } else if (Object.keys(parsed.sizes).length === 1) {
+                      matchedCost = Object.values(parsed.sizes)[0];
+                    } else if (parsed.unified !== null) {
+                      matchedCost = parsed.unified;
                     }
                     colVal = matchedCost;
                   }
