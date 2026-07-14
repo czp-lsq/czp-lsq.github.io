@@ -2227,6 +2227,7 @@ const CalcEngine = {
         stepResults.push({
           step: stepIdx,
           type: step.type,
+          stepConfig: step.config,
           rows: data.length,
           preview: data.slice(0, 5),
         });
@@ -2235,6 +2236,7 @@ const CalcEngine = {
         stepResults.push({
           step: stepIdx,
           type: step.type,
+          stepConfig: step.config,
           error: e.message,
           rows: data.length,
           preview: data.slice(0, 3),

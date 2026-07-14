@@ -1,5 +1,5 @@
-const APP_VERSION = "czp-1.30.1";
-const DATA_VERSION = "8.5.1";
+const APP_VERSION = "czp-1.30.2";
+const DATA_VERSION = "8.5.2";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
 const BUILD_TIME = (() => {
@@ -11,6 +11,22 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-1.30.2", date: "2026-07-15 22:00:00",
+    summary: "实时预览信息展示优化、图标文字排列优化、智能推荐逻辑完善",
+    changes: [
+      { type: "feature", text: "实时预览差异化展示：虚拟字段展示源字段→规则→目标字段，join展示关联键+新增列，公式只展示参与计算的字段值" },
+      { type: "feature", text: "公式计算详情展示优化：原始公式、字段代入值、代入后表达式、结果一目了然" },
+      { type: "feature", text: "智能推荐逻辑重构：基于数据列特征（规格/款号/尺码/金额/日期等）做精准推荐，支持多条推荐按优先级排序" },
+      { type: "feature", text: "智能推荐原因具体化：如「检测到规格列，建议提取条数和尺码」「检测到日期列，建议按时间排序」" },
+      { type: "optimize", text: "step-header图标防挤压：图标span添加inline-flex和flex-shrink: 0，避免flex布局中图标被压缩变形" },
+      { type: "optimize", text: "预览数据行取消换行：debug-step-preview-row改为flex-wrap: nowrap，配合overflow-x: auto横向滚动，减少视觉干扰" },
+      { type: "optimize", text: "meta标签防换行：debug-step-meta-tag添加flex-shrink: 0和white-space: nowrap，标签完整显示不折断" },
+      { type: "optimize", text: "智能推荐按钮防换行：推荐按钮和文字添加white-space: nowrap，保持单行整洁展示" },
+    ],
+    bugfixes: [
+      { text: "修复rules.js第7080行SyntaxError：删除debug-step-details中多余的闭合括号，恢复页面正常打开" },
+    ],
+  },
   { version: "czp-1.30.1", date: "2026-07-15 20:00:00",
     summary: "修复页面语法错误、表识别名称优化、特别致谢配色重构",
     changes: [
