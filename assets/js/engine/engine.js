@@ -478,6 +478,9 @@ const CalcEngine = {
                   // 条数识别：从商品规格中识别每包的条数
                   const s = String(src || "").trim();
                   if (!s) { result = 1; break; }
+                  // 模式0: 纯数字直接返回
+                  const pureNum = /^\d+$/.exec(s);
+                  if (pureNum) { result = Number(pureNum[0]); break; }
                   // 模式1: X条装（优先级最高）
                   const pattern1 = /(\d+|[一二三四五六七八九十]+)\s*条装/;
                   const m1 = s.match(pattern1);
@@ -491,6 +494,14 @@ const CalcEngine = {
                   const m1b = s.match(pattern1b);
                   if (m1b) {
                     const num = Number(m1b[1]) || _chineseToNumber(m1b[1]);
+                    result = num || 1;
+                    break;
+                  }
+                  // 模式1c: X条/包、X条\包、X条每包
+                  const pattern1c = /(\d+|[一二三四五六七八九十]+)\s*条\s*[/\\每]\s*[包袋盒件]/;
+                  const m1c = s.match(pattern1c);
+                  if (m1c) {
+                    const num = Number(m1c[1]) || _chineseToNumber(m1c[1]);
                     result = num || 1;
                     break;
                   }
@@ -525,23 +536,61 @@ const CalcEngine = {
                     result = num || 1;
                     break;
                   }
+                  // 模式3c: X条*Y（如 3条*2 → 6条，表示组合装）
+                  const pattern3c = /(\d+)\s*条\s*[*xX×]\s*(\d+)/;
+                  const m3c = s.match(pattern3c);
+                  if (m3c) {
+                    result = Number(m3c[1]) * Number(m3c[2]);
+                    break;
+                  }
                   // 模式4: 加号分隔（条数 = 加号数量 + 1）
                   const plusCount = (s.match(/\+/g) || []).length;
                   if (plusCount > 0) {
                     result = plusCount + 1;
                     break;
                   }
-                  // 模式5: 颜色词模式（兜底模式）
-                  const colorWords = ["黑","白","灰","粉","红","蓝","绿","黄","紫","肤","杏","咖","米","棕","橙","藏","青"];
+                  // 模式4b: 顿号/逗号分隔的颜色（如 黑+白+灰、黑,白,灰）
+                  const separators = /[,，、\/\\|]+/;
+                  if (separators.test(s)) {
+                    const parts = s.split(separators).filter((p) => p.trim());
+                    if (parts.length > 1) {
+                      // 如果包含颜色词或尺码词，按件数算
+                      result = parts.length;
+                      break;
+                    }
+                  }
+                  // 模式5: 件数单位（件/个/双/套）
+                  const pieceUnitPattern = /(\d+)\s*[件个双套]/;
+                  const mUnit = s.match(pieceUnitPattern);
+                  if (mUnit) {
+                    result = Number(mUnit[1]) || 1;
+                    break;
+                  }
+                  // 模式5b: 数量前缀（数量:5、x5、*5）
+                  const qtyPrefixPattern = /(?:数量|qty|x|×|\*)\s*(\d+)/i;
+                  const mQty = s.match(qtyPrefixPattern);
+                  if (mQty) {
+                    result = Number(mQty[1]) || 1;
+                    break;
+                  }
+                  // 模式6: 颜色词模式（兜底模式）
+                  const colorWords = ["黑","白","灰","粉","红","蓝","绿","黄","紫","肤","杏","咖","米","棕","橙","藏","青","驼","酒","玫","天","墨","浅","深","草","豆","裸","玫","藕","香","奶","姜","铁","银","金","驼","烟","雾","冰","水","花","素","净","撞","渐","混","杂","纯","亮","暗","荧","哑","珠","丝","绒","棉","麻","绸","缎","纱","蕾丝","牛仔","针织","毛呢","皮革","羽绒"];
                   let colorCount = 0;
+                  const matchedColors = new Set();
                   for (const color of colorWords) {
                     const regex = new RegExp(color, "g");
                     const matches = s.match(regex);
                     if (matches) {
+                      matchedColors.add(color);
                       colorCount += matches.length;
                     }
                   }
-                  if (colorCount > 0) {
+                  // 如果颜色词分散出现且不重复太多，取颜色种类数
+                  if (matchedColors.size >= 2 && matchedColors.size <= 12) {
+                    result = matchedColors.size;
+                    break;
+                  }
+                  if (colorCount > 0 && colorCount <= 12) {
                     result = colorCount;
                     break;
                   }

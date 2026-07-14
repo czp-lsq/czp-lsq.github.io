@@ -2543,7 +2543,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                     /*#__PURE__*/ React.createElement(
                       "span",
                       { className: "form-label-hint" },
-                      "如: {单价} * {数量}，先计算每行的值再聚合"
+                      "先计算每行的值，再聚合。如: {单价} * {数量}"
                     )
                   ),
                   /*#__PURE__*/ React.createElement(
@@ -2555,17 +2555,62 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                       onChange: (e) => updateStepConfig(step.id, "expr", e.target.value),
                       placeholder: "输入计算表达式，如: {单价} * {数量}",
                       className: "form-input",
+                      style: { fontFamily: "var(--font-mono)", letterSpacing: "0.5px" },
                     }),
                     /*#__PURE__*/ React.createElement(
                       "div",
-                      { className: "form-hint" },
-                      "可用字段: ",
-                      sourceTableHeaders.slice(0, 5).map((h) => /*#__PURE__*/ React.createElement(
-                        "span",
-                        { key: h, className: "quick-tag", onClick: () => updateStepConfig(step.id, "expr", (step.config.expr || "") + `{${h}}`) },
-                        h,
-                      )),
-                      sourceTableHeaders.length > 5 && "...",
+                      { style: { marginTop: "10px" } },
+                      /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", fontWeight: 600, color: "var(--color-text-tertiary)", marginBottom: "6px", display: "flex", alignItems: "center", gap: "4px" } },
+                        /*#__PURE__*/ React.createElement(Icons.Calculator, { size: 12 }),
+                        "运算符",
+                      ),
+                      /*#__PURE__*/ React.createElement(
+                        "div",
+                        { style: { display: "flex", gap: "6px", flexWrap: "wrap", marginBottom: "10px" } },
+                        [" + ", " - ", " * ", " / ", "(", ")"].map((op) => /*#__PURE__*/ React.createElement(
+                          "button",
+                          {
+                            key: op,
+                            type: "button",
+                            className: "quick-tag",
+                            style: { cursor: "pointer", minWidth: "32px", textAlign: "center", padding: "4px 10px", fontFamily: "var(--font-mono)", fontSize: "13px", fontWeight: 600 },
+                            onClick: () => updateStepConfig(step.id, "expr", (step.config.expr || "") + op),
+                          },
+                          op.trim(),
+                        )),
+                      ),
+                    ),
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { style: { marginTop: "6px" } },
+                      /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", fontWeight: 600, color: "var(--color-text-tertiary)", marginBottom: "6px", display: "flex", alignItems: "center", gap: "4px" } },
+                        /*#__PURE__*/ React.createElement(Icons.Columns, { size: 12 }),
+                        "可用字段（点击插入）",
+                      ),
+                      /*#__PURE__*/ React.createElement(
+                        "div",
+                        { style: { display: "flex", flexWrap: "wrap", gap: "6px", maxHeight: "120px", overflowY: "auto", padding: "2px" } },
+                        sourceTableHeaders.map((h) => /*#__PURE__*/ React.createElement(
+                          "button",
+                          {
+                            key: h,
+                            type: "button",
+                            className: "quick-tag",
+                            style: { cursor: "pointer", maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
+                            title: h,
+                            onClick: () => updateStepConfig(step.id, "expr", (step.config.expr || "") + `{${h}}`),
+                          },
+                          h,
+                        )),
+                      ),
+                    ),
+                    step.config.expr && /*#__PURE__*/ React.createElement(
+                      "div",
+                      { style: { marginTop: "10px", padding: "10px", background: "#f0fdf4", borderRadius: "8px", border: "1px solid #bbf7d0" } },
+                      /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", fontWeight: 600, color: "#16a34a", marginBottom: "4px" } }, "公式预览"),
+                      /*#__PURE__*/ React.createElement("div", { style: { fontSize: "13px", fontFamily: "var(--font-mono)", color: "#166534" } },
+                        (step.config.expr || "").replace(/{([^}]+)}/g, "【$1】"),
+                      ),
                     ),
                   ),
                 ),
@@ -2854,6 +2899,24 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 placeholder: "请选择输出格式",
               })
             )
+          ),
+          step.config.expr && /*#__PURE__*/ React.createElement(
+            "div",
+            { style: { marginTop: "10px", padding: "10px", background: "#f0f9ff", borderRadius: "8px", border: "1px solid #bae6fd" } },
+            /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", fontWeight: 600, color: "#0369a1", marginBottom: "4px" } }, "公式预览"),
+            /*#__PURE__*/ React.createElement("div", { style: { fontSize: "13px", fontFamily: "var(--font-mono)", color: "#0c4a6e" } },
+              (step.config.expr || "").replace(/{([^}]+)}/g, "【$1】"),
+            ),
+            (() => {
+              const expr = step.config.expr || "";
+              const fields = expr.match(/{([^}]+)}/g);
+              if (!fields) return null;
+              return /*#__PURE__*/ React.createElement("div", { style: { marginTop: "6px", display: "flex", flexWrap: "wrap", gap: "4px" } },
+                fields.map((f, i) => /*#__PURE__*/ React.createElement("span", { key: i, style: { fontSize: "11px", padding: "2px 6px", background: "#e0f2fe", borderRadius: "4px", color: "#0369a1" } }, f.slice(1, -1)),
+              ),
+              /*#__PURE__*/ React.createElement("span", { style: { fontSize: "11px", color: "#7dd3fc" } }, `共${fields.length}个字段`),
+              );
+            })(),
           ),
           /*#__PURE__*/ React.createElement(
             "div",
@@ -5845,8 +5908,10 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
           if (data.length === 0) {
             return /*#__PURE__*/ React.createElement("span", { className: "debug-empty" }, "空数组");
           }
-          const headers = data.length > 0 ? Object.keys(data[0]).filter((k) => !k.startsWith("_")) : [];
-          const displayRows = data.slice(0, 5);
+          const allHeaders = data.length > 0 ? Object.keys(data[0]).filter((k) => !k.startsWith("_")) : [];
+          const displayRows = data.slice(0, 100);
+          const MAX_COLS = 8;
+          const headers = allHeaders.slice(0, MAX_COLS);
           return /*#__PURE__*/ React.createElement(
             "div",
             { className: "debug-data-table" },
@@ -5859,7 +5924,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 /*#__PURE__*/ React.createElement(
                   "tr",
                   null,
-                  headers.map((h) => /*#__PURE__*/ React.createElement("th", { key: h }, h)),
+                  headers.map((h) => /*#__PURE__*/ React.createElement("th", { key: h, title: h }, h)),
+                  allHeaders.length > MAX_COLS && /*#__PURE__*/ React.createElement("th", null, `...+${allHeaders.length - MAX_COLS}列`),
                 ),
               ),
               /*#__PURE__*/ React.createElement(
@@ -5877,13 +5943,14 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                         : String(row[h]).slice(0, 50)
                       : "-",
                   )),
+                  allHeaders.length > MAX_COLS && /*#__PURE__*/ React.createElement("td", null, "..."),
                 )),
               ),
             ),
-            data.length > 5 && /*#__PURE__*/ React.createElement(
+            data.length > 100 && /*#__PURE__*/ React.createElement(
               "div",
               { className: "debug-table-more" },
-              `... 共 ${data.length} 行`,
+              `... 共 ${data.length} 行，显示前100行`,
             ),
           );
         }
@@ -7184,66 +7251,81 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                               /*#__PURE__*/ React.createElement(
                                                 "div",
                                                 { className: "debug-step-preview-content" },
-                                                sr.preview.slice(0, 3).map((row, ri) => /*#__PURE__*/ React.createElement(
-                                                  "div",
-                                                  { key: ri, className: "debug-step-preview-row" },
-                                                  (() => {
-                                                    const cfg = sr.stepConfig || {};
-                                                    let relevantKeys = [];
-                                                    switch (sr.type) {
-                                                      case "virtual":
-                                                        relevantKeys = [cfg.source, cfg.target].filter(Boolean);
-                                                        break;
-                                                      case "join":
-                                                        relevantKeys = [cfg.key, cfg.fk, cfg.col].filter(Boolean);
-                                                        break;
-                                                      case "formula":
-                                                        relevantKeys = row._formulaDetail ? Object.keys(row._formulaDetail.substitutions || {}) : [];
-                                                        break;
-                                                      case "filter":
+                                                (() => {
+                                                  const cfg = sr.stepConfig || {};
+                                                  const extractExprFields = (expr) => {
+                                                    if (!expr) return [];
+                                                    const matches = expr.match(/{([^}]+)}/g);
+                                                    return matches ? matches.map((m) => m.slice(1, -1)) : [];
+                                                  };
+                                                  let relevantKeys = [];
+                                                  switch (sr.type) {
+                                                    case "virtual":
+                                                      relevantKeys = [cfg.source, cfg.target].filter(Boolean);
+                                                      break;
+                                                    case "join":
+                                                      relevantKeys = [cfg.key, cfg.fk, cfg.col].filter(Boolean);
+                                                      break;
+                                                    case "formula":
+                                                      relevantKeys = sr.preview[0]?._formulaDetail ? Object.keys(sr.preview[0]._formulaDetail.substitutions || {}) : extractExprFields(cfg.expr);
+                                                      break;
+                                                    case "filter":
+                                                      relevantKeys = [cfg.column].filter(Boolean);
+                                                      break;
+                                                    case "aggregate":
+                                                      if (cfg.column === "__expr__" && cfg.expr) {
+                                                        relevantKeys = extractExprFields(cfg.expr);
+                                                      } else {
                                                         relevantKeys = [cfg.column].filter(Boolean);
-                                                        break;
-                                                      case "aggregate":
-                                                        relevantKeys = [cfg.column].filter(Boolean);
-                                                        break;
-                                                      default:
-                                                        relevantKeys = Object.keys(row).filter((k) => !k.startsWith("_")).slice(0, 5);
-                                                        break;
-                                                    }
-                                                    if (relevantKeys.length === 0) {
-                                                      relevantKeys = Object.keys(row).filter((k) => !k.startsWith("_")).slice(0, 5);
-                                                    }
-                                                    return relevantKeys.map((k) => {
-                                                      const v = row[k];
-                                                      return /*#__PURE__*/ React.createElement(
-                                                        "span",
-                                                        { key: k, className: "debug-step-preview-cell" },
-                                                        /*#__PURE__*/ React.createElement(
+                                                      }
+                                                      break;
+                                                    default:
+                                                      relevantKeys = Object.keys(sr.preview[0] || {}).filter((k) => !k.startsWith("_")).slice(0, 5);
+                                                      break;
+                                                  }
+                                                  if (relevantKeys.length === 0) {
+                                                    relevantKeys = Object.keys(sr.preview[0] || {}).filter((k) => !k.startsWith("_")).slice(0, 5);
+                                                  }
+                                                  const displayCount = Math.min(sr.preview.length, 100);
+                                                  return /*#__PURE__*/ React.createElement(
+                                                    React.Fragment,
+                                                    null,
+                                                    sr.preview.slice(0, displayCount).map((row, ri) => /*#__PURE__*/ React.createElement(
+                                                      "div",
+                                                      { key: ri, className: "debug-step-preview-row" },
+                                                      relevantKeys.map((k) => {
+                                                        const v = row[k];
+                                                        return /*#__PURE__*/ React.createElement(
                                                           "span",
-                                                          { className: "debug-step-preview-key" },
-                                                          k,
-                                                        ),
-                                                        ": ",
-                                                        /*#__PURE__*/ React.createElement(
-                                                          "span",
-                                                          { className: "debug-step-preview-value" },
-                                                          typeof v === "number"
-                                                            ? v.toLocaleString("zh-CN", { maximumFractionDigits: 2 })
-                                                            : v != null
-                                                              ? String(v).slice(0, 30)
-                                                              : "-",
-                                                        ),
-                                                      );
-                                                    });
-                                                  })(),
-                                                )),
-                                              )),
-                                              sr.preview.length > 3 && /*#__PURE__*/ React.createElement(
-                                                "span",
-                                                { className: "debug-step-preview-more" },
-                                                `...(\u5171${sr.preview.length}\u6761)`,
+                                                          { key: k, className: "debug-step-preview-cell" },
+                                                          /*#__PURE__*/ React.createElement(
+                                                            "span",
+                                                            { className: "debug-step-preview-key" },
+                                                            k,
+                                                          ),
+                                                          ": ",
+                                                          /*#__PURE__*/ React.createElement(
+                                                            "span",
+                                                            { className: "debug-step-preview-value" },
+                                                            typeof v === "number"
+                                                              ? v.toLocaleString("zh-CN", { maximumFractionDigits: 2 })
+                                                              : v != null
+                                                                ? String(v).slice(0, 30)
+                                                                : "-",
+                                                          ),
+                                                        );
+                                                      }),
+                                                    )),
+                                                    sr.preview.length > 100 && /*#__PURE__*/ React.createElement(
+                                                      "span",
+                                                      { className: "debug-step-preview-more" },
+                                                      `...(\u5171${sr.preview.length}\u6761\uff0c\u663e\u793a\u524d100\u6761)`,
+                                                    ),
+                                                  );
+                                                })(),
                                               ),
-                                            sr.value !== undefined && sr.value !== null && sr.value !== "" && /*#__PURE__*/ React.createElement(
+                                            ),
+                                          sr.value !== undefined && sr.value !== null && sr.value !== "" && /*#__PURE__*/ React.createElement(
                                               "div",
                                               { className: "debug-step-value-box" },
                                               /*#__PURE__*/ React.createElement(
@@ -7577,6 +7659,90 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                   ),
                                 ),
                               renderStepConfig(step, activeField),
+                              /*#__PURE__*/ React.createElement(
+                                "div",
+                                { className: "step-live-preview", style: { margin: "12px 0", padding: "10px 14px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" } },
+                                (() => {
+                                  const cfg = step.config || {};
+                                  const previews = [];
+                                  switch (step.type) {
+                                    case "source":
+                                      if (cfg.tables && cfg.tables.length > 0) {
+                                        previews.push({ icon: "📁", text: `已选择 ${cfg.tables.length} 个数据表` });
+                                      } else {
+                                        previews.push({ icon: "⚠️", text: "请至少选择一个数据表", warn: true });
+                                      }
+                                      break;
+                                    case "filter":
+                                      if (cfg.column && cfg.op) {
+                                        previews.push({ icon: "🔍", text: `筛选条件: ${cfg.column} ${cfg.op} ${cfg.value != null ? String(cfg.value) : ""}` });
+                                      } else {
+                                        previews.push({ icon: "⚠️", text: "请配置筛选条件", warn: true });
+                                      }
+                                      break;
+                                    case "virtual":
+                                      if (cfg.source && cfg.rule && cfg.target) {
+                                        previews.push({ icon: "✨", text: `从「${cfg.source}」提取${cfg.rule} → 生成「${cfg.target}」` });
+                                      } else {
+                                        previews.push({ icon: "⚠️", text: "请配置源字段、规则和目标字段", warn: true });
+                                      }
+                                      break;
+                                    case "join":
+                                      if (cfg.key && cfg.fk && cfg.col) {
+                                        previews.push({ icon: "🔗", text: `关联: ${cfg.key} = ${cfg.fk}，导入「${cfg.col}」` });
+                                      } else {
+                                        previews.push({ icon: "⚠️", text: "请配置关联键和导入列", warn: true });
+                                      }
+                                      break;
+                                    case "aggregate":
+                                      if (cfg.column === "__expr__" && cfg.expr) {
+                                        previews.push({ icon: "📊", text: `聚合: ${cfg.func || "sum"}(${cfg.expr.replace(/{([^}]+)}/g, "【$1】")})` });
+                                      } else if (cfg.column) {
+                                        previews.push({ icon: "📊", text: `聚合: ${cfg.func || "sum"}(${cfg.column})` });
+                                      } else {
+                                        previews.push({ icon: "⚠️", text: "请选择聚合列", warn: true });
+                                      }
+                                      break;
+                                    case "formula":
+                                      if (cfg.expr) {
+                                        previews.push({ icon: "🧮", text: `公式: ${cfg.expr.replace(/{([^}]+)}/g, "【$1】")}` });
+                                        if (cfg.format && cfg.format !== "none") {
+                                          previews.push({ icon: "🎨", text: `输出格式: ${cfg.format}` });
+                                        }
+                                      } else {
+                                        previews.push({ icon: "⚠️", text: "请输入计算公式", warn: true });
+                                      }
+                                      break;
+                                    case "sort":
+                                      if (cfg.column) {
+                                        previews.push({ icon: "📋", text: `按 ${cfg.column} ${cfg.direction === "desc" ? "降序" : "升序"} 排列` });
+                                      } else {
+                                        previews.push({ icon: "⚠️", text: "请选择排序列", warn: true });
+                                      }
+                                      break;
+                                    case "limit":
+                                      previews.push({ icon: "✂️", text: `限制输出前 ${cfg.limit || 10} 条数据` });
+                                      break;
+                                  }
+                                  if (previews.length === 0) return null;
+                                  return /*#__PURE__*/ React.createElement(
+                                    React.Fragment,
+                                    null,
+                                    /*#__PURE__*/ React.createElement(
+                                      "div",
+                                      { style: { fontSize: "11px", fontWeight: 600, color: "#64748b", marginBottom: "6px", display: "flex", alignItems: "center", gap: "4px" } },
+                                      /*#__PURE__*/ React.createElement(Icons.Eye, { size: 12 }),
+                                      "配置预览",
+                                    ),
+                                    previews.map((p, pi) => /*#__PURE__*/ React.createElement(
+                                      "div",
+                                      { key: pi, style: { fontSize: "12px", color: p.warn ? "#d97706" : "#334155", marginBottom: "3px", display: "flex", alignItems: "center", gap: "6px" } },
+                                      /*#__PURE__*/ React.createElement("span", null, p.icon),
+                                      p.text,
+                                    )),
+                                  );
+                                })(),
+                              ),
                               /*#__PURE__*/ React.createElement(
                                 "div",
                                 { className: "step-debug-panel" },

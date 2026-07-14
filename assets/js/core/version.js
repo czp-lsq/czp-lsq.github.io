@@ -1,5 +1,5 @@
-const APP_VERSION = "czp-1.30.2";
-const DATA_VERSION = "8.5.2";
+const APP_VERSION = "czp-1.30.3";
+const DATA_VERSION = "8.5.3";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
 const BUILD_TIME = (() => {
@@ -11,6 +11,31 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-1.30.3", date: "2026-07-15 23:00:00",
+    summary: "聚合表达式UI优化、调试预览增强、条数识别增强、配置实时预览弹窗、公式编辑器优化",
+    changes: [
+      { type: "feature", text: "聚合计算表达式UI全面优化：运算符快捷按钮（+、-、*、/、(、)）一键插入，可用字段网格化标签展示，支持点击插入" },
+      { type: "feature", text: "聚合表达式公式预览：输入表达式后实时显示可视化公式（字段名以【】包裹），清晰可读" },
+      { type: "feature", text: "配置实时预览小卡片：步骤配置区域下方新增配置预览条，根据步骤类型实时展示配置状态（如「筛选: 店铺 = 内裤店」「关联: 商品id = 商品id, 导入成本」）" },
+      { type: "feature", text: "公式编辑器公式预览：输入公式后实时展示公式可视化效果和引用的字段标签列表" },
+      { type: "feature", text: "调试预览数据表格优化：限制最多显示8列（超出显示+XN列），最多显示100行数据，底部显示行数统计" },
+      { type: "feature", text: "实时预览数据增强：支持最多显示100条数据（原为3条），超出显示提示" },
+      { type: "feature", text: "实时预览列筛选增强：aggregate步骤选择计算表达式时，自动提取表达式中的字段并只展示这些字段" },
+      { type: "feature", text: "条数识别规则(parsePieces)全面增强：新增X条/包模式、X条*Y组合装模式、顿号/逗号分隔颜色模式、件数单位模式、数量前缀模式" },
+      { type: "feature", text: "条数识别颜色词库扩展：从17个扩展到50+，覆盖更多颜色/面料/工艺描述词，匹配更精准" },
+      { type: "feature", text: "条数识别纯数字直接返回：规格为纯数字时直接作为条数返回" },
+      { type: "feature", text: "数据源下拉框过滤全局表：数据源选择只显示样本数据表，全局数据表不再显示且不可选择" },
+      { type: "feature", text: "样本表布局优化：使用auto-fill网格布局，自适应列宽，显示更紧凑" },
+      { type: "feature", text: "sourceTableHeaders包含join导入列：公式和聚合的字段下拉框现在包含跨表关联导入的列" },
+      { type: "optimize", text: "公式计算详情展示重构：4步展示（公式→代入值→计算→结果），去除无用信息，计算过程一目了然" },
+      { type: "optimize", text: "公式详情代入值标签化：字段名和值并排展示，不再使用列表缩进，更紧凑清晰" },
+      { type: "optimize", text: "聚合表达式配置提示优化：更具体地说明「先计算每行的值，再聚合」的使用方式" },
+    ],
+    bugfixes: [
+      { text: "修复步骤调试预览模块无法使用的问题：补充tables/externals/shopName上下文参数，恢复实时计算" },
+      { text: "修复预览数据展示括号不匹配：调整IIFE提取后的括号闭合顺序" },
+    ],
+  },
   { version: "czp-1.30.2", date: "2026-07-15 22:00:00",
     summary: "实时预览信息展示优化、图标文字排列优化、智能推荐逻辑完善",
     changes: [
