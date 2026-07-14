@@ -1,5 +1,5 @@
-const APP_VERSION = "czp-1.28.3";
-const DATA_VERSION = "8.3.0";
+const APP_VERSION = "czp-1.29.0";
+const DATA_VERSION = "8.4.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
 const BUILD_TIME = (() => {
@@ -11,6 +11,21 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-1.29.0", date: "2026-07-15 08:00:00",
+    summary: "计算规则页面修复、表识别优化（手动备注名）、特别致谢页面重构",
+    changes: [
+      { type: "feature", text: "表识别双字段分离：displayName（自动识别名）用于批量计算匹配，alias（手动备注名）用于计算规则页面选择" },
+      { type: "feature", text: "配置中心新增识别名称列：展示自动识别的表名，便于批量计算时匹配上传表格" },
+      { type: "feature", text: "计算规则页面表选择下拉框：仅显示手动备注名，界面更简洁清晰" },
+      { type: "feature", text: "特别致谢页面全面重构：渐变背景、光晕效果、玻璃拟态卡片、情感真挚的致谢文案" },
+      { type: "feature", text: "特别致谢突出展示：开发者陈泽平署名、支持者刘思琦四维支持（资金/情感/灵感/体验）" },
+      { type: "optimize", text: "批量上传时自动生成displayName和alias字段，确保数据完整性" },
+      { type: "optimize", text: "配置中心表格布局优化：识别名称以斜体显示，与备注名形成视觉区分" },
+    ],
+    bugfixes: [
+      { text: "修复计算规则页面可能出现的hasTable未定义错误" },
+    ],
+  },
   { version: "czp-1.28.3", date: "2026-07-14 20:00:00",
     summary: "表名格式统一【XX明细-X月份】、列值转换优化、复杂步骤提示、智能验证",
     changes: [

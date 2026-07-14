@@ -201,6 +201,7 @@ const DataPage = ({ state, currentPlatform }) => {
           setUploadProgress(Math.round(((i + p / 100) / files.length) * 100));
         });
         const autoName = generateTableName(file.name, result);
+        result.displayName = autoName;
         result.alias = autoName;
         ExcelUtils.stripForStorage(result);
         newSamples.push(result);
@@ -245,8 +246,8 @@ const DataPage = ({ state, currentPlatform }) => {
           setUploadProgress(p);
         });
         const autoName = generateTableName(file.name, result);
-        result.alias =
-          aliasInput.trim() || autoName;
+        result.displayName = autoName;
+        result.alias = aliasInput.trim() || autoName;
         ExcelUtils.stripForStorage(result);
         newSamples.push(result);
       }
@@ -721,6 +722,11 @@ const DataPage = ({ state, currentPlatform }) => {
                   ),
                   /*#__PURE__*/ React.createElement(
                     "th",
+                    { style: { width: 180 } },
+                    "\u8BC6\u522B\u540D\u79F0",
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "th",
                     null,
                     "\u539F\u59CB\u6587\u4EF6\u540D",
                   ),
@@ -836,25 +842,46 @@ const DataPage = ({ state, currentPlatform }) => {
                           ),
                         ),
                         /*#__PURE__*/ React.createElement(
-                          "td",
-                          null,
-                          /*#__PURE__*/ React.createElement(
-                            "span",
-                            {
-                              style: {
-                                fontSize: 12,
-                                color: "var(--color-text-tertiary)",
-                                maxWidth: 200,
-                                display: "inline-block",
-                                overflow: "hidden",
-                                textOverflow: "ellipsis",
-                                whiteSpace: "nowrap",
-                              },
-                              title: sample.fileName,
+                        "td",
+                        null,
+                        /*#__PURE__*/ React.createElement(
+                          "span",
+                          {
+                            style: {
+                              fontSize: 12,
+                              color: "var(--color-text-secondary)",
+                              fontStyle: "italic",
+                              maxWidth: 180,
+                              display: "inline-block",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
                             },
-                            sample.fileName,
-                          ),
+                            title: sample.displayName || "未识别",
+                          },
+                          sample.displayName || "未识别",
                         ),
+                      ),
+                      /*#__PURE__*/ React.createElement(
+                        "td",
+                        null,
+                        /*#__PURE__*/ React.createElement(
+                          "span",
+                          {
+                            style: {
+                              fontSize: 12,
+                              color: "var(--color-text-tertiary)",
+                              maxWidth: 200,
+                              display: "inline-block",
+                              overflow: "hidden",
+                              textOverflow: "ellipsis",
+                              whiteSpace: "nowrap",
+                            },
+                            title: sample.fileName,
+                          },
+                          sample.fileName,
+                        ),
+                      ),
                         /*#__PURE__*/ React.createElement(
                           "td",
                           null,

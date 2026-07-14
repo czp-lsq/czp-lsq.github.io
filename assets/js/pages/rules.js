@@ -163,16 +163,13 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
       return { valid: true, msg: "配置完整（固定值）" };
     }
     const source = rule.steps.find((s) => s.type === "source");
+    const hasTable = source ? (source.config.table || (source.config.tables && source.config.tables.length > 0)) : false;
     if (!source && needsDataSource) {
       return { valid: false, msg: "缺少「数据源」步骤" };
     }
-    if (source) {
-      const hasTable = source.config.table || (source.config.tables && source.config.tables.length > 0);
-      if (!hasTable) {
-        return { valid: false, msg: "「数据源」步骤未选择数据表" };
-      }
+    if (source && !hasTable) {
+      return { valid: false, msg: "「数据源」步骤未选择数据表" };
     }
-    // 智能检测：只有数据源步骤没有处理步骤时，提示需要添加处理步骤
     const processTypes = ["filter", "aggregate", "join", "group", "formula", "virtual", "constant", "text", "valueNormalize", "normalize", "runningTotal", "percentOfTotal", "movingAverage", "binning"];
     const hasProcessStep = rule.steps.some((s) => processTypes.includes(s.type));
     if (source && hasTable && !hasProcessStep) {

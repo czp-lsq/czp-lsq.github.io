@@ -1,12 +1,13 @@
 // utils/excel.js - Excel 解析与导出工具 (ExcelUtils)
 const ExcelUtils = {
   parseExcelBuffer(arrayBuffer) {
-    const wb = XLSX.read(new Uint8Array(arrayBuffer), {
-      type: "array",
-      cellDates: true,
-      cellNF: true,
-      cellHTML: false,
-    });
+    try {
+      const wb = XLSX.read(new Uint8Array(arrayBuffer), {
+        type: "array",
+        cellDates: true,
+        cellNF: true,
+        cellHTML: false,
+      });
     const sheets = {};
     wb.SheetNames.forEach((name) => {
       const ws = wb.Sheets[name];
@@ -69,7 +70,11 @@ const ExcelUtils = {
         };
       }
     });
-    return sheets;
+      return sheets;
+    } catch (err) {
+      console.error("[ExcelUtils] Parse error:", err);
+      throw err;
+    }
   },
   detectHeaderRow(aoa) {
     const maxScan = Math.min(aoa.length, 15);
