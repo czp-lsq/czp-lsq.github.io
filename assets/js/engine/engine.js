@@ -965,11 +965,50 @@ const CalcEngine = {
               joinRows.forEach((r) => {
                 lookup[r[step.config.fk]] = r;
               });
+              const parseSizeCostStr = (costStr) => {
+                if (!costStr) return {};
+                const map = {};
+                const s = String(costStr).toLowerCase();
+                const patterns = [
+                  /([a-z]+)(\d+\.?\d*)/g,
+                  /(\d+\.?\d*)([a-z]+)/g,
+                ];
+                for (const pat of patterns) {
+                  let match;
+                  const tempStr = s;
+                  pat.lastIndex = 0;
+                  while ((match = pat.exec(tempStr)) !== null) {
+                    const size = match[1].match(/[a-z]+/) ? match[1] : match[2];
+                    const cost = match[1].match(/\d/) ? match[1] : match[2];
+                    map[size] = parseFloat(cost);
+                  }
+                }
+                return map;
+              };
               data = data.map((row) => {
                 const keyVal = row[step.config.key];
                 const joined = lookup[keyVal];
                 if (joined) {
-                  return { ...row, [step.config.col]: joined[step.config.col] };
+                  let colVal = joined[step.config.col];
+                  if (step.config.parseSizeCost && step.config.sizeField) {
+                    const sizeCostMap = parseSizeCostStr(colVal);
+                    const sizeVal = String(row[step.config.sizeField] || "").trim().toLowerCase();
+                    let matchedCost = 0;
+                    if (sizeCostMap[sizeVal] !== undefined) {
+                      matchedCost = sizeCostMap[sizeVal];
+                    } else {
+                      const sizePattern = /[a-z]+/i;
+                      const extractedSize = String(row[step.config.sizeField] || "").match(sizePattern);
+                      if (extractedSize) {
+                        const shortSize = extractedSize[0].toLowerCase();
+                        if (sizeCostMap[shortSize] !== undefined) {
+                          matchedCost = sizeCostMap[shortSize];
+                        }
+                      }
+                    }
+                    colVal = matchedCost;
+                  }
+                  return { ...row, [step.config.col]: colVal };
                 }
                 return row;
               });

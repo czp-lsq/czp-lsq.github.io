@@ -2019,7 +2019,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   /*#__PURE__*/ React.createElement(
                     "div",
                     { className: "table-select-group-label" },
-                    "📁 样表数据"
+                    "样表数据"
                   ),
                   /*#__PURE__*/ React.createElement(
                     "div",
@@ -3347,12 +3347,52 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
           ),
           /*#__PURE__*/ React.createElement(
             "div",
-            { className: "step-desc" },
-            /*#__PURE__*/ React.createElement(Icons.Info, null),
-            " 💡 根据主表关联键从关联表中匹配数据，将关联表中指定列的值填充到当前字段。",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-checkbox-label" },
+              /*#__PURE__*/ React.createElement("input", {
+                type: "checkbox",
+                checked: step.config.parseSizeCost || false,
+                onChange: (e) => updateStepConfig(step.id, "parseSizeCost", e.target.checked),
+              }),
+              "启用尺码成本解析",
+              /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "form-label-hint" },
+                "从成本列（如m3.5l4）中根据尺码提取对应成本"
+              )
+            )
           ),
-        );
-      }
+          step.config.parseSizeCost && /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "form-item" },
+            /*#__PURE__*/ React.createElement(
+              "label",
+              { className: "form-label" },
+              "尺码字段",
+              /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "form-label-hint" },
+                "主表中包含尺码信息的字段"
+              )
+            ),
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
+              value: step.config.sizeField || "",
+              onChange: (val) => updateStepConfig(step.id, "sizeField", val),
+              options: sourceTableHeaders.map((h) => ({ value: h, label: h })),
+              placeholder: "请选择尺码字段",
+            })
+          )
+        ),
+        /*#__PURE__*/ React.createElement(
+          "div",
+          { className: "step-desc" },
+          /*#__PURE__*/ React.createElement(Icons.Info, null),
+          " 💡 根据主表关联键从关联表中匹配数据，将关联表中指定列的值填充到当前字段。",
+        ),
+      );
+    }
       case "distinct":
         return /*#__PURE__*/ React.createElement(
           "div",
@@ -5909,9 +5949,45 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             return /*#__PURE__*/ React.createElement("span", { className: "debug-empty" }, "空数组");
           }
           const allHeaders = data.length > 0 ? Object.keys(data[0]).filter((k) => !k.startsWith("_")) : [];
+          const cfg = step.config || {};
+          let relevantHeaders = [];
+          const extractExprFields = (expr) => {
+            if (!expr) return [];
+            const matches = expr.match(/{([^}]+)}/g);
+            return matches ? matches.map((m) => m.slice(1, -1)) : [];
+          };
+          switch (step.type) {
+            case "filter":
+              relevantHeaders = [cfg.column].filter(Boolean);
+              break;
+            case "virtual":
+              relevantHeaders = [cfg.source, cfg.target].filter(Boolean);
+              break;
+            case "join":
+              relevantHeaders = [cfg.key, cfg.fk, cfg.col].filter(Boolean);
+              break;
+            case "aggregate":
+              if (cfg.column === "__expr__" && cfg.expr) {
+                relevantHeaders = extractExprFields(cfg.expr);
+              } else {
+                relevantHeaders = [cfg.column].filter(Boolean);
+              }
+              break;
+            case "formula":
+              relevantHeaders = extractExprFields(cfg.expr);
+              break;
+            case "sort":
+              relevantHeaders = [cfg.column].filter(Boolean);
+              break;
+            case "source":
+            case "limit":
+            default:
+              relevantHeaders = allHeaders.slice(0, 5);
+              break;
+          }
+          const validHeaders = relevantHeaders.filter((h) => allHeaders.includes(h));
+          const displayHeaders = validHeaders.length > 0 ? validHeaders : allHeaders.slice(0, 5);
           const displayRows = data.slice(0, 100);
-          const MAX_COLS = 8;
-          const headers = allHeaders.slice(0, MAX_COLS);
           return /*#__PURE__*/ React.createElement(
             "div",
             { className: "debug-data-table" },
@@ -5924,8 +6000,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 /*#__PURE__*/ React.createElement(
                   "tr",
                   null,
-                  headers.map((h) => /*#__PURE__*/ React.createElement("th", { key: h, title: h }, h)),
-                  allHeaders.length > MAX_COLS && /*#__PURE__*/ React.createElement("th", null, `...+${allHeaders.length - MAX_COLS}列`),
+                  displayHeaders.map((h) => /*#__PURE__*/ React.createElement("th", { key: h, title: h }, h)),
                 ),
               ),
               /*#__PURE__*/ React.createElement(
@@ -5934,7 +6009,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 displayRows.map((row, ri) => /*#__PURE__*/ React.createElement(
                   "tr",
                   { key: ri },
-                  headers.map((h) => /*#__PURE__*/ React.createElement(
+                  displayHeaders.map((h) => /*#__PURE__*/ React.createElement(
                     "td",
                     { key: h },
                     row[h] != null
@@ -5943,9 +6018,13 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                         : String(row[h]).slice(0, 50)
                       : "-",
                   )),
-                  allHeaders.length > MAX_COLS && /*#__PURE__*/ React.createElement("td", null, "..."),
                 )),
               ),
+            ),
+            displayHeaders.length < allHeaders.length && /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "debug-table-more" },
+              `... 共 ${allHeaders.length} 列，仅显示参与计算的 ${displayHeaders.length} 列`,
             ),
             data.length > 100 && /*#__PURE__*/ React.createElement(
               "div",
@@ -7668,60 +7747,60 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                   switch (step.type) {
                                     case "source":
                                       if (cfg.tables && cfg.tables.length > 0) {
-                                        previews.push({ icon: "📁", text: `已选择 ${cfg.tables.length} 个数据表` });
+                                        previews.push({ icon: "", text: `已选择 ${cfg.tables.length} 个数据表` });
                                       } else {
-                                        previews.push({ icon: "⚠️", text: "请至少选择一个数据表", warn: true });
+                                        previews.push({ icon: "", text: "请至少选择一个数据表", warn: true });
                                       }
                                       break;
                                     case "filter":
                                       if (cfg.column && cfg.op) {
-                                        previews.push({ icon: "🔍", text: `筛选条件: ${cfg.column} ${cfg.op} ${cfg.value != null ? String(cfg.value) : ""}` });
+                                        previews.push({ icon: "", text: `筛选条件: ${cfg.column} ${cfg.op} ${cfg.value != null ? String(cfg.value) : ""}` });
                                       } else {
-                                        previews.push({ icon: "⚠️", text: "请配置筛选条件", warn: true });
+                                        previews.push({ icon: "", text: "请配置筛选条件", warn: true });
                                       }
                                       break;
                                     case "virtual":
                                       if (cfg.source && cfg.rule && cfg.target) {
-                                        previews.push({ icon: "✨", text: `从「${cfg.source}」提取${cfg.rule} → 生成「${cfg.target}」` });
+                                        previews.push({ icon: "", text: `从「${cfg.source}」提取${cfg.rule} → 生成「${cfg.target}」` });
                                       } else {
-                                        previews.push({ icon: "⚠️", text: "请配置源字段、规则和目标字段", warn: true });
+                                        previews.push({ icon: "", text: "请配置源字段、规则和目标字段", warn: true });
                                       }
                                       break;
                                     case "join":
                                       if (cfg.key && cfg.fk && cfg.col) {
-                                        previews.push({ icon: "🔗", text: `关联: ${cfg.key} = ${cfg.fk}，导入「${cfg.col}」` });
+                                        previews.push({ icon: "", text: `关联: ${cfg.key} = ${cfg.fk}，导入「${cfg.col}」` });
                                       } else {
-                                        previews.push({ icon: "⚠️", text: "请配置关联键和导入列", warn: true });
+                                        previews.push({ icon: "", text: "请配置关联键和导入列", warn: true });
                                       }
                                       break;
                                     case "aggregate":
                                       if (cfg.column === "__expr__" && cfg.expr) {
-                                        previews.push({ icon: "📊", text: `聚合: ${cfg.func || "sum"}(${cfg.expr.replace(/{([^}]+)}/g, "【$1】")})` });
+                                        previews.push({ icon: "", text: `聚合: ${cfg.func || "sum"}(${cfg.expr.replace(/{([^}]+)}/g, "【$1】")})` });
                                       } else if (cfg.column) {
-                                        previews.push({ icon: "📊", text: `聚合: ${cfg.func || "sum"}(${cfg.column})` });
+                                        previews.push({ icon: "", text: `聚合: ${cfg.func || "sum"}(${cfg.column})` });
                                       } else {
-                                        previews.push({ icon: "⚠️", text: "请选择聚合列", warn: true });
+                                        previews.push({ icon: "", text: "请选择聚合列", warn: true });
                                       }
                                       break;
                                     case "formula":
                                       if (cfg.expr) {
-                                        previews.push({ icon: "🧮", text: `公式: ${cfg.expr.replace(/{([^}]+)}/g, "【$1】")}` });
+                                        previews.push({ icon: "", text: `公式: ${cfg.expr.replace(/{([^}]+)}/g, "【$1】")}` });
                                         if (cfg.format && cfg.format !== "none") {
-                                          previews.push({ icon: "🎨", text: `输出格式: ${cfg.format}` });
+                                          previews.push({ icon: "", text: `输出格式: ${cfg.format}` });
                                         }
                                       } else {
-                                        previews.push({ icon: "⚠️", text: "请输入计算公式", warn: true });
+                                        previews.push({ icon: "", text: "请输入计算公式", warn: true });
                                       }
                                       break;
                                     case "sort":
                                       if (cfg.column) {
-                                        previews.push({ icon: "📋", text: `按 ${cfg.column} ${cfg.direction === "desc" ? "降序" : "升序"} 排列` });
+                                        previews.push({ icon: "", text: `按 ${cfg.column} ${cfg.direction === "desc" ? "降序" : "升序"} 排列` });
                                       } else {
-                                        previews.push({ icon: "⚠️", text: "请选择排序列", warn: true });
+                                        previews.push({ icon: "", text: "请选择排序列", warn: true });
                                       }
                                       break;
                                     case "limit":
-                                      previews.push({ icon: "✂️", text: `限制输出前 ${cfg.limit || 10} 条数据` });
+                                      previews.push({ icon: "", text: `限制输出前 ${cfg.limit || 10} 条数据` });
                                       break;
                                   }
                                   if (previews.length === 0) return null;
@@ -7736,8 +7815,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                     ),
                                     previews.map((p, pi) => /*#__PURE__*/ React.createElement(
                                       "div",
-                                      { key: pi, style: { fontSize: "12px", color: p.warn ? "#d97706" : "#334155", marginBottom: "3px", display: "flex", alignItems: "center", gap: "6px" } },
-                                      /*#__PURE__*/ React.createElement("span", null, p.icon),
+                                      { key: pi, style: { fontSize: "12px", color: p.warn ? "#d97706" : "#334155", marginBottom: "3px" } },
                                       p.text,
                                     )),
                                   );
