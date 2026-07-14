@@ -974,24 +974,24 @@ const CalcEngine = {
                   douyin: ["抖音", "dy", "DY", "抖", "抖店"],
                 };
                 let targetPlatform = null;
-                let platformPriority = ["pdd", "taobao", "douyin"];
                 if (platformName) {
                   const pn = String(platformName).toLowerCase();
-                  for (const [plat, keywords] of Object.entries(platformKeywords)) {
-                    if (keywords.some((kw) => pn.includes(kw.toLowerCase()))) {
-                      targetPlatform = plat;
-                      break;
-                    }
-                  }
-                  if (!targetPlatform) {
+                  if (platformKeywords[pn]) {
                     targetPlatform = pn;
+                  } else {
+                    for (const [plat, keywords] of Object.entries(platformKeywords)) {
+                      if (keywords.some((kw) => pn.includes(kw.toLowerCase()))) {
+                        targetPlatform = plat;
+                        break;
+                      }
+                    }
                   }
                 }
                 const result = { unified: null, sizes: {} };
                 const extractSizeCostPairs = (segment) => {
                   const pairs = {};
-                  const seg = segment.toLowerCase();
-                  const sizePattern = /(?:^|[^a-z])(xs|s|m|l|xl|xxl|2xl|3xl|4xl|5xl|x{1,3}l|x{0,3}s)(\d+\.?\d*)/gi;
+                  const seg = segment.toLowerCase().trim();
+                  const sizePattern = /(xs|s|m|l|xl|xxl|2xl|3xl|4xl|5xl|x{1,3}l|x{0,3}s)(\d+\.?\d*)/gi;
                   let match;
                   const found = new Set();
                   while ((match = sizePattern.exec(seg)) !== null) {
@@ -1012,7 +1012,6 @@ const CalcEngine = {
                 };
                 let platformSegments = [];
                 const tempStr = s;
-                let hasPlatformPrefix = false;
                 const allKeywords = [];
                 for (const [plat, keywords] of Object.entries(platformKeywords)) {
                   keywords.forEach((kw) => {
@@ -1025,7 +1024,28 @@ const CalcEngine = {
                 allKeywords.forEach(({ kw, plat }) => {
                   let idx = 0;
                   while ((idx = lowerStr.indexOf(kw, idx)) !== -1) {
-                    positions.push({ start: idx, end: idx + kw.length, plat, kw });
+                    const isChineseKw = /[\u4e00-\u9fa5]/.test(kw);
+                    let beforeOk = true;
+                    let afterOk = true;
+                    if (idx > 0) {
+                      const beforeChar = lowerStr.charAt(idx - 1);
+                      if (isChineseKw) {
+                        beforeOk = !/[\u4e00-\u9fa5]/.test(beforeChar);
+                      } else {
+                        beforeOk = /[\d\s（）()【】\[\],，、/\\-_\u4e00-\u9fa5]/.test(beforeChar);
+                      }
+                    }
+                    if (idx + kw.length < lowerStr.length) {
+                      const afterChar = lowerStr.charAt(idx + kw.length);
+                      if (isChineseKw) {
+                        afterOk = !/[\u4e00-\u9fa5]/.test(afterChar);
+                      } else {
+                        afterOk = /[\d\s（）()【】\[\],，、/\\-_\u4e00-\u9fa5]/.test(afterChar);
+                      }
+                    }
+                    if (beforeOk && afterOk) {
+                      positions.push({ start: idx, end: idx + kw.length, plat, kw });
+                    }
                     idx += kw.length;
                   }
                 });
@@ -1036,8 +1056,8 @@ const CalcEngine = {
                     merged.push(pos);
                   }
                 });
+                let hasPlatformPrefix = merged.length > 0;
                 if (merged.length > 0) {
-                  hasPlatformPrefix = true;
                   for (let i = 0; i < merged.length; i++) {
                     const segStart = merged[i].end;
                     const segEnd = i + 1 < merged.length ? merged[i + 1].start : tempStr.length;
@@ -1053,23 +1073,31 @@ const CalcEngine = {
                 } else {
                   platformSegments.push({ plat: null, segment: tempStr });
                 }
-                for (const { plat, segment } of platformSegments) {
-                  const parsed = extractSizeCostPairs(segment);
-                  if (targetPlatform && plat === targetPlatform) {
-                    if (parsed.unified !== undefined) {
-                      result.unified = parsed.unified;
+                if (!hasPlatformPrefix && targetPlatform) {
+                  const parsed = extractSizeCostPairs(tempStr);
+                  if (parsed.unified !== undefined) {
+                    result.unified = parsed.unified;
+                  }
+                  result.sizes = { ...result.sizes, ...parsed.sizes };
+                } else {
+                  for (const { plat, segment } of platformSegments) {
+                    const parsed = extractSizeCostPairs(segment);
+                    if (targetPlatform && plat === targetPlatform) {
+                      if (parsed.unified !== undefined) {
+                        result.unified = parsed.unified;
+                      }
+                      result.sizes = { ...result.sizes, ...parsed.sizes };
+                    } else if (!plat && !targetPlatform) {
+                      if (parsed.unified !== undefined) {
+                        result.unified = parsed.unified;
+                      }
+                      result.sizes = { ...result.sizes, ...parsed.sizes };
+                    } else if (!targetPlatform && plat) {
+                      if (parsed.unified !== undefined) {
+                        result.unified = parsed.unified;
+                      }
+                      result.sizes = { ...result.sizes, ...parsed.sizes };
                     }
-                    result.sizes = { ...result.sizes, ...parsed.sizes };
-                  } else if (!plat && !targetPlatform) {
-                    if (parsed.unified !== undefined) {
-                      result.unified = parsed.unified;
-                    }
-                    result.sizes = { ...result.sizes, ...parsed.sizes };
-                  } else if (!targetPlatform && plat) {
-                    if (parsed.unified !== undefined) {
-                      result.unified = parsed.unified;
-                    }
-                    result.sizes = { ...result.sizes, ...parsed.sizes };
                   }
                 }
                 return result;
@@ -1078,18 +1106,15 @@ const CalcEngine = {
                 if (!specStr) return "";
                 const s = String(specStr);
                 const sizePatterns = [
-                  /\b(X{1,3}S|X{0,3}L|\d{0,2}X{0,2}[SL]|M)\s*(码|号|斤)?/i,
-                  /(?:尺码|尺寸|规格|size)\s*[:：]?\s*(X{1,3}S|X{0,3}L|\d{0,2}X{0,2}[SL]|M)/i,
+                  /(?:尺码|尺寸|规格|size)\s*[:：]?\s*(XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL|X{1,3}S|X{0,3}L|\d{1,2}X{0,2}[SL])/i,
+                  /(XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL|X{1,3}S|X{0,3}L|\d{1,2}X{0,2}[SL])\s*(码|号|斤|cm|CM)/i,
+                  /(?:^|[^A-Za-z])(XS|S|M|L|XL|XXL|2XL|3XL|4XL|5XL|X{1,3}S|X{0,3}L|\d{1,2}X{0,2}[SL])(?=[^A-Za-z]|$)/i,
                 ];
                 for (const pat of sizePatterns) {
                   const m = s.match(pat);
                   if (m) {
                     return m[1].toLowerCase();
                   }
-                }
-                const standalone = s.match(/[^A-Za-z0-9](X{1,3}S|X{0,3}L|\d{0,2}X{0,2}[SL]|M)(?![A-Za-z0-9])/i);
-                if (standalone) {
-                  return standalone[1].toLowerCase();
                 }
                 return "";
               };
