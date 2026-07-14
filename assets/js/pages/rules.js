@@ -378,6 +378,30 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   const [debugStepId, setDebugStepId] = useState(null);
   const [showPreviewModal, setShowPreviewModal] = useState(false);
   const [previewStepId, setPreviewStepId] = useState(null);
+  const [previewTab, setPreviewTab] = useState("both");
+  const [isPreviewPinned, setIsPreviewPinned] = useState(false);
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(`rules_page_left_collapsed_${currentPlatform}`) === "true";
+    } catch (e) { return false; }
+  });
+  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem(`rules_page_right_collapsed_${currentPlatform}`) === "true";
+    } catch (e) { return false; }
+  });
+  const [isSaved, setIsSaved] = useState(true);
+  const [showShortcuts, setShowShortcuts] = useState(false);
+  const [fieldCategoryFilter, setFieldCategoryFilter] = useState("all");
+
+  useEffect(() => {
+    localStorage.setItem(`rules_page_left_collapsed_${currentPlatform}`, leftPanelCollapsed);
+  }, [leftPanelCollapsed, currentPlatform]);
+
+  useEffect(() => {
+    localStorage.setItem(`rules_page_right_collapsed_${currentPlatform}`, rightPanelCollapsed);
+  }, [rightPanelCollapsed, currentPlatform]);
+
   const platform = state.platforms.find((p) => p.id === currentPlatform);
   const template = state.templates[currentPlatform];
   const savedRules = state.rules[currentPlatform] || {};
@@ -462,6 +486,40 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
     return 0;
   };
 
+  const categorizeField = (field) => {
+    const name = (field.name || "").toLowerCase();
+    const semanticType = field.semanticType || "";
+    if (["shop", "year", "month", "day", "date"].includes(semanticType)) {
+      return "other";
+    }
+    if (semanticType === "text") {
+      return "other";
+    }
+    const salesKeywords = ["销售", "营收", "收入", "销售额", "营业额", "毛利", "销售金额", "实付", "支付", "成交额", "订单金额"];
+    const costKeywords = ["成本", "费用", "支出", "投入", "花费", "进价", "采购", "运费", "包装", "推广", "广告", "佣金", "服务费"];
+    const profitKeywords = ["利润", "净利", "盈利", "收益", "回报率", "毛利率", "利润率"];
+    for (const kw of salesKeywords) {
+      if (name.includes(kw.toLowerCase())) return "sales";
+    }
+    for (const kw of costKeywords) {
+      if (name.includes(kw.toLowerCase())) return "cost";
+    }
+    for (const kw of profitKeywords) {
+      if (name.includes(kw.toLowerCase())) return "profit";
+    }
+    return "other";
+  };
+
+  const getFieldCategoryInfo = (cat) => {
+    const cats = {
+      sales: { name: "销售类", icon: "💰", color: "#10b981", bg: "#d1fae5" },
+      cost: { name: "成本类", icon: "📦", color: "#f59e0b", bg: "#fef3c7" },
+      profit: { name: "利润类", icon: "📈", color: "#6366f1", bg: "#e0e7ff" },
+      other: { name: "其他", icon: "📋", color: "#64748b", bg: "#f1f5f9" },
+    };
+    return cats[cat] || cats.other;
+  };
+
   const filteredFields = useMemo(() => {
     return fields.filter((f) => {
       const matchSearch =
@@ -483,6 +541,15 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
       }
     });
   }, [fields, savedRules, fieldFilter, fieldSearch]);
+
+  const groupedFields = useMemo(() => {
+    const groups = { sales: [], cost: [], profit: [], other: [] };
+    filteredFields.forEach((f) => {
+      const cat = categorizeField(f);
+      groups[cat].push(f);
+    });
+    return groups;
+  }, [filteredFields]);
 
   const completedCount = useMemo(() => {
     return fields.filter(
@@ -5970,6 +6037,237 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
     }
   };
 
+  const copyToClipboard = (text) => {
+    try {
+      if (navigator.clipboard && navigator.clipboard.writeText) {
+        navigator.clipboard.writeText(text);
+        return true;
+      }
+      const ta = document.createElement("textarea");
+      ta.value = text;
+      ta.style.position = "fixed";
+      ta.style.left = "-9999px";
+      document.body.appendChild(ta);
+      ta.select();
+      document.execCommand("copy");
+      document.body.removeChild(ta);
+      return true;
+    } catch (e) {
+      return false;
+    }
+  };
+
+  const dataToCSV = (data) => {
+    if (!data || !Array.isArray(data) || data.length === 0) return "";
+    const headers = new Set();
+    data.forEach((row) => {
+      if (row && typeof row === "object") {
+        Object.keys(row).forEach((k) => {
+          if (!k.startsWith("_")) headers.add(k);
+        });
+      }
+    });
+    const headerArr = Array.from(headers);
+    const escapeCSV = (val) => {
+      if (val == null) return "";
+      const str = String(val);
+      if (str.includes(",") || str.includes("\"") || str.includes("\n")) {
+        return "\"" + str.replace(/"/g, "\"\"") + "\"";
+      }
+      return str;
+    };
+    const lines = [headerArr.join(",")];
+    data.forEach((row) => {
+      lines.push(headerArr.map((h) => escapeCSV(row[h])).join(","));
+    });
+    return lines.join("\n");
+  };
+
+  const downloadCSV = (data, filename) => {
+    const csv = dataToCSV(data);
+    if (!csv) return;
+    const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename || "data.csv";
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const getPreviewData = (step, stepIdx) => {
+    try {
+      const allSteps = currentRule?.steps || [];
+      const prevSteps = allSteps.slice(0, stepIdx);
+      const activeFieldId = activeField?.id;
+      const samples = state.samples || {};
+      const fieldSamples = activeFieldId ? samples[activeFieldId] || [] : [];
+      const sampleTables = (state.samples[currentPlatform] || []).map((s, i) => ({
+        id: s.id || `sample_${i}`,
+        name: s.alias || s.fileName,
+        originalName: s.fileName,
+        headers: s.sheets[Object.keys(s.sheets)[0]]?.headers || [],
+        rows: s.sheets[Object.keys(s.sheets)[0]]?.rows || [],
+        source: "sample",
+      }));
+      const externalTables = (state.externals || []).map((e) => ({
+        id: e.id || e.sheetKey,
+        name: e.name || e.sheetKey,
+        headers: e.headers || (e.allData && e.allData.length > 0 ? Object.keys(e.allData[0]) : []),
+        rows: e.allData || e.rows || [],
+        source: "external",
+        externalId: e.id || e.sheetKey,
+      }));
+      const tables = [...sampleTables, ...externalTables];
+      let inputData = null;
+      let outputData = null;
+      try {
+        if (typeof CalcEngine?.runSteps === "function") {
+          const ctx = {
+            fieldId: activeFieldId,
+            platform: currentPlatform,
+            samples: fieldSamples,
+            template,
+            tables,
+            externals: state.externals || [],
+            shopName: platform?.shops?.[0]?.name || "",
+          };
+          const resIn = CalcEngine.runSteps(prevSteps, ctx);
+          inputData = resIn?.data ?? resIn?.result ?? resIn;
+          const resOut = CalcEngine.runSteps(allSteps.slice(0, stepIdx + 1), ctx);
+          outputData = resOut?.data ?? resOut?.result ?? resOut;
+        }
+      } catch (e) {}
+      return { inputData, outputData };
+    } catch (e) {
+      return { inputData: null, outputData: null };
+    }
+  };
+
+  const renderDataTable = (data, maxRows) => {
+    const mRows = maxRows || 100;
+    if (!data) {
+      return /*#__PURE__*/ React.createElement(
+        "div",
+        { style: { padding: "20px", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: "12px" } },
+        "暂无数据",
+      );
+    }
+    if (!Array.isArray(data)) {
+      return /*#__PURE__*/ React.createElement(
+        "div",
+        { style: { padding: "20px", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: "12px" } },
+        "数据格式不支持预览",
+      );
+    }
+    if (data.length === 0) {
+      return /*#__PURE__*/ React.createElement(
+        "div",
+        { style: { padding: "20px", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: "12px" } },
+        "空数组（0行）",
+      );
+    }
+    const headerSet = new Set();
+    data.forEach((row) => {
+      if (row && typeof row === "object") {
+        Object.keys(row).forEach((k) => {
+          if (!k.startsWith("_")) headerSet.add(k);
+        });
+      }
+    });
+    const allHeaders = Array.from(headerSet);
+    if (allHeaders.length === 0) {
+      return /*#__PURE__*/ React.createElement(
+        "div",
+        { style: { padding: "20px", textAlign: "center", color: "var(--color-text-tertiary)", fontSize: "12px" } },
+        "无可见列",
+      );
+    }
+    const displayRows = data.slice(0, mRows);
+    return /*#__PURE__*/ React.createElement(
+      "div",
+      { style: { width: "100%" } },
+      /*#__PURE__*/ React.createElement(
+        "div",
+        { style: { overflowX: "auto", border: "1px solid var(--color-border)", borderRadius: "6px", maxHeight: "300px", overflowY: "auto" } },
+        /*#__PURE__*/ React.createElement(
+          "table",
+          { style: { width: "100%", borderCollapse: "collapse", fontSize: "12px" } },
+          /*#__PURE__*/ React.createElement(
+            "thead",
+            null,
+            /*#__PURE__*/ React.createElement(
+              "tr",
+              null,
+              allHeaders.map((h) => /*#__PURE__*/ React.createElement(
+                "th",
+                {
+                  key: h,
+                  title: h,
+                  style: {
+                    padding: "8px 10px",
+                    textAlign: "left",
+                    background: "var(--color-bg-tertiary)",
+                    borderBottom: "1px solid var(--color-border)",
+                    fontWeight: 600,
+                    color: "var(--color-text-secondary)",
+                    whiteSpace: "nowrap",
+                    position: "sticky",
+                    top: 0,
+                    zIndex: 1,
+                  },
+                },
+                h,
+              )),
+            ),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "tbody",
+            null,
+            displayRows.map((row, ri) => /*#__PURE__*/ React.createElement(
+              "tr",
+              {
+                key: ri,
+                style: {
+                  background: ri % 2 === 0 ? "var(--color-bg-primary)" : "var(--color-bg-secondary)",
+                },
+              },
+              allHeaders.map((h) => /*#__PURE__*/ React.createElement(
+                "td",
+                {
+                  key: h,
+                  style: {
+                    padding: "6px 10px",
+                    borderBottom: "1px solid var(--color-border)",
+                    color: "var(--color-text-primary)",
+                    whiteSpace: "nowrap",
+                    maxWidth: "200px",
+                    overflow: "hidden",
+                    textOverflow: "ellipsis",
+                  },
+                  title: row[h] != null ? String(row[h]) : "",
+                },
+                row[h] != null
+                  ? (typeof row[h] === "number"
+                    ? row[h].toLocaleString("zh-CN", { maximumFractionDigits: 2 })
+                    : String(row[h]))
+                  : "-",
+              )),
+            )),
+          ),
+        ),
+      ),
+      /*#__PURE__*/ React.createElement(
+        "div",
+        { style: { marginTop: "6px", fontSize: "11px", color: "var(--color-text-tertiary)", display: "flex", justifyContent: "space-between" } },
+        /*#__PURE__*/ React.createElement("span", null, "共 " + data.length + " 行，显示前 " + Math.min(mRows, data.length) + " 行"),
+        /*#__PURE__*/ React.createElement("span", null, allHeaders.length + " 列"),
+      ),
+    );
+  };
+
   // 调试预览：模拟执行当前步骤，展示输入/输出
   const renderStepDebug = (step, stepIdx) => {
     try {
@@ -6502,7 +6800,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   };
   return /*#__PURE__*/ React.createElement(
     "div",
-    { className: "fade-in rules-page" },
+    { className: "fade-in rules-page", style: { position: "relative" } },
     fields.length === 0
       ? /*#__PURE__*/ React.createElement(
           "div",
@@ -6533,14 +6831,229 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
           ),
         )
       : /*#__PURE__*/ React.createElement(
-          "div",
-          { className: "workspace" },
+          React.Fragment,
+          null,
           /*#__PURE__*/ React.createElement(
             "div",
-            { className: "workspace-left" },
-        /*#__PURE__*/ React.createElement(
+            {
+              className: "rules-page-header",
+              style: {
+                padding: "12px 20px",
+                borderBottom: "1px solid var(--color-border-light)",
+                background: "var(--color-bg)",
+                display: "flex",
+                alignItems: "center",
+                justifyContent: "space-between",
+              },
+            },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { style: { display: "flex", alignItems: "center", gap: "12px" } },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                {
+                  className: "breadcrumb",
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "8px",
+                    fontSize: "13px",
+                    color: "var(--color-text-secondary)",
+                  },
+                },
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  {
+                    style: { cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" },
+                    onClick: () => onNavigate && onNavigate("template"),
+                  },
+                  /*#__PURE__*/ React.createElement(Icons.LayoutGrid, { size: 14 }),
+                  "模板中心",
+                ),
+                /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-text-tertiary)" } }, "/"),
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  { style: { fontWeight: 600, color: "var(--color-text-primary)" } },
+                  /*#__PURE__*/ React.createElement(Icons.Calculator, { size: 14 }),
+                  " 计算规则",
+                ),
+                activeField && /*#__PURE__*/ React.createElement(
+                  React.Fragment,
+                  null,
+                  /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-text-tertiary)" } }, "/"),
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { style: { color: "var(--color-primary)", fontWeight: 500 } },
+                    activeField.name,
+                  ),
+                ),
+              ),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { style: { display: "flex", alignItems: "center", gap: "12px" } },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                {
+                  className: `save-status-indicator ${isSaved ? "saved" : "unsaved"}`,
+                  style: {
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "6px",
+                    fontSize: "12px",
+                    padding: "4px 10px",
+                    borderRadius: "999px",
+                    background: isSaved ? "#f0fdf4" : "#fef3c7",
+                    color: isSaved ? "#16a34a" : "#d97706",
+                    border: `1px solid ${isSaved ? "#bbf7d0" : "#fde68a"}`,
+                  },
+                },
+                isSaved
+                  ? /*#__PURE__*/ React.createElement(Icons.CheckCircle, { size: 12 })
+                  : /*#__PURE__*/ React.createElement(Icons.Circle, { size: 12 }),
+                isSaved ? "已保存" : "未保存",
+              ),
+              /*#__PURE__*/ React.createElement(
+                "button",
+                {
+                  className: "btn btn-default btn-sm",
+                  onClick: () => setShowShortcuts(!showShortcuts),
+                  title: "快捷键 (Ctrl+/)",
+                  style: { display: "flex", alignItems: "center", gap: "4px" },
+                },
+                /*#__PURE__*/ React.createElement(Icons.Keyboard, { size: 14 }),
+                "快捷键",
+              ),
+              activeField && /*#__PURE__*/ React.createElement(
+                Button,
+                {
+                  size: "sm",
+                  onClick: () => {
+                    const idx = filteredFields.findIndex((f) => f.id === activeField.id);
+                    if (idx > 0) setActiveField(filteredFields[idx - 1]);
+                  },
+                  disabled: filteredFields.findIndex((f) => f.id === activeField.id) <= 0,
+                },
+                /*#__PURE__*/ React.createElement(Icons.ChevronLeft, { size: 14 }),
+                " 上一个",
+              ),
+              activeField && /*#__PURE__*/ React.createElement(
+                Button,
+                {
+                  type: "primary",
+                  size: "sm",
+                  onClick: () => {
+                    const idx = filteredFields.findIndex((f) => f.id === activeField.id);
+                    if (idx < filteredFields.length - 1) setActiveField(filteredFields[idx + 1]);
+                  },
+                  disabled: filteredFields.findIndex((f) => f.id === activeField.id) >= filteredFields.length - 1,
+                },
+                "下一个 ",
+                /*#__PURE__*/ React.createElement(Icons.ChevronRight, { size: 14 }),
+              ),
+            ),
+          ),
+          showShortcuts && /*#__PURE__*/ React.createElement(
+            "div",
+            {
+              className: "shortcuts-panel",
+              style: {
+                position: "absolute",
+                top: "60px",
+                right: "20px",
+                background: "var(--color-bg-card)",
+                border: "1px solid var(--color-border)",
+                borderRadius: "var(--radius-lg)",
+                padding: "16px",
+                boxShadow: "var(--shadow-lg)",
+                zIndex: 1000,
+                minWidth: "280px",
+              },
+            },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              {
+                style: {
+                  fontSize: "13px",
+                  fontWeight: 600,
+                  marginBottom: "12px",
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                },
+              },
+              "快捷键提示",
+              /*#__PURE__*/ React.createElement(
+                "button",
+                {
+                  onClick: () => setShowShortcuts(false),
+                  style: {
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "var(--color-text-tertiary)",
+                  },
+                },
+                /*#__PURE__*/ React.createElement(Icons.X, { size: 16 }),
+              ),
+            ),
+            [
+              { keys: "Ctrl + S", desc: "保存当前规则" },
+              { keys: "Ctrl + Z", desc: "撤销" },
+              { keys: "Ctrl + Y", desc: "重做" },
+              { keys: "Ctrl + /", desc: "显示/隐藏快捷键" },
+              { keys: "Alt + ←", desc: "上一个字段" },
+              { keys: "Alt + →", desc: "下一个字段" },
+              { keys: "Ctrl + N", desc: "添加步骤" },
+            ].map((item, i) => /*#__PURE__*/ React.createElement(
+              "div",
+              {
+                key: i,
+                style: {
+                  display: "flex",
+                  justifyContent: "space-between",
+                  alignItems: "center",
+                  padding: "6px 0",
+                  fontSize: "12px",
+                  borderBottom: i < 6 ? "1px solid var(--color-border-light)" : "none",
+                },
+              },
+              /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-text-secondary)" } }, item.desc),
+              /*#__PURE__*/ React.createElement(
+                "kbd",
+                {
+                  style: {
+                    padding: "2px 6px",
+                    background: "var(--color-bg-tertiary)",
+                    border: "1px solid var(--color-border)",
+                    borderRadius: "4px",
+                    fontSize: "11px",
+                    fontFamily: "var(--font-mono)",
+                    color: "var(--color-text-primary)",
+                  },
+                },
+                item.keys,
+              ),
+            )),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "workspace", style: { height: "calc(100vh - 57px)" } },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              {
+                className: "workspace-left",
+                style: {
+                  width: leftPanelCollapsed ? "0px" : "260px",
+                  flexShrink: 0,
+                  overflow: "hidden",
+                  transition: "width 0.2s ease",
+                  position: "relative",
+                },
+              },
+              !leftPanelCollapsed && /*#__PURE__*/ React.createElement(
           "div",
-          { className: "card" },
+          { className: "card", style: { height: "100%", display: "flex", flexDirection: "column" } },
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "card-header" },
@@ -6551,11 +7064,33 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               "\u6A21\u677F\u5B57\u6BB5",
             ),
             /*#__PURE__*/ React.createElement(
-              "span",
-              { className: "tag tag-default" },
-              filteredFields.length,
-              "/",
-              fields.length,
+              "div",
+              { style: { display: "flex", alignItems: "center", gap: "8px" } },
+              /*#__PURE__*/ React.createElement(
+                "span",
+                { className: "tag tag-default" },
+                filteredFields.length,
+                "/",
+                fields.length,
+              ),
+              /*#__PURE__*/ React.createElement(
+                "button",
+                {
+                  className: "panel-collapse-btn",
+                  onClick: () => setLeftPanelCollapsed(true),
+                  title: "收起面板",
+                  style: {
+                    background: "none",
+                    border: "none",
+                    cursor: "pointer",
+                    color: "var(--color-text-tertiary)",
+                    padding: "2px",
+                    display: "flex",
+                    alignItems: "center",
+                  },
+                },
+                /*#__PURE__*/ React.createElement(Icons.ChevronLeft, { size: 16 }),
+              ),
             ),
           ),
           fields.length > 0 &&
@@ -6636,7 +7171,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             ),
           /*#__PURE__*/ React.createElement(
             "div",
-            { className: "field-list-wrapper" },
+            { className: "field-list-wrapper", style: { flex: 1, overflow: "auto" } },
             fields.length === 0
               ? /*#__PURE__*/ React.createElement(
                   "div",
@@ -6668,10 +7203,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                     " 前往模板中心",
                   ),
                 )
-              : /*#__PURE__*/ React.createElement(
-                  "ul",
-                  { className: "field-list" },
-                  filteredFields.length === 0
+              : filteredFields.length === 0
                 ? /*#__PURE__*/ React.createElement(
                     "div",
                     {
@@ -6684,75 +7216,219 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                     },
                     "\u672A\u627E\u5230\u5339\u914D\u5B57\u6BB5",
                   )
-                : filteredFields.map((field) => {
-                    const level = inferFieldLevel(field);
-                    const validation = validateRule(
-                      savedRules[field.id],
-                      field,
-                    );
-                    const stepCount = (savedRules[field.id]?.steps || [])
-                      .length;
-                    return /*#__PURE__*/ React.createElement(
-                      "li",
-                      {
-                        key: field.id,
-                        className: `field-item ${activeField?.id === field.id ? "active" : ""}`,
-                        onClick: () => setActiveField(field),
-                      },
-                      /*#__PURE__*/ React.createElement("span", {
-                        className: `field-dot ${stepCount > 0 ? (validation.valid ? "done" : "partial") : ""}`,
-                      }),
-                      /*#__PURE__*/ React.createElement(
+                : /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "field-grouped-list" },
+                    ["sales", "cost", "profit", "other"].map((catKey) => {
+                      const catFields = groupedFields[catKey] || [];
+                      if (catFields.length === 0) return null;
+                      const catInfo = getFieldCategoryInfo(catKey);
+                      return /*#__PURE__*/ React.createElement(
                         "div",
-                        { className: "field-item-content" },
+                        { key: catKey, className: "field-group" },
                         /*#__PURE__*/ React.createElement(
                           "div",
-                          { className: "field-name" },
-                          field.name,
-                        ),
-                        /*#__PURE__*/ React.createElement(
-                          "div",
-                          { className: "field-meta" },
+                          {
+                            className: "field-group-header",
+                            style: {
+                              padding: "8px 12px",
+                              background: catInfo.bg,
+                              color: catInfo.color,
+                              fontSize: "12px",
+                              fontWeight: 600,
+                              display: "flex",
+                              alignItems: "center",
+                              gap: "6px",
+                              position: "sticky",
+                              top: 0,
+                              zIndex: 1,
+                            },
+                          },
+                          /*#__PURE__*/ React.createElement("span", null, catInfo.icon),
+                          /*#__PURE__*/ React.createElement("span", null, catInfo.name),
                           /*#__PURE__*/ React.createElement(
                             "span",
-                            { className: "field-cell" },
-                            field.cell,
-                          ),
-                          stepCount > 0 &&
-                            /*#__PURE__*/ React.createElement(
-                              "span",
-                              { className: "field-step-count" },
-                              stepCount,
-                              "\u6B65",
-                            ),
-                          level !== null &&
-                            /*#__PURE__*/ React.createElement(
-                              "span",
-                              { className: `field-level-tag level-${level}` },
-                              "L",
-                              level,
-                            ),
-                          stepCount > 0 &&
-                            !validation.valid &&
-                            /*#__PURE__*/ React.createElement(
-                              "span",
-                              {
-                                className: "field-warning",
-                                title: validation.msg,
+                            {
+                              style: {
+                                marginLeft: "auto",
+                                background: "rgba(255,255,255,0.8)",
+                                padding: "1px 6px",
+                                borderRadius: "10px",
+                                fontSize: "11px",
                               },
-                              "\u26A0",
-                            ),
+                            },
+                            catFields.length,
+                          ),
                         ),
-                      ),
-                    );
-                  }),
-                ),
+                        /*#__PURE__*/ React.createElement(
+                          "ul",
+                          { className: "field-list" },
+                          catFields.map((field) => {
+                            const level = inferFieldLevel(field);
+                            const validation = validateRule(
+                              savedRules[field.id],
+                              field,
+                            );
+                            const stepCount = (savedRules[field.id]?.steps || [])
+                              .length;
+                            const getStatusType = () => {
+                              if (stepCount === 0) return "unconfigured";
+                              if (!validation.valid) return "error";
+                              return "configured";
+                            };
+                            const statusType = getStatusType();
+                            return /*#__PURE__*/ React.createElement(
+                              "li",
+                              {
+                                key: field.id,
+                                className: `field-item ${activeField?.id === field.id ? "active" : ""}`,
+                                onClick: () => setActiveField(field),
+                              },
+                              /*#__PURE__*/ React.createElement("span", {
+                                className: `field-dot ${stepCount > 0 ? (validation.valid ? "done" : "partial") : ""}`,
+                              }),
+                              /*#__PURE__*/ React.createElement(
+                                "div",
+                                { className: "field-item-content", style: { flex: 1 } },
+                                /*#__PURE__*/ React.createElement(
+                                  "div",
+                                  { style: { display: "flex", alignItems: "center", gap: "6px" } },
+                                  /*#__PURE__*/ React.createElement(
+                                    "div",
+                                    { className: "field-name" },
+                                    field.name,
+                                  ),
+                                  /*#__PURE__*/ React.createElement(
+                                    "span",
+                                    {
+                                      className: `field-status-badge status-${statusType}`,
+                                      style: {
+                                        fontSize: "10px",
+                                        padding: "1px 5px",
+                                        borderRadius: "4px",
+                                        flexShrink: 0,
+                                        background: statusType === "configured" ? "#dcfce7" : statusType === "error" ? "#fee2e2" : "#f1f5f9",
+                                        color: statusType === "configured" ? "#16a34a" : statusType === "error" ? "#dc2626" : "#64748b",
+                                      },
+                                    },
+                                    statusType === "configured" ? "已配置" : statusType === "error" ? "有错误" : "未配置",
+                                  ),
+                                ),
+                                /*#__PURE__*/ React.createElement(
+                                  "div",
+                                  { className: "field-meta" },
+                                  /*#__PURE__*/ React.createElement(
+                                    "span",
+                                    { className: "field-cell" },
+                                    field.cell,
+                                  ),
+                                  stepCount > 0 &&
+                                    /*#__PURE__*/ React.createElement(
+                                      "span",
+                                      { className: "field-step-count" },
+                                      stepCount,
+                                      "\u6B65",
+                                    ),
+                                  level !== null &&
+                                    /*#__PURE__*/ React.createElement(
+                                      "span",
+                                      { className: `field-level-tag level-${level}` },
+                                      "L",
+                                      level,
+                                    ),
+                                  stepCount > 0 &&
+                                    !validation.valid &&
+                                    /*#__PURE__*/ React.createElement(
+                                      "span",
+                                      {
+                                        className: "field-warning",
+                                        title: validation.msg,
+                                      },
+                                      "\u26A0",
+                                    ),
+                                ),
+                                /*#__PURE__*/ React.createElement(
+                                  "div",
+                                  {
+                                    className: "field-progress-bar",
+                                    style: {
+                                      height: "3px",
+                                      background: "#e2e8f0",
+                                      borderRadius: "2px",
+                                      marginTop: "4px",
+                                      overflow: "hidden",
+                                    },
+                                  },
+                                  stepCount > 0 && validation.valid && /*#__PURE__*/ React.createElement(
+                                    "div",
+                                    {
+                                      style: {
+                                        height: "100%",
+                                        background: "#10b981",
+                                        width: "100%",
+                                        borderRadius: "2px",
+                                      },
+                                    },
+                                  ),
+                                  stepCount > 0 && !validation.valid && /*#__PURE__*/ React.createElement(
+                                    "div",
+                                    {
+                                      style: {
+                                        height: "100%",
+                                        background: "#f59e0b",
+                                        width: "50%",
+                                        borderRadius: "2px",
+                                      },
+                                    },
+                                  ),
+                                ),
+                              ),
+                            );
+                          }),
+                        ),
+                      );
+                    }),
+                  ),
           ),
         ),
-      ),
-      /*#__PURE__*/ React.createElement(
-        "div",
-        { className: "workspace-right" },
+              leftPanelCollapsed && /*#__PURE__*/ React.createElement(
+                "button",
+                {
+                  className: "panel-expand-btn",
+                  onClick: () => setLeftPanelCollapsed(false),
+                  title: "展开字段面板",
+                  style: {
+                    position: "absolute",
+                    left: 0,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "var(--color-bg-card)",
+                    border: "1px solid var(--color-border)",
+                    borderLeft: "none",
+                    borderRadius: "0 8px 8px 0",
+                    padding: "12px 4px",
+                    cursor: "pointer",
+                    zIndex: 10,
+                    color: "var(--color-text-secondary)",
+                  },
+                },
+                /*#__PURE__*/ React.createElement(Icons.ChevronRight, { size: 16 }),
+              ),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              {
+                className: "workspace-middle",
+                style: {
+                  flex: 1,
+                  overflow: "hidden",
+                  display: "flex",
+                  flexDirection: "column",
+                },
+              },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "workspace-right" },
         /*#__PURE__*/ React.createElement(
           "div",
           { className: "card" },
@@ -7827,6 +8503,23 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                 "button",
                                 {
                                   className:
+                                    "step-action-btn step-action-preview",
+                                  onClick: (e) => {
+                                    e.stopPropagation();
+                                    setPreviewStepId(step.id);
+                                    setShowPreviewModal(true);
+                                  },
+                                  title: "\u9884\u89C8",
+                                },
+                                /*#__PURE__*/ React.createElement(
+                                  Icons.Eye,
+                                  null,
+                                ),
+                              ),
+                              /*#__PURE__*/ React.createElement(
+                                "button",
+                                {
+                                  className:
                                     "step-action-btn step-action-duplicate",
                                   onClick: () => duplicateStep(step.id),
                                   title: "\u514B\u9686\u6B65\u9AA4",
@@ -7959,6 +8652,41 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                             ),
                         );
                       }),
+                    activeField && /*#__PURE__*/ React.createElement(
+                      "button",
+                      {
+                        className: "add-step-bottom-btn",
+                        onClick: () => setShowAddStepModal(true),
+                        style: {
+                          width: "100%",
+                          padding: "16px",
+                          marginTop: "16px",
+                          border: "2px dashed var(--color-border)",
+                          borderRadius: "var(--radius-lg)",
+                          background: "var(--color-bg-card)",
+                          cursor: "pointer",
+                          display: "flex",
+                          alignItems: "center",
+                          justifyContent: "center",
+                          gap: "8px",
+                          fontSize: "14px",
+                          color: "var(--color-text-secondary)",
+                          transition: "all 0.2s",
+                        },
+                        onMouseEnter: (e) => {
+                          e.target.style.borderColor = "var(--color-primary)";
+                          e.target.style.color = "var(--color-primary)";
+                          e.target.style.background = "var(--color-primary-50)";
+                        },
+                        onMouseLeave: (e) => {
+                          e.target.style.borderColor = "var(--color-border)";
+                          e.target.style.color = "var(--color-text-secondary)";
+                          e.target.style.background = "var(--color-bg-card)";
+                        },
+                      },
+                      /*#__PURE__*/ React.createElement(Icons.PlusCircle, { size: 20 }),
+                      "添加计算步骤",
+                    ),
                 ),
               ),
             !activeField &&
@@ -7994,7 +8722,316 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               ),
           ),
         ),
-      ),
+              ),
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              {
+                className: "workspace-right-panel",
+                style: {
+                  width: rightPanelCollapsed ? "0px" : "300px",
+                  flexShrink: 0,
+                  overflow: "hidden",
+                  transition: "width 0.2s ease",
+                  position: "relative",
+                  borderLeft: rightPanelCollapsed ? "none" : "1px solid var(--color-border-light)",
+                },
+              },
+              !rightPanelCollapsed && activeField && /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "card", style: { height: "100%", display: "flex", flexDirection: "column" } },
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "card-header" },
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "card-title", style: { fontSize: 14 } },
+                    /*#__PURE__*/ React.createElement(Icons.Info, null),
+                    "字段信息",
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "button",
+                    {
+                      className: "panel-collapse-btn",
+                      onClick: () => setRightPanelCollapsed(true),
+                      title: "收起面板",
+                      style: {
+                        background: "none",
+                        border: "none",
+                        cursor: "pointer",
+                        color: "var(--color-text-tertiary)",
+                        padding: "2px",
+                        display: "flex",
+                        alignItems: "center",
+                      },
+                    },
+                    /*#__PURE__*/ React.createElement(Icons.ChevronRight, { size: 16 }),
+                  ),
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { style: { flex: 1, overflow: "auto", padding: "16px" } },
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { style: { marginBottom: "20px" } },
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { style: { fontSize: "12px", color: "var(--color-text-tertiary)", marginBottom: "6px" } },
+                      "字段名称",
+                    ),
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { style: { fontSize: "15px", fontWeight: 600, color: "var(--color-text-primary)" } },
+                      activeField.name,
+                    ),
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { style: { marginBottom: "20px" } },
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { style: { fontSize: "12px", color: "var(--color-text-tertiary)", marginBottom: "6px" } },
+                      "单元格位置",
+                    ),
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { style: { fontSize: "14px", fontFamily: "var(--font-mono)", color: "var(--color-text-secondary)" } },
+                      activeField.cell,
+                    ),
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { style: { marginBottom: "20px" } },
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { style: { fontSize: "12px", color: "var(--color-text-tertiary)", marginBottom: "6px" } },
+                      "字段类型",
+                    ),
+                    /*#__PURE__*/ React.createElement(
+                      "span",
+                      {
+                        style: {
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: "4px",
+                          padding: "4px 10px",
+                          borderRadius: "999px",
+                          fontSize: "12px",
+                          background: activeField.type === "text" ? "#f0f9ff" : "#f0fdf4",
+                          color: activeField.type === "text" ? "#0284c7" : "#16a34a",
+                          border: `1px solid ${activeField.type === "text" ? "#bae6fd" : "#bbf7d0"}`,
+                        },
+                      },
+                      activeField.type === "text" ? "📝 文本填充" : "💰 数值填充",
+                    ),
+                  ),
+                  activeField.semanticType && /*#__PURE__*/ React.createElement(
+                    "div",
+                    { style: { marginBottom: "20px" } },
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { style: { fontSize: "12px", color: "var(--color-text-tertiary)", marginBottom: "6px" } },
+                      "语义类型识别",
+                    ),
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      {
+                        style: {
+                          padding: "10px 12px",
+                          background: "#f8fafc",
+                          borderRadius: "8px",
+                          border: "1px solid #e2e8f0",
+                        },
+                      },
+                      /*#__PURE__*/ React.createElement(
+                        "div",
+                        { style: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" } },
+                        /*#__PURE__*/ React.createElement(Icons.Sparkles, { size: 14, style: { color: "#8b5cf6" } }),
+                        /*#__PURE__*/ React.createElement(
+                          "span",
+                          { style: { fontWeight: 600, fontSize: "13px", color: "#4c1d95" } },
+                          "AI 识别结果",
+                        ),
+                      ),
+                      /*#__PURE__*/ React.createElement(
+                        "div",
+                        { style: { fontSize: "13px", color: "var(--color-text-primary)" } },
+                        activeField.semanticType === "shop" && "🏪 店铺名占位符",
+                        activeField.semanticType === "year" && "📅 年份占位符",
+                        activeField.semanticType === "month" && "📅 月份占位符",
+                        activeField.semanticType === "day" && "📅 日期占位符",
+                        activeField.semanticType === "date" && "📅 日期占位符",
+                        activeField.semanticType === "value" && "💰 数值占位符",
+                        activeField.semanticType === "text" && "📝 文本占位符",
+                        !["shop", "year", "month", "day", "date", "value", "text"].includes(activeField.semanticType) && "📦 其他占位符",
+                      ),
+                    ),
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { style: { marginBottom: "20px" } },
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { style: { fontSize: "12px", color: "var(--color-text-tertiary)", marginBottom: "8px" } },
+                      "配置验证状态",
+                    ),
+                    (() => {
+                      const v = validateRule(currentRule, activeField);
+                      const stepCount = currentRule?.steps?.length || 0;
+                      const StatusIcon = v.valid ? Icons.CheckCircle : Icons.AlertCircle;
+                      return /*#__PURE__*/ React.createElement(
+                        "div",
+                        {
+                          style: {
+                            padding: "12px",
+                            borderRadius: "8px",
+                            background: v.valid ? "#f0fdf4" : "#fef2f2",
+                            border: `1px solid ${v.valid ? "#bbf7d0" : "#fecaca"}`,
+                          },
+                        },
+                        /*#__PURE__*/ React.createElement(
+                          "div",
+                          { style: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" } },
+                          /*#__PURE__*/ React.createElement(StatusIcon, { size: 16, style: { color: v.valid ? "#16a34a" : "#dc2626" } }),
+                          /*#__PURE__*/ React.createElement(
+                            "span",
+                            { style: { fontWeight: 600, fontSize: "13px", color: v.valid ? "#166534" : "#991b1b" } },
+                            v.valid ? "配置完整" : "配置不完整",
+                          ),
+                        ),
+                        /*#__PURE__*/ React.createElement(
+                          "div",
+                          { style: { fontSize: "12px", color: v.valid ? "#15803d" : "#b91c1c", marginBottom: "8px" } },
+                          v.msg,
+                        ),
+                        /*#__PURE__*/ React.createElement(
+                          "div",
+                          { style: { display: "flex", gap: "12px", fontSize: "11px", color: "var(--color-text-secondary)" } },
+                          /*#__PURE__*/ React.createElement("span", null, `步骤数: ${stepCount}`),
+                          /*#__PURE__*/ React.createElement("span", null, `完成度: ${v.valid ? "100%" : stepCount > 0 ? "50%" : "0%"}`),
+                        ),
+                      );
+                    })(),
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { style: { marginBottom: "20px" } },
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { style: { fontSize: "12px", color: "var(--color-text-tertiary)", marginBottom: "8px", display: "flex", alignItems: "center", gap: "4px" } },
+                      /*#__PURE__*/ React.createElement(Icons.Lightbulb, { size: 12 }),
+                      "相关字段推荐",
+                    ),
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { style: { display: "flex", flexDirection: "column", gap: "6px" } },
+                      (() => {
+                        const currentCat = categorizeField(activeField);
+                        const related = fields
+                          .filter((f) => f.id !== activeField.id && categorizeField(f) === currentCat)
+                          .slice(0, 3);
+                        if (related.length === 0) {
+                          return /*#__PURE__*/ React.createElement(
+                            "div",
+                            { style: { fontSize: "12px", color: "var(--color-text-tertiary)", fontStyle: "italic" } },
+                            "暂无相关字段",
+                          );
+                        }
+                        return related.map((f) => /*#__PURE__*/ React.createElement(
+                          "button",
+                          {
+                            key: f.id,
+                            onClick: () => setActiveField(f),
+                            style: {
+                              textAlign: "left",
+                              padding: "8px 10px",
+                              background: "var(--color-bg-tertiary)",
+                              border: "1px solid var(--color-border-light)",
+                              borderRadius: "6px",
+                              cursor: "pointer",
+                              fontSize: "12px",
+                              color: "var(--color-text-secondary)",
+                              transition: "all 0.2s",
+                            },
+                            onMouseEnter: (e) => {
+                              e.target.style.background = "var(--color-primary-50)";
+                              e.target.style.borderColor = "var(--color-primary-200)";
+                            },
+                            onMouseLeave: (e) => {
+                              e.target.style.background = "var(--color-bg-tertiary)";
+                              e.target.style.borderColor = "var(--color-border-light)";
+                            },
+                          },
+                          /*#__PURE__*/ React.createElement(
+                            "div",
+                            { style: { fontWeight: 500, color: "var(--color-text-primary)", marginBottom: "2px" } },
+                            f.name,
+                          ),
+                          /*#__PURE__*/ React.createElement(
+                            "div",
+                            { style: { fontSize: "11px", color: "var(--color-text-tertiary)" } },
+                            f.cell,
+                          ),
+                        ));
+                      })(),
+                    ),
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { style: { marginBottom: "20px" } },
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { style: { fontSize: "12px", color: "var(--color-text-tertiary)", marginBottom: "8px", display: "flex", alignItems: "center", gap: "4px" } },
+                      /*#__PURE__*/ React.createElement(Icons.HelpCircle, { size: 12 }),
+                      "帮助信息",
+                    ),
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      {
+                        style: {
+                          padding: "12px",
+                          background: "#eff6ff",
+                          borderRadius: "8px",
+                          border: "1px solid #bfdbfe",
+                          fontSize: "12px",
+                          color: "#1e40af",
+                          lineHeight: "1.6",
+                        },
+                      },
+                      activeField.semanticType === "shop" && "该字段为店铺名占位符，系统会自动从上传的文件名中识别店铺名并填充，无需手动配置计算步骤。",
+                      (activeField.semanticType === "year" || activeField.semanticType === "month" || activeField.semanticType === "day" || activeField.semanticType === "date") && "该字段为日期占位符，系统会自动填充当前处理数据的对应日期部分，可根据需要调整日期格式。",
+                      activeField.semanticType === "value" && "该字段为数值占位符，需要通过计算步骤从数据源获取值。建议先添加「数据源」步骤选择数据表，再添加筛选、公式等处理步骤。",
+                      activeField.semanticType === "text" && "该字段为文本占位符，可从数据源字段中提取文本，或设置固定文本值。",
+                      !["shop", "year", "month", "day", "date", "value", "text"].includes(activeField.semanticType) && "该字段为通用占位符，可根据实际需要配置填充方式或计算规则。",
+                    ),
+                  ),
+                ),
+              ),
+              rightPanelCollapsed && /*#__PURE__*/ React.createElement(
+                "button",
+                {
+                  className: "panel-expand-btn",
+                  onClick: () => setRightPanelCollapsed(false),
+                  title: "展开信息面板",
+                  style: {
+                    position: "absolute",
+                    right: 0,
+                    top: "50%",
+                    transform: "translateY(-50%)",
+                    background: "var(--color-bg-card)",
+                    border: "1px solid var(--color-border)",
+                    borderRight: "none",
+                    borderRadius: "8px 0 0 8px",
+                    padding: "12px 4px",
+                    cursor: "pointer",
+                    zIndex: 10,
+                    color: "var(--color-text-secondary)",
+                  },
+                },
+                /*#__PURE__*/ React.createElement(Icons.ChevronLeft, { size: 16 }),
+              ),
+            ),
+          ),
       showCopyModal &&
         /*#__PURE__*/ React.createElement(
           Modal,

@@ -45,6 +45,7 @@ const LoginPage = ({ onLogin }) => {
   const [captchaSent, setCaptchaSent] = useState(false);
   const [captchaCountdown, setCaptchaCountdown] = useState(0);
   const [forgotError, setForgotError] = useState("");
+  const [isAdminMode, setIsAdminMode] = useState(false);
 
   const validateUsername = (val) => {
     if (!val.trim()) {
@@ -89,6 +90,7 @@ const LoginPage = ({ onLogin }) => {
         password: password,
         remember,
         isRemembered,
+        isAdminMode,
         onError: (msg) => {
           setError(msg);
           setPassword("");
@@ -326,8 +328,8 @@ const LoginPage = ({ onLogin }) => {
         /*#__PURE__*/ React.createElement(
           "div",
           { className: "login-form-header" },
-          /*#__PURE__*/ React.createElement("h2", null, "欢迎回来"),
-          /*#__PURE__*/ React.createElement("p", null, "请登录您的账号开始使用"),
+          /*#__PURE__*/ React.createElement("h2", null, isAdminMode ? "后台管理登录" : "欢迎回来"),
+          /*#__PURE__*/ React.createElement("p", null, isAdminMode ? "请输入管理员账号密码" : "请登录您的账号开始使用"),
         ),
         error &&
           /*#__PURE__*/ React.createElement(
@@ -429,7 +431,28 @@ const LoginPage = ({ onLogin }) => {
               className: "login-btn",
               disabled: loading,
             },
-            loading ? "登录中..." : "登录",
+            loading ? "登录中..." : (isAdminMode ? "后台登录" : "登录"),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "login-admin-entry" },
+            /*#__PURE__*/ React.createElement(
+              "a",
+              {
+                href: "#",
+                className: "login-admin-link",
+                onClick: (e) => {
+                  e.preventDefault();
+                  setIsAdminMode(!isAdminMode);
+                  setError("");
+                  setUsername("");
+                  setPassword("");
+                  setUsernameError("");
+                  setPasswordError("");
+                },
+              },
+              isAdminMode ? "← 返回用户登录" : "后台管理入口 →",
+            ),
           ),
         ),
         /*#__PURE__*/ React.createElement(

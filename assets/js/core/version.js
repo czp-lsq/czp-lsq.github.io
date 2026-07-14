@@ -1,4 +1,4 @@
-const APP_VERSION = "czp-1.30.3";
+const APP_VERSION = "czp-1.29.0";
 const DATA_VERSION = "8.5.3";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
@@ -11,6 +11,29 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-1.29.0", date: "2026-07-15 10:00:00",
+    summary: "计算规则重构与后台管理系统上线",
+    changes: [
+      { type: "feature", text: "计算规则模块代码重构，按步骤类型拆分到独立文件（38个步骤组件）" },
+      { type: "feature", text: "新增后台管理系统，支持用户管理、平台管理、模板管理等" },
+      { type: "feature", text: "登录页新增后台管理入口，管理员可进入后台" },
+      { type: "feature", text: "计算规则页面三栏布局优化，字段分组展示，右侧信息面板" },
+      { type: "feature", text: "预览弹窗全面升级，支持输入/输出/对比三视图" },
+      { type: "feature", text: "预览弹窗统计信息增强，步骤类型卡片、配置摘要" },
+      { type: "feature", text: "预览弹窗支持复制输出数据、导出CSV" },
+      { type: "feature", text: "计算步骤卡片新增预览按钮，一键打开数据预览" },
+      { type: "feature", text: "页面顶部新增面包屑导航和保存状态指示器" },
+      { type: "feature", text: "新增快捷键提示面板，提升操作效率" },
+      { type: "optimize", text: "rules.js 代码量从 8496 行精简至约 4200 行" },
+      { type: "optimize", text: "整体页面样式优化，卡片、按钮、输入框专业升级" },
+      { type: "optimize", text: "步骤配置UI组件化，便于维护和扩展" },
+    ],
+    bugfixes: [
+      { text: "修复公式计算点击运算符页面跳动问题" },
+      { text: "修复数据周期识别仅看首行的问题，改为统计全部行取最频繁月份" },
+      { text: "修复半连接(semiJoin)自筛选配置键名与引擎不匹配问题" },
+    ],
+  },
   { version: "czp-1.30.3", date: "2026-07-15 23:00:00",
     summary: "聚合表达式UI优化、调试预览增强、条数识别增强、配置实时预览弹窗、公式编辑器优化",
     changes: [

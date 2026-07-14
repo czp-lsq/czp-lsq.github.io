@@ -202,6 +202,45 @@ const CalcEngine = {
         return valid ? result + temp : NaN;
       };
     })();
+    const _applyRowFilter = (row, col, op, val, useValFallback = false) => {
+      const cellVal = useValFallback ? (row[col] ?? row.val) : row[col];
+      const v = cellVal != null ? String(cellVal) : "";
+      const t = val != null ? String(val) : "";
+      switch (op) {
+        case "==":
+          return v === t;
+        case "!=":
+          return v !== t;
+        case ">":
+          return Number(cellVal) > Number(val);
+        case "<":
+          return Number(cellVal) < Number(val);
+        case ">=":
+          return Number(cellVal) >= Number(val);
+        case "<=":
+          return Number(cellVal) <= Number(val);
+        case "contains":
+          return v.includes(t);
+        case "notContains":
+          return !v.includes(t);
+        case "startsWith":
+          return v.startsWith(t);
+        case "endsWith":
+          return v.endsWith(t);
+        case "isEmpty":
+          return v.trim() === "";
+        case "notEmpty":
+          return v.trim() !== "";
+        case "regex":
+          try {
+            return new RegExp(t).test(v);
+          } catch {
+            return true;
+          }
+        default:
+          return true;
+      }
+    };
     for (let stepIdx = 0; stepIdx < rule.steps.length; stepIdx++) {
       const step = rule.steps[stepIdx];
       try {
@@ -1357,7 +1396,7 @@ const CalcEngine = {
             }
             let rawVal, formulaError;
             try {
-              rawVal = Function(`"use strict"; const Math = window.Math; return (${expr})`)();
+              rawVal = Function(`"use strict"; const Math = globalThis.Math; return (${expr})`)();
             } catch (e) {
               console.error("Formula error:", e);
               formulaError = e.message;
@@ -1773,22 +1812,7 @@ const CalcEngine = {
                 const filterCol = cfg.filterColumn;
                 const filterOp = cfg.filterOp || "==";
                 const filterVal = cfg.filterValue;
-                cmpRows = cmpRows.filter((row) => {
-                  const cellVal = String(row[filterCol] ?? "");
-                  switch (filterOp) {
-                    case "==": return cellVal === String(filterVal);
-                    case "!=": return cellVal !== String(filterVal);
-                    case ">": return Number(cellVal) > Number(filterVal);
-                    case "<": return Number(cellVal) < Number(filterVal);
-                    case ">=": return Number(cellVal) >= Number(filterVal);
-                    case "<=": return Number(cellVal) <= Number(filterVal);
-                    case "contains": return cellVal.includes(String(filterVal));
-                    case "notContains": return !cellVal.includes(String(filterVal));
-                    case "isEmpty": return cellVal.trim() === "";
-                    case "notEmpty": return cellVal.trim() !== "";
-                    default: return true;
-                  }
-                });
+                cmpRows = cmpRows.filter((row) => _applyRowFilter(row, filterCol, filterOp, filterVal, false));
               }
               data = [...data, ...cmpRows];
             } else if (mode === "semiJoin" || mode === "antiJoin") {
@@ -1799,22 +1823,7 @@ const CalcEngine = {
                 const sfCol = cfg.selfFilterColumn;
                 const sfOp = cfg.selfFilterOp || "==";
                 const sfVal = cfg.selfFilterValue;
-                data = data.filter((row) => {
-                  const cellVal = String(row[sfCol] ?? "");
-                  switch (sfOp) {
-                    case "==": return cellVal === String(sfVal);
-                    case "!=": return cellVal !== String(sfVal);
-                    case ">": return Number(cellVal) > Number(sfVal);
-                    case "<": return Number(cellVal) < Number(sfVal);
-                    case ">=": return Number(cellVal) >= Number(sfVal);
-                    case "<=": return Number(cellVal) <= Number(sfVal);
-                    case "contains": return cellVal.includes(String(sfVal));
-                    case "notContains": return !cellVal.includes(String(sfVal));
-                    case "isEmpty": return cellVal.trim() === "";
-                    case "notEmpty": return cellVal.trim() !== "";
-                    default: return true;
-                  }
-                });
+                data = data.filter((row) => _applyRowFilter(row, sfCol, sfOp, sfVal, true));
               }
               const cmpTable = tables.find((t) => t.id === cfg.table);
               let cmpRows = cmpTable ? cmpTable.rows : [];
@@ -1822,22 +1831,7 @@ const CalcEngine = {
                 const filterCol = cfg.filterColumn;
                 const filterOp = cfg.filterOp || "==";
                 const filterVal = cfg.filterValue;
-                cmpRows = cmpRows.filter((row) => {
-                  const cellVal = String(row[filterCol] ?? "");
-                  switch (filterOp) {
-                    case "==": return cellVal === String(filterVal);
-                    case "!=": return cellVal !== String(filterVal);
-                    case ">": return Number(cellVal) > Number(filterVal);
-                    case "<": return Number(cellVal) < Number(filterVal);
-                    case ">=": return Number(cellVal) >= Number(filterVal);
-                    case "<=": return Number(cellVal) <= Number(filterVal);
-                    case "contains": return cellVal.includes(String(filterVal));
-                    case "notContains": return !cellVal.includes(String(filterVal));
-                    case "isEmpty": return cellVal.trim() === "";
-                    case "notEmpty": return cellVal.trim() !== "";
-                    default: return true;
-                  }
-                });
+                cmpRows = cmpRows.filter((row) => _applyRowFilter(row, filterCol, filterOp, filterVal, false));
               }
               const cmpSet = new Set(cmpRows.map((r) => makeKey(r, compareColumns)));
               if (mode === "semiJoin") {
@@ -1853,22 +1847,7 @@ const CalcEngine = {
                 const filterCol = cfg.filterColumn;
                 const filterOp = cfg.filterOp || "==";
                 const filterVal = cfg.filterValue;
-                cmpRows = cmpRows.filter((row) => {
-                  const cellVal = String(row[filterCol] ?? "");
-                  switch (filterOp) {
-                    case "==": return cellVal === String(filterVal);
-                    case "!=": return cellVal !== String(filterVal);
-                    case ">": return Number(cellVal) > Number(filterVal);
-                    case "<": return Number(cellVal) < Number(filterVal);
-                    case ">=": return Number(cellVal) >= Number(filterVal);
-                    case "<=": return Number(cellVal) <= Number(filterVal);
-                    case "contains": return cellVal.includes(String(filterVal));
-                    case "notContains": return !cellVal.includes(String(filterVal));
-                    case "isEmpty": return cellVal.trim() === "";
-                    case "notEmpty": return cellVal.trim() !== "";
-                    default: return true;
-                  }
-                });
+                cmpRows = cmpRows.filter((row) => _applyRowFilter(row, filterCol, filterOp, filterVal, false));
               }
               const cmpSet = new Set(cmpRows.map((r) => makeKey(r, compareColumns)));
               if (mode === "keepIntersection" || mode === "keepExist") {
@@ -2595,13 +2574,27 @@ const CalcEngine = {
         });
       } catch (e) {
         console.error(`Step ${stepIdx} error:`, e);
+        const inputRows = stepIdx > 0 ? (stepResults[stepIdx - 1]?.rows || 0) : 0;
         stepResults.push({
           step: stepIdx,
           type: step.type,
           stepConfig: step.config,
           error: e.message,
           rows: data.length,
+          prevRows: inputRows,
+          columns: (() => {
+            const colSet = new Set();
+            data.slice(0, 20).forEach((row) => {
+              if (row && typeof row === "object") Object.keys(row).forEach((k) => { if (!k.startsWith("_")) colSet.add(k); });
+            });
+            return Array.from(colSet);
+          })(),
           preview: data.slice(0, 3),
+          stats: {
+            inputRows: inputRows,
+            outputRows: data.length,
+            change: data.length - inputRows,
+          },
         });
       }
     }
