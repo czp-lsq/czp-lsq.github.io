@@ -2618,6 +2618,50 @@
   overflow-y: auto;
 }
 
+.rules-page .formula-search-box {
+  position: relative;
+  margin-bottom: 10px;
+}
+
+.rules-page .formula-search-input {
+  width: 100%;
+  padding: 6px 28px 6px 10px;
+  font-size: 12px;
+  border-radius: var(--radius-md);
+}
+
+.rules-page .formula-search-clear {
+  position: absolute;
+  right: 8px;
+  top: 50%;
+  transform: translateY(-50%);
+  background: none;
+  border: none;
+  cursor: pointer;
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  padding: 2px 4px;
+  line-height: 1;
+}
+
+.rules-page .formula-search-clear:hover {
+  color: var(--color-danger);
+}
+
+.rules-page .formula-dropdown-group-count {
+  margin-left: 4px;
+  font-size: 10px;
+  color: var(--color-text-tertiary);
+  font-weight: 400;
+}
+
+.rules-page .formula-dropdown-empty {
+  padding: 20px;
+  text-align: center;
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
 .rules-page .formula-dropdown-group {
   margin-bottom: 12px;
 }

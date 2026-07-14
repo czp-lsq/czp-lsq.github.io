@@ -11,22 +11,25 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
-  { version: "czp-1.28.0", date: "2026-07-14 12:00:00",
-    summary: "公式编辑器优化、表识别增强与系统信息完善",
+  { version: "czp-1.28.0", date: "2026-07-14 14:00:00",
+    summary: "公式编辑器优化、表识别增强、系统信息完善与Bug修复",
     changes: [
       { type: "feature", text: "公式编辑器支持下拉选择：分类展示运算符、数学函数、变量、字段，点击即可插入" },
+      { type: "feature", text: "公式字段搜索：支持在公式下拉面板中按关键词搜索字段、函数、运算符" },
       { type: "feature", text: "公式计算支持已配置字段引用：无需预览即可在公式中使用其他已配置字段" },
       { type: "feature", text: "公式输出值支持格式转换：支持四舍五入、千分位、货币、百分比等10种格式" },
       { type: "feature", text: "表识别系统增强：自动识别8种表类型（订单/退款/推广/账务/成本/商品/利润/报表），生成详细名称" },
       { type: "feature", text: "表名去重机制：自动检测重复名称，添加序号后缀确保唯一性" },
-      { type: "feature", text: "批量计算自动匹配：根据店铺和表类型自动匹配对应计算规则" },
-      { type: "feature", text: "系统信息页面特别致谢：展示刘思琦的资金、情感、灵感支持信息" },
-      { type: "optimize", text: "公式编辑器布局优化：下拉面板分组展示，不同类型使用不同颜色标识" },
-      { type: "optimize", text: "表名自动生成：智能组合店铺名、表类型图标、日期信息" },
+      { type: "feature", text: "系统信息页面特别致谢：展示刘思琦的资金、情感、灵感、体验官四重支持" },
+      { type: "optimize", text: "公式编辑器布局优化：下拉面板分组展示，搜索过滤，不同类型使用不同颜色标识" },
+      { type: "optimize", text: "存储错误处理优化：数据损坏时静默恢复，不再输出刺眼的错误日志" },
+      { type: "optimize", text: "致谢UI设计升级：渐变背景、四维支持卡片、引文式致谢文案" },
     ],
     bugfixes: [
       { text: "修复点击公式计算页面报错：stepResults is not defined" },
       { text: "修复公式编辑器引用activeFieldRef未定义导致页面崩溃" },
+      { text: "修复配置中心页面pendingFiles未定义导致页面崩溃" },
+      { text: "修复存储数据损坏时解压失败的错误日志输出" },
     ],
   },
   { version: "czp-1.27.0", date: "2026-07-13 18:00:00",

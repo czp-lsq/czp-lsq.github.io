@@ -114,6 +114,8 @@ const DataPage = ({ state, currentPlatform }) => {
     
     return nameParts.join(" - ");
   };
+  const [aliasInput, setAliasInput] = useState("");
+  const [pendingFiles, setPendingFiles] = useState(null);
   const [editAliasIdx, setEditAliasIdx] = useState(null);
   const [editAliasValue, setEditAliasValue] = useState("");
   const [previewSample, setPreviewSample] = useState(null);

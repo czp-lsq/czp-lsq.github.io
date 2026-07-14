@@ -890,8 +890,7 @@ const Store = (() => {
       }
       return JSON.parse(raw);
     } catch (e) {
-      console.error("Failed to parse/decompress data:", e);
-      console.error("Raw data preview:", raw.substring(0, 100));
+      console.warn("[Store] Data decompression failed, will attempt recovery:", e.message);
       throw e;
     }
   };
@@ -935,18 +934,22 @@ const Store = (() => {
           }
           return JSON.parse(decompressed);
         } catch (e) {
-          console.error("Compressed data is corrupted, trying backup:", e);
+          console.warn("[Store] Cache data corrupted, attempting recovery from backup...");
+          // 立即清理损坏的缓存
+          try { localStorage.removeItem(STORAGE_KEY + "_cache"); } catch (_) {}
+          try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+          
           const backup = restoreFromBackup();
           if (backup) {
-            console.log("Successfully restored from backup");
+            console.log("[Store] Successfully restored from backup");
             return backup;
           }
           const snapshot = restoreFromSnapshot();
           if (snapshot) {
-            console.log("Successfully restored from snapshot");
+            console.log("[Store] Successfully restored from snapshot");
             return snapshot;
           }
-          console.warn("No backup available, cleaning up all corrupted data");
+          console.warn("[Store] No backup available, starting with fresh state");
           clearAllCorruptedData();
           return null;
         }
@@ -954,18 +957,21 @@ const Store = (() => {
 
       return JSON.parse(saved);
     } catch (e) {
-      console.error("LocalStorage data is corrupted, trying backup:", e);
+      console.warn("[Store] LocalStorage data corrupted, attempting recovery...");
+      try { localStorage.removeItem(STORAGE_KEY + "_cache"); } catch (_) {}
+      try { localStorage.removeItem(STORAGE_KEY); } catch (_) {}
+      
       const backup = restoreFromBackup();
       if (backup) {
-        console.log("Successfully restored from backup");
+        console.log("[Store] Successfully restored from backup");
         return backup;
       }
       const snapshot = restoreFromSnapshot();
       if (snapshot) {
-        console.log("Successfully restored from snapshot");
+        console.log("[Store] Successfully restored from snapshot");
         return snapshot;
       }
-      console.warn("No backup available, cleaning up all corrupted data");
+      console.warn("[Store] No backup available, starting with fresh state");
       clearAllCorruptedData();
       return null;
     }

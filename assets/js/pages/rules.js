@@ -61,6 +61,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   }, [expandedStep, currentPlatform]);
 
   const [previewResult, setPreviewResult] = useState(null);
+  const [formulaFieldSearch, setFormulaFieldSearch] = useState("");
   const [presetCategory, setPresetCategory] = useState("all");
   const [fieldSearch, setFieldSearch] = useState(() => {
     try {
@@ -2378,7 +2379,18 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             insertAtCursor(opt.key);
           }
         };
-        const groupedOptions = allFormulaOptions.reduce((acc, opt) => {
+        const filteredOptions = formulaFieldSearch.trim()
+          ? allFormulaOptions.filter((opt) => {
+              const q = formulaFieldSearch.toLowerCase();
+              return (
+                (opt.key || "").toLowerCase().includes(q) ||
+                (opt.name || "").toLowerCase().includes(q) ||
+                (opt.desc || "").toLowerCase().includes(q) ||
+                (opt.category || "").toLowerCase().includes(q)
+              );
+            })
+          : allFormulaOptions;
+        const filteredGrouped = filteredOptions.reduce((acc, opt) => {
           const cat = opt.category || "其他";
           if (!acc[cat]) acc[cat] = [];
           acc[cat].push(opt);
@@ -2428,38 +2440,68 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               /*#__PURE__*/ React.createElement(
                 "div",
                 { className: "formula-dropdown-panel" },
-                Object.keys(groupedOptions).map((cat) => /*#__PURE__*/ React.createElement(
+                /*#__PURE__*/ React.createElement(
                   "div",
-                  { key: cat, className: "formula-dropdown-group" },
-                  /*#__PURE__*/ React.createElement(
-                    "div",
-                    { className: "formula-dropdown-group-title" },
-                    cat
+                  { className: "formula-search-box" },
+                  /*#__PURE__*/ React.createElement("input", {
+                    type: "text",
+                    className: "input formula-search-input",
+                    placeholder: "搜索字段、函数、运算符...",
+                    value: formulaFieldSearch,
+                    onChange: (e) => setFormulaFieldSearch(e.target.value),
+                  }),
+                  formulaFieldSearch && /*#__PURE__*/ React.createElement(
+                    "button",
+                    {
+                      className: "formula-search-clear",
+                      onClick: () => setFormulaFieldSearch(""),
+                    },
+                    "✕"
                   ),
-                  /*#__PURE__*/ React.createElement(
-                    "div",
-                    { className: "formula-dropdown-options" },
-                    groupedOptions[cat].map((opt, i) => /*#__PURE__*/ React.createElement(
-                      "button",
-                      {
-                        key: i,
-                        className: `formula-dropdown-option ${opt.type}`,
-                        onClick: () => handleOptionSelect(opt),
-                        title: opt.desc || opt.name,
-                      },
+                ),
+                Object.keys(filteredGrouped).length > 0
+                  ? Object.keys(filteredGrouped).map((cat) => /*#__PURE__*/ React.createElement(
+                      "div",
+                      { key: cat, className: "formula-dropdown-group" },
                       /*#__PURE__*/ React.createElement(
-                        "span",
-                        { className: "formula-option-key" },
-                        opt.key
+                        "div",
+                        { className: "formula-dropdown-group-title" },
+                        cat,
+                        /*#__PURE__*/ React.createElement(
+                          "span",
+                          { className: "formula-dropdown-group-count" },
+                          filteredGrouped[cat].length
+                        )
                       ),
                       /*#__PURE__*/ React.createElement(
-                        "span",
-                        { className: "formula-option-name" },
-                        opt.name
-                      ),
+                        "div",
+                        { className: "formula-dropdown-options" },
+                        filteredGrouped[cat].map((opt, i) => /*#__PURE__*/ React.createElement(
+                          "button",
+                          {
+                            key: i,
+                            className: `formula-dropdown-option ${opt.type}`,
+                            onClick: () => handleOptionSelect(opt),
+                            title: opt.desc || opt.name,
+                          },
+                          /*#__PURE__*/ React.createElement(
+                            "span",
+                            { className: "formula-option-key" },
+                            opt.key
+                          ),
+                          /*#__PURE__*/ React.createElement(
+                            "span",
+                            { className: "formula-option-name" },
+                            opt.name
+                          ),
+                        ))
+                      )
                     ))
-                  )
-                ))
+                  : /*#__PURE__*/ React.createElement(
+                      "div",
+                      { className: "formula-dropdown-empty" },
+                      "未找到匹配项"
+                    )
               )
             ),
             /*#__PURE__*/ React.createElement(
