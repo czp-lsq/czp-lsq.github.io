@@ -24,6 +24,9 @@ const UPDATE_LOG = [
     ],
     bugfixes: [
       { text: "修复计算规则页面可能出现的hasTable未定义错误" },
+      { text: "修复虚拟字段步骤点击报错：AdvancedRuleConfig和MapValueEditor组件未定义" },
+      { text: "新增MapValueEditor组件：支持映射值规则的配置（键值对添加/删除/编辑）" },
+      { text: "新增AdvancedRuleConfig组件：支持substring/replace/concat/ifEmpty/multiply/divide/sumFields/diffFields/split/join等规则的额外参数配置" },
     ],
   },
   { version: "czp-1.28.3", date: "2026-07-14 20:00:00",
