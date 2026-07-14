@@ -477,12 +477,15 @@ const App = () => {
   const _updateCheckingRef = React.useRef(false);
   const _lastCheckTimeRef = React.useRef(0);
 
+  const showUpdateModalRef = useRef(showUpdateModal);
+  useEffect(() => { showUpdateModalRef.current = showUpdateModal; }, [showUpdateModal]);
+
   const checkForUpdate = useCallback(async (showToast = false) => {
     // 防止并发检查
     if (_updateCheckingRef.current) return;
-    // 防止过于频繁检查（至少间隔30秒）
+    // 防止过于频繁检查（至少间隔15秒）
     const nowTime = Date.now();
-    if (nowTime - _lastCheckTimeRef.current < 30000) return;
+    if (nowTime - _lastCheckTimeRef.current < 15000) return;
     _lastCheckTimeRef.current = nowTime;
 
     try {
@@ -493,7 +496,7 @@ const App = () => {
         return;
       }
       // 如果弹窗已经显示，不再重复弹窗
-      if (showUpdateModal) {
+      if (showUpdateModalRef.current) {
         return;
       }
 
@@ -546,35 +549,50 @@ const App = () => {
     } finally {
       _updateCheckingRef.current = false;
     }
-  }, [showUpdateModal]);
+  }, []);
 
+  // 页面加载后自动检测更新
   useEffect(() => {
-    checkForUpdate(false);
+    if (window.location.protocol === "file:") return;
+    // 延迟1秒后首次检测，避免阻塞页面初始化
+    const initTimer = setTimeout(() => checkForUpdate(false), 1000);
+    return () => clearTimeout(initTimer);
   }, [checkForUpdate]);
 
-  // 后台定时检查：改为每5分钟一次，且只在页面可见时检查
+  // 后台定时检查：每2分钟自动检测，且只在页面可见时检查
   useEffect(() => {
     if (window.location.protocol === "file:") return;
     const timer = setInterval(() => {
       if (document.visibilityState === "visible") {
         checkForUpdate(true);
       }
-    }, 5 * 60 * 1000);
+    }, 2 * 60 * 1000);
     return () => clearInterval(timer);
   }, [checkForUpdate]);
 
-  // 页面重新可见时检查（但使用防抖，避免快速切换时多次触发）
+  // 页面重新可见时自动检测（使用防抖，避免快速切换时多次触发）
   useEffect(() => {
     if (window.location.protocol === "file:") return;
     const handleVisibility = () => {
       if (document.visibilityState === "visible") {
-        // 延迟500ms检查，避免快速切换标签页时频繁触发
         setTimeout(() => checkForUpdate(true), 500);
       }
     };
     document.addEventListener("visibilitychange", handleVisibility);
     return () => {
       document.removeEventListener("visibilitychange", handleVisibility);
+    };
+  }, [checkForUpdate]);
+
+  // 网络恢复时自动检测更新
+  useEffect(() => {
+    if (window.location.protocol === "file:") return;
+    const handleOnline = () => {
+      setTimeout(() => checkForUpdate(true), 1000);
+    };
+    window.addEventListener("online", handleOnline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
     };
   }, [checkForUpdate]);
 

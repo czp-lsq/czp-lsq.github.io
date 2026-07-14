@@ -1791,6 +1791,60 @@ const CalcEngine = {
                 });
               }
               data = [...data, ...cmpRows];
+            } else if (mode === "semiJoin" || mode === "antiJoin") {
+              // 半连接：先筛选当前数据，再筛选对比表，然后按列匹配
+              // semiJoin: 保留当前数据中能与对比表匹配的行
+              // antiJoin: 保留当前数据中不能与对比表匹配的行
+              if (cfg.selfFilterColumn) {
+                const sfCol = cfg.selfFilterColumn;
+                const sfOp = cfg.selfFilterOp || "==";
+                const sfVal = cfg.selfFilterValue;
+                data = data.filter((row) => {
+                  const cellVal = String(row[sfCol] ?? "");
+                  switch (sfOp) {
+                    case "==": return cellVal === String(sfVal);
+                    case "!=": return cellVal !== String(sfVal);
+                    case ">": return Number(cellVal) > Number(sfVal);
+                    case "<": return Number(cellVal) < Number(sfVal);
+                    case ">=": return Number(cellVal) >= Number(sfVal);
+                    case "<=": return Number(cellVal) <= Number(sfVal);
+                    case "contains": return cellVal.includes(String(sfVal));
+                    case "notContains": return !cellVal.includes(String(sfVal));
+                    case "isEmpty": return cellVal.trim() === "";
+                    case "notEmpty": return cellVal.trim() !== "";
+                    default: return true;
+                  }
+                });
+              }
+              const cmpTable = tables.find((t) => t.id === cfg.table);
+              let cmpRows = cmpTable ? cmpTable.rows : [];
+              if (cfg.filterColumn && cmpRows.length > 0) {
+                const filterCol = cfg.filterColumn;
+                const filterOp = cfg.filterOp || "==";
+                const filterVal = cfg.filterValue;
+                cmpRows = cmpRows.filter((row) => {
+                  const cellVal = String(row[filterCol] ?? "");
+                  switch (filterOp) {
+                    case "==": return cellVal === String(filterVal);
+                    case "!=": return cellVal !== String(filterVal);
+                    case ">": return Number(cellVal) > Number(filterVal);
+                    case "<": return Number(cellVal) < Number(filterVal);
+                    case ">=": return Number(cellVal) >= Number(filterVal);
+                    case "<=": return Number(cellVal) <= Number(filterVal);
+                    case "contains": return cellVal.includes(String(filterVal));
+                    case "notContains": return !cellVal.includes(String(filterVal));
+                    case "isEmpty": return cellVal.trim() === "";
+                    case "notEmpty": return cellVal.trim() !== "";
+                    default: return true;
+                  }
+                });
+              }
+              const cmpSet = new Set(cmpRows.map((r) => makeKey(r, compareColumns)));
+              if (mode === "semiJoin") {
+                data = data.filter((row) => cmpSet.has(makeKey(row, columns)));
+              } else {
+                data = data.filter((row) => !cmpSet.has(makeKey(row, columns)));
+              }
             } else {
               const cmpTable = tables.find((t) => t.id === cfg.table);
               let cmpRows = cmpTable ? cmpTable.rows : [];
@@ -2525,7 +2579,19 @@ const CalcEngine = {
           stepConfig: step.config,
           rows: data.length,
           prevRows: stepIdx > 0 ? (stepResults[stepIdx - 1]?.rows || 0) : 0,
+          columns: (() => {
+            const colSet = new Set();
+            data.slice(0, 20).forEach((row) => {
+              if (row && typeof row === "object") Object.keys(row).forEach((k) => { if (!k.startsWith("_")) colSet.add(k); });
+            });
+            return Array.from(colSet);
+          })(),
           preview: data.slice(0, 5),
+          stats: {
+            inputRows: stepIdx > 0 ? (stepResults[stepIdx - 1]?.rows || 0) : 0,
+            outputRows: data.length,
+            change: data.length - (stepIdx > 0 ? (stepResults[stepIdx - 1]?.rows || 0) : 0),
+          },
         });
       } catch (e) {
         console.error(`Step ${stepIdx} error:`, e);

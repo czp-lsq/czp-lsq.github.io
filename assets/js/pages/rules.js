@@ -2889,7 +2889,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                           {
                             key: i,
                             className: `formula-dropdown-option ${opt.type}`,
-                            onClick: () => handleOptionSelect(opt),
+                            onClick: (e) => { e.preventDefault(); e.stopPropagation(); handleOptionSelect(opt); },
                             title: opt.desc || opt.name,
                           },
                           /*#__PURE__*/ React.createElement(
@@ -4607,6 +4607,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 { value: "mergeWithFilter", label: "合并两表并筛选" },
                 { value: "removeDuplicates", label: "当前数据多列去重" },
                 { value: "keepDuplicates", label: "当前数据保留重复行" },
+                { value: "semiJoin", label: "半连接（筛选后匹配）" },
+                { value: "antiJoin", label: "反连接（筛选后不匹配）" },
               ];
           const compareTableHeaders = getTableHeaders(step.config.table);
           const columns = step.config.columns && step.config.columns.length > 0
@@ -4616,7 +4618,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             ? step.config.compareColumns
             : (step.config.compareKey ? [step.config.compareKey] : [""]);
           const currentMode = step.config.mode || (isIntersect ? "keepExist" : "keepIntersection");
-          const needCompareTable = currentMode === "keepIntersection" || currentMode === "keepDifference" || currentMode === "keepExist" || currentMode === "keepNotExist" || currentMode === "mergeWithFilter";
+          const needCompareTable = currentMode === "keepIntersection" || currentMode === "keepDifference" || currentMode === "keepExist" || currentMode === "keepNotExist" || currentMode === "mergeWithFilter" || currentMode === "semiJoin" || currentMode === "antiJoin";
           const allTableOptions = [{ value: "", label: "请选择数据表" }, ...allTables.map((t) => ({ value: t.id, label: t.name }))];
           return /*#__PURE__*/ React.createElement(
             "div",
@@ -4631,6 +4633,43 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 options: modeOptions,
                 placeholder: isIntersect ? "请选择对比模式" : "请选择处理模式",
               }),
+            ),
+            (currentMode === "semiJoin" || currentMode === "antiJoin") && /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "当前数据筛选"),
+              /*#__PURE__*/ React.createElement("div", { className: "grid-3", style: { gap: 6 } },
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: step.config.selfFilterColumn || "",
+                  onChange: (val) => updateStepConfig(step.id, "selfFilterColumn", val),
+                  options: sourceTableHeaders.map((h) => ({ value: h, label: h })),
+                  placeholder: "筛选列",
+                }),
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: step.config.selfFilterOp || "==",
+                  onChange: (val) => updateStepConfig(step.id, "selfFilterOp", val),
+                  options: [
+                    { value: "==", label: "等于" },
+                    { value: "!=", label: "不等于" },
+                    { value: ">", label: "大于" },
+                    { value: "<", label: "小于" },
+                    { value: ">=", label: "大于等于" },
+                    { value: "<=", label: "小于等于" },
+                    { value: "contains", label: "包含" },
+                    { value: "notEmpty", label: "不为空" },
+                    { value: "isEmpty", label: "为空" },
+                  ],
+                  placeholder: "运算符",
+                }),
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
+                  value: step.config.selfFilterValue || "",
+                  onChange: (val) => updateStepConfig(step.id, "selfFilterValue", val),
+                  options: [{ value: "", label: "请输入值" }, ...getColumnValues(step.config.selfFilterColumn).map((v) => ({ value: v, label: v }))],
+                  placeholder: "选择或输入值",
+                  allowCreate: true,
+                  disabled: step.config.selfFilterOp === "isEmpty" || step.config.selfFilterOp === "notEmpty",
+                }),
+              ),
             ),
             /*#__PURE__*/ React.createElement(
               "div",
@@ -7902,308 +7941,6 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                               renderStepConfig(step, activeField),
                               /*#__PURE__*/ React.createElement(
                                 "div",
-                                { className: "step-live-preview", style: { margin: "12px 0", padding: "10px 14px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" } },
-                                (() => {
-                                  const cfg = step.config || {};
-                                  const previews = [];
-                                  switch (step.type) {
-                                    case "source":
-                                      if (cfg.tables && cfg.tables.length > 0) {
-                                        previews.push({ icon: "", text: `已选择 ${cfg.tables.length} 个数据表` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请至少选择一个数据表", warn: true });
-                                      }
-                                      break;
-                                    case "filter":
-                                      if (cfg.column && cfg.op) {
-                                        previews.push({ icon: "", text: `筛选条件: ${cfg.column} ${cfg.op} ${cfg.value != null ? String(cfg.value) : ""}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请配置筛选条件", warn: true });
-                                      }
-                                      break;
-                                    case "virtual":
-                                      if (cfg.source && cfg.rule && cfg.target) {
-                                        previews.push({ icon: "", text: `从「${cfg.source}」提取${cfg.rule} → 生成「${cfg.target}」` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请配置源字段、规则和目标字段", warn: true });
-                                      }
-                                      break;
-                                    case "join":
-                                      if (cfg.key && cfg.fk && cfg.col) {
-                                        previews.push({ icon: "", text: `关联: ${cfg.key} = ${cfg.fk}，导入「${cfg.col}」` });
-                                        if (cfg.parseSizeCost) {
-                                          const sizeInfo = cfg.sizeField ? `，尺码字段: ${cfg.sizeField}` : "";
-                                          previews.push({ icon: "", text: `智能成本解析: 自动识别平台${sizeInfo}` });
-                                        }
-                                      } else {
-                                        previews.push({ icon: "", text: "请配置关联键和导入列", warn: true });
-                                      }
-                                      break;
-                                    case "aggregate":
-                                      if (cfg.column === "__expr__" && cfg.expr) {
-                                        previews.push({ icon: "", text: `聚合: ${cfg.func || "sum"}(${cfg.expr.replace(/{([^}]+)}/g, "【$1】")})` });
-                                      } else if (cfg.column) {
-                                        previews.push({ icon: "", text: `聚合: ${cfg.func || "sum"}(${cfg.column})` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择聚合列", warn: true });
-                                      }
-                                      break;
-                                    case "formula":
-                                      if (cfg.expr) {
-                                        previews.push({ icon: "", text: `公式: ${cfg.expr.replace(/{([^}]+)}/g, "【$1】")}` });
-                                        if (cfg.format && cfg.format !== "none") {
-                                          previews.push({ icon: "", text: `输出格式: ${cfg.format}` });
-                                        }
-                                      } else {
-                                        previews.push({ icon: "", text: "请输入计算公式", warn: true });
-                                      }
-                                      break;
-                                    case "sort":
-                                      if (cfg.column) {
-                                        previews.push({ icon: "", text: `按 ${cfg.column} ${cfg.direction === "desc" ? "降序" : "升序"} 排列` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择排序列", warn: true });
-                                      }
-                                      break;
-                                    case "limit":
-                                      previews.push({ icon: "", text: `限制输出前 ${cfg.limit || cfg.count || 10} 条数据` });
-                                      break;
-                                    case "fill":
-                                      if (cfg.fillType) {
-                                        const fillTypeNames = { auto: "自动识别", shop: "店铺名", date: "数据周期日期", dateNow: "当前系统日期", field: "数据字段取值", manual: "手动输入" };
-                                        previews.push({ icon: "", text: `填充方式: ${fillTypeNames[cfg.fillType] || cfg.fillType}` });
-                                        if (cfg.fillType === "field" && cfg.sourceField) {
-                                          previews.push({ icon: "", text: `从「${cfg.sourceField}」字段取值` });
-                                        }
-                                        if ((cfg.fillType === "date" || cfg.fillType === "dateNow") && cfg.dateFormat) {
-                                          previews.push({ icon: "", text: `日期格式: ${cfg.dateFormat}` });
-                                        }
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择填充方式", warn: true });
-                                      }
-                                      break;
-                                    case "filterEqual":
-                                    case "filterContain":
-                                    case "filterRange":
-                                      if (cfg.column) {
-                                        previews.push({ icon: "", text: `筛选条件: ${cfg.column} ${cfg.op || "=="} ${cfg.value != null ? String(cfg.value) : ""}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请配置筛选条件", warn: true });
-                                      }
-                                      break;
-                                    case "topN":
-                                      if (cfg.column) {
-                                        previews.push({ icon: "", text: `取前 ${cfg.count || 10} 条，按 ${cfg.column} ${cfg.order === "desc" ? "降序" : "升序"}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择排序列", warn: true });
-                                      }
-                                      break;
-                                    case "distinct":
-                                      if (cfg.column) {
-                                        previews.push({ icon: "", text: `按 ${cfg.column} 去重` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择去重列", warn: true });
-                                      }
-                                      break;
-                                    case "group":
-                                      if (cfg.column) {
-                                        previews.push({ icon: "", text: `按 ${cfg.column} 分组，${cfg.func || "sum"}(${cfg.aggColumn || "val"})` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择分组列", warn: true });
-                                      }
-                                      break;
-                                    case "condition":
-                                      if (cfg.column && cfg.op) {
-                                        previews.push({ icon: "", text: `条件: ${cfg.column} ${cfg.op} ${cfg.value != null ? String(cfg.value) : ""} → ${cfg.trueValue}/${cfg.falseValue}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请配置条件判断", warn: true });
-                                      }
-                                      break;
-                                    case "crossMatch":
-                                    case "intersect": {
-                                      const modeNames = {
-                                        keepIntersection: "保留交集行",
-                                        keepDifference: "保留差集行",
-                                        keepExist: "保留存在于对比表的行",
-                                        keepNotExist: "保留不存在于对比表的行",
-                                        mergeWithFilter: "合并两表并筛选",
-                                        removeDuplicates: "当前数据多列去重",
-                                        keepDuplicates: "当前数据保留重复行",
-                                      };
-                                      const modeName = modeNames[cfg.mode] || cfg.mode;
-                                      previews.push({ icon: "", text: `处理模式: ${modeName}` });
-                                      if (cfg.columns && cfg.columns.length > 0 && cfg.columns[0]) {
-                                        previews.push({ icon: "", text: `当前表匹配列: ${cfg.columns.join(", ")}` });
-                                      }
-                                      if ((cfg.mode === "keepIntersection" || cfg.mode === "keepDifference" || cfg.mode === "keepExist" || cfg.mode === "keepNotExist" || cfg.mode === "mergeWithFilter") && cfg.table) {
-                                        previews.push({ icon: "", text: `对比表: ${cfg.table}` });
-                                        if (cfg.compareColumns && cfg.compareColumns.length > 0 && cfg.compareColumns[0]) {
-                                          previews.push({ icon: "", text: `对比表匹配列: ${cfg.compareColumns.join(", ")}` });
-                                        }
-                                      }
-                                      break;
-                                    }
-                                    case "keepDuplicate":
-                                    case "keepUnique":
-                                      if (cfg.column) {
-                                        previews.push({ icon: "", text: `${step.type === "keepDuplicate" ? "保留重复行" : "保留唯一行"}，判断列: ${cfg.column}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择判断列", warn: true });
-                                      }
-                                      break;
-                                    case "union":
-                                      if (cfg.tables && cfg.tables.length > 0) {
-                                        previews.push({ icon: "", text: `合并 ${cfg.tables.length} 个数据表` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请添加合并数据表", warn: true });
-                                      }
-                                      break;
-                                    case "lookup":
-                                      if (cfg.column && cfg.pairs && cfg.pairs.length > 0) {
-                                        previews.push({ icon: "", text: `对 ${cfg.column} 查找替换，共 ${cfg.pairs.length} 条规则` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请配置查找替换规则", warn: true });
-                                      }
-                                      break;
-                                    case "runningTotal":
-                                      if (cfg.column) {
-                                        previews.push({ icon: "", text: `累计求和: ${cfg.column}${cfg.orderColumn ? `，按 ${cfg.orderColumn} ${cfg.direction === "desc" ? "降序" : "升序"}` : ""}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择累计列", warn: true });
-                                      }
-                                      break;
-                                    case "percentOfTotal":
-                                      if (cfg.column) {
-                                        previews.push({ icon: "", text: `占比计算: ${cfg.column}${cfg.asPercent !== false ? "（以百分比输出）" : ""}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择计算列", warn: true });
-                                      }
-                                      break;
-                                    case "movingAverage":
-                                      if (cfg.column) {
-                                        previews.push({ icon: "", text: `移动平均: ${cfg.column}，窗口 ${cfg.windowSize || 3}，输出到 ${cfg.targetColumn || "moving_avg"}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择计算列", warn: true });
-                                      }
-                                      break;
-                                    case "binning":
-                                      if (cfg.column) {
-                                        previews.push({ icon: "", text: `数据分箱: ${cfg.column}，分箱数 ${cfg.binCount || 5}，输出到 ${cfg.targetColumn || "bin"}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择分箱列", warn: true });
-                                      }
-                                      break;
-                                    case "conditionalTag":
-                                      if (cfg.conditions && cfg.conditions.length > 0) {
-                                        previews.push({ icon: "", text: `条件标记: ${cfg.conditions.length} 条规则，输出到 ${cfg.targetColumn || "tag"}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请添加条件规则", warn: true });
-                                      }
-                                      break;
-                                    case "stringExtract":
-                                      if (cfg.column && cfg.extractType) {
-                                        previews.push({ icon: "", text: `字符串提取: ${cfg.column}，方式 ${cfg.extractType}，输出到 ${cfg.targetColumn || "extracted"}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请配置源字段和提取方式", warn: true });
-                                      }
-                                      break;
-                                    case "fillNA":
-                                      if (cfg.column) {
-                                        previews.push({ icon: "", text: `空值填充: ${cfg.column}，策略 ${cfg.fillType || "value"}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择填充列", warn: true });
-                                      }
-                                      break;
-                                    case "normalize":
-                                      if (cfg.column) {
-                                        previews.push({ icon: "", text: `数据标准化: ${cfg.column}，方法 ${cfg.normType || "minmax"}，输出到 ${cfg.targetColumn || "normalized"}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择标准化列", warn: true });
-                                      }
-                                      break;
-                                    case "concat":
-                                      if (cfg.columns && cfg.columns.length > 0 && cfg.columns[0]) {
-                                        previews.push({ icon: "", text: `拼接字段: ${cfg.columns.join(" + ")}${cfg.separator ? `，分隔符「${cfg.separator}」` : ""}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请添加拼接字段", warn: true });
-                                      }
-                                      break;
-                                    case "substring":
-                                      if (cfg.column) {
-                                        previews.push({ icon: "", text: `截取子串: ${cfg.column}[${cfg.start || 0}:${(cfg.start || 0) + (cfg.length || 10)}]` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择源字段", warn: true });
-                                      }
-                                      break;
-                                    case "date":
-                                      if (cfg.column) {
-                                        previews.push({ icon: "", text: `日期处理: ${cfg.column} → ${cfg.format || "yyyy-mm-dd"}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择日期字段", warn: true });
-                                      }
-                                      break;
-                                    case "math":
-                                      if (cfg.column) {
-                                        previews.push({ icon: "", text: `数学运算: ${cfg.column} ${cfg.operation || "+"} ${cfg.value != null ? String(cfg.value) : ""}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择输入列", warn: true });
-                                      }
-                                      break;
-                                    case "rank":
-                                      if (cfg.column) {
-                                        previews.push({ icon: "", text: `排名: ${cfg.column} ${cfg.direction === "desc" ? "降序" : "升序"}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择排名列", warn: true });
-                                      }
-                                      break;
-                                    case "diff":
-                                      if (cfg.column && cfg.baseColumn) {
-                                        previews.push({ icon: "", text: `差值: ${cfg.column} - ${cfg.baseColumn}${cfg.percent ? "（百分比）" : ""}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择当前列和基准列", warn: true });
-                                      }
-                                      break;
-                                    case "ratio":
-                                      if (cfg.numerator && cfg.denominator) {
-                                        previews.push({ icon: "", text: `比率: ${cfg.numerator} / ${cfg.denominator}${cfg.percent !== false ? "（百分比）" : ""}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择分子和分母", warn: true });
-                                      }
-                                      break;
-                                    case "constant":
-                                      previews.push({ icon: "", text: `常量值: ${cfg.value != null ? String(cfg.value) : ""}` });
-                                      break;
-                                    case "text":
-                                      previews.push({ icon: "", text: `文本值: ${cfg.value != null ? String(cfg.value) : ""}` });
-                                      break;
-                                    case "valueNormalize":
-                                      if (cfg.column) {
-                                        previews.push({ icon: "", text: `值规范化: ${cfg.column}，规则数 ${(cfg.rules || []).length}` });
-                                      } else {
-                                        previews.push({ icon: "", text: "请选择需要规范化的字段", warn: true });
-                                      }
-                                      break;
-                                  }
-                                  if (previews.length === 0) return null;
-                                  return /*#__PURE__*/ React.createElement(
-                                    React.Fragment,
-                                    null,
-                                    /*#__PURE__*/ React.createElement(
-                                      "div",
-                                      { style: { fontSize: "11px", fontWeight: 600, color: "#64748b", marginBottom: "6px", display: "flex", alignItems: "center", gap: "4px" } },
-                                      /*#__PURE__*/ React.createElement(Icons.Eye, { size: 12 }),
-                                      "配置预览",
-                                    ),
-                                    previews.map((p, pi) => /*#__PURE__*/ React.createElement(
-                                      "div",
-                                      { key: pi, style: { fontSize: "12px", color: p.warn ? "#d97706" : "#334155", marginBottom: "3px" } },
-                                      p.text,
-                                    )),
-                                  );
-                                })(),
-                              ),
-                              /*#__PURE__*/ React.createElement(
-                                "div",
                                 { className: "step-debug-panel" },
                                 /*#__PURE__*/ React.createElement(
                                   "button",
@@ -8366,10 +8103,20 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
       const step = currentRule?.steps?.find((s) => s.id === previewStepId);
       const stepIdx = currentRule?.steps?.findIndex((s) => s.id === previewStepId);
       if (!step) return null;
+      const engineResult = currentRule?.steps?.length > 0 ? (() => {
+        try {
+          return CalcEngine.exec(currentRule, platform?.tables || [], {
+            fieldSemanticType: activeField?.semanticType,
+            shopName: platform?.name,
+          });
+        } catch (e) { return null; }
+      })() : null;
+      const stepResult = engineResult?.stepResults?.[stepIdx];
+      const stats = stepResult?.stats;
       return /*#__PURE__*/ React.createElement(
         DraggableModal,
         {
-          title: `步骤预览 - ${getStepTypeInfo(step.type).name} (第${stepIdx + 1}步)`,
+          title: `${getStepTypeInfo(step.type).icon} ${getStepTypeInfo(step.type).name} - 第${stepIdx + 1}步预览`,
           onClose: () => { setShowPreviewModal(false); setPreviewStepId(null); },
           width: 900,
           height: 600,
@@ -8377,44 +8124,37 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
         /*#__PURE__*/ React.createElement(
           "div",
           { style: { padding: "16px" } },
-          /*#__PURE__*/ React.createElement(
+          stats && /*#__PURE__*/ React.createElement(
             "div",
-            { style: { marginBottom: "16px", padding: "12px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" } },
-            /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", fontWeight: 600, color: "#64748b", marginBottom: "6px", display: "flex", alignItems: "center", gap: "4px" } },
-              /*#__PURE__*/ React.createElement(Icons.Eye, { size: 12 }),
-              "配置预览",
+            { style: { display: "flex", gap: "12px", marginBottom: "16px", flexWrap: "wrap" } },
+            /*#__PURE__*/ React.createElement("div", { style: { flex: "1 1 120px", padding: "10px 14px", background: "#f0f9ff", borderRadius: "8px", border: "1px solid #bae6fd" } },
+              /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", color: "#0369a1", marginBottom: "2px" } }, "输入行数"),
+              /*#__PURE__*/ React.createElement("div", { style: { fontSize: "20px", fontWeight: 700, color: "#0c4a6e" } }, (stats.inputRows || 0).toLocaleString()),
             ),
-            (() => {
-              const cfg = step.config || {};
-              const previews = [];
-              switch (step.type) {
-                case "source":
-                  previews.push({ text: cfg.tables && cfg.tables.length > 0 ? `已选择 ${cfg.tables.length} 个数据表` : "请至少选择一个数据表", warn: !cfg.tables?.length });
-                  break;
-                case "filter":
-                  previews.push({ text: cfg.column && cfg.op ? `筛选条件: ${cfg.column} ${cfg.op} ${cfg.value != null ? String(cfg.value) : ""}` : "请配置筛选条件", warn: !cfg.column });
-                  break;
-                case "virtual":
-                  previews.push({ text: cfg.source && cfg.target ? `从「${cfg.source}」提取 → 生成「${cfg.target}」` : "请配置源字段和目标字段", warn: !cfg.source });
-                  break;
-                case "join":
-                  previews.push({ text: cfg.key && cfg.fk ? `关联: ${cfg.key} = ${cfg.fk}` : "请配置关联键", warn: !cfg.key });
-                  break;
-                case "aggregate":
-                  previews.push({ text: cfg.column ? `聚合: ${cfg.func || "sum"}(${cfg.column})` : "请选择聚合列", warn: !cfg.column });
-                  break;
-                case "formula":
-                  previews.push({ text: cfg.expr ? `公式: ${cfg.expr.replace(/{([^}]+)}/g, "【$1】")}` : "请输入计算公式", warn: !cfg.expr });
-                  break;
-                default:
-                  previews.push({ text: getStepTypeInfo(step.type).description });
-              }
-              return previews.map((p, pi) => /*#__PURE__*/ React.createElement(
-                "div",
-                { key: pi, style: { fontSize: "12px", color: p.warn ? "#d97706" : "#334155", marginBottom: "3px" } },
-                p.text,
-              ));
-            })(),
+            /*#__PURE__*/ React.createElement("div", { style: { flex: "1 1 120px", padding: "10px 14px", background: "#f0fdf4", borderRadius: "8px", border: "1px solid #bbf7d0" } },
+              /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", color: "#15803d", marginBottom: "2px" } }, "输出行数"),
+              /*#__PURE__*/ React.createElement("div", { style: { fontSize: "20px", fontWeight: 700, color: "#14532d" } }, (stats.outputRows || 0).toLocaleString()),
+            ),
+            /*#__PURE__*/ React.createElement("div", {
+              style: {
+                flex: "1 1 120px", padding: "10px 14px",
+                background: stats.change > 0 ? "#fef2f2" : stats.change < 0 ? "#fefce8" : "#f8fafc",
+                borderRadius: "8px",
+                border: stats.change > 0 ? "1px solid #fecaca" : stats.change < 0 ? "1px solid #fef08a" : "1px solid #e2e8f0",
+              },
+            },
+              /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", color: "#64748b", marginBottom: "2px" } }, "行数变化"),
+              /*#__PURE__*/ React.createElement("div", { style: { fontSize: "20px", fontWeight: 700, color: stats.change > 0 ? "#991b1b" : stats.change < 0 ? "#854d0e" : "#334155" } },
+                stats.change > 0 ? `+${stats.change}` : stats.change < 0 ? `${stats.change}` : "0",
+              ),
+            ),
+            stepResult?.columns && stepResult.columns.length > 0 && /*#__PURE__*/ React.createElement("div",
+              { style: { flex: "1 1 180px", padding: "10px 14px", background: "#faf5ff", borderRadius: "8px", border: "1px solid #e9d5ff" } },
+              /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", color: "#7e22ce", marginBottom: "2px" } }, "输出列"),
+              /*#__PURE__*/ React.createElement("div", { style: { fontSize: "13px", fontWeight: 600, color: "#581c87", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" } },
+                stepResult.columns.join(", "),
+              ),
+            ),
           ),
           /*#__PURE__*/ React.createElement(
             "div",

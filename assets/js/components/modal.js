@@ -167,9 +167,12 @@ const AlertModal = ({ title, message, onConfirm, type = "info", confirmText = "�
 const DraggableModal = ({ title, children, onClose, width = 800, height = 600 }) => {
   const portalContainerRef = useRef(null);
   const [containerReady, setContainerReady] = useState(false);
-  const [position, setPosition] = useState({ x: 100, y: 100 });
+  const [position, setPosition] = useState({ x: Math.max(60, window.innerWidth - width - 40), y: 60 });
+  const [size, setSize] = useState({ w: width, h: height });
   const [isDragging, setIsDragging] = useState(false);
+  const [isResizing, setIsResizing] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [resizeStart, setResizeStart] = useState({ x: 0, y: 0, w: 0, h: 0 });
   const onCloseRef = useRef(onClose);
 
   useEffect(() => {
@@ -182,14 +185,11 @@ const DraggableModal = ({ title, children, onClose, width = 800, height = 600 })
       document.body.appendChild(portalContainerRef.current);
     }
     setContainerReady(true);
-    document.body.style.overflow = "hidden";
-
     const handleKey = (e) => { if (e.key === "Escape" && onCloseRef.current) onCloseRef.current(); };
     window.addEventListener("keydown", handleKey);
 
     return () => {
       window.removeEventListener("keydown", handleKey);
-      document.body.style.overflow = "";
       try {
         if (portalContainerRef.current && document.body.contains(portalContainerRef.current)) {
           document.body.removeChild(portalContainerRef.current);
@@ -200,18 +200,26 @@ const DraggableModal = ({ title, children, onClose, width = 800, height = 600 })
     };
   }, []);
 
+  // 拖拽
   useEffect(() => {
     const handleMouseMove = (e) => {
-      if (!isDragging) return;
-      setPosition({
-        x: e.clientX - dragOffset.x,
-        y: e.clientY - dragOffset.y,
-      });
+      if (isDragging) {
+        setPosition({
+          x: Math.max(0, Math.min(window.innerWidth - 100, e.clientX - dragOffset.x)),
+          y: Math.max(0, Math.min(window.innerHeight - 60, e.clientY - dragOffset.y)),
+        });
+      }
+      if (isResizing) {
+        const newW = Math.max(400, resizeStart.w + (e.clientX - resizeStart.x));
+        const newH = Math.max(300, resizeStart.h + (e.clientY - resizeStart.y));
+        setSize({ w: newW, h: newH });
+      }
     };
     const handleMouseUp = () => {
       setIsDragging(false);
+      setIsResizing(false);
     };
-    if (isDragging) {
+    if (isDragging || isResizing) {
       window.addEventListener("mousemove", handleMouseMove);
       window.addEventListener("mouseup", handleMouseUp);
     }
@@ -219,7 +227,7 @@ const DraggableModal = ({ title, children, onClose, width = 800, height = 600 })
       window.removeEventListener("mousemove", handleMouseMove);
       window.removeEventListener("mouseup", handleMouseUp);
     };
-  }, [isDragging, dragOffset]);
+  }, [isDragging, isResizing, dragOffset, resizeStart]);
 
   const handleMouseDown = (e) => {
     if (e.target.closest('.modal-close') || e.target.closest('.modal-body')) return;
@@ -230,44 +238,44 @@ const DraggableModal = ({ title, children, onClose, width = 800, height = 600 })
     });
   };
 
+  const handleResizeMouseDown = (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    setIsResizing(true);
+    setResizeStart({ x: e.clientX, y: e.clientY, w: size.w, h: size.h });
+  };
+
   if (!containerReady || !portalContainerRef.current) return null;
 
   return ReactDOM.createPortal(
     React.createElement("div", {
-      className: "modal-mask",
-      onClick: (e) => {
-        if (e.target === e.currentTarget && onCloseRef.current) onCloseRef.current();
-      }
+      className: "modal-float-panel",
+      style: {
+        left: position.x,
+        top: position.y,
+        width: size.w,
+        height: size.h,
+      },
     },
       React.createElement("div", {
-        className: "modal modal-draggable",
-        style: {
-          maxWidth: 'none',
-          width: width,
-          height: height,
-          left: position.x,
-          top: position.y,
-          position: 'fixed',
-          transform: 'none',
-        },
-        onClick: (e) => e.stopPropagation(),
+        className: "modal-header",
+        onMouseDown: handleMouseDown,
+        style: { cursor: 'move', userSelect: 'none' },
       },
-        React.createElement("div", {
-          className: "modal-header",
-          onMouseDown: handleMouseDown,
-          style: { cursor: 'move' },
+        React.createElement("div", { className: "modal-title" }, title),
+        React.createElement("button", {
+          className: "modal-close",
+          onClick: () => onCloseRef.current && onCloseRef.current(),
+          style: { cursor: 'pointer' },
         },
-          React.createElement("div", { className: "modal-title" }, title),
-          React.createElement("button", {
-            className: "modal-close",
-            onClick: () => onCloseRef.current && onCloseRef.current(),
-            style: { cursor: 'pointer' },
-          },
-            React.createElement(Icons.X, null)
-          )
-        ),
-        React.createElement("div", { className: "modal-body", style: { height: 'calc(100% - 56px)', overflow: 'auto' } }, children),
-      )
+          React.createElement(Icons.X, null)
+        )
+      ),
+      React.createElement("div", { className: "modal-body", style: { height: 'calc(100% - 56px - 12px)', overflow: 'auto' } }, children),
+      React.createElement("div", {
+        className: "modal-resize-handle",
+        onMouseDown: handleResizeMouseDown,
+      })
     ),
     portalContainerRef.current
   );
