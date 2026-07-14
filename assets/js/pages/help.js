@@ -2,6 +2,24 @@
 const HelpPage = () => {
   const [activeSection, setActiveSection] = useState("intro");
   const [expandedFAQ, setExpandedFAQ] = useState(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [showScrollTop, setShowScrollTop] = useState(false);
+
+  const handleScroll = (e) => {
+    const target = e.target;
+    if (target.scrollTop > 300) {
+      setShowScrollTop(true);
+    } else {
+      setShowScrollTop(false);
+    }
+  };
+
+  const scrollToTop = () => {
+    const mainEl = document.querySelector(".help-main");
+    if (mainEl) {
+      mainEl.scrollTo({ top: 0, behavior: "smooth" });
+    }
+  };
 
   const sections = [
     { id: "intro", name: "系统介绍", icon: Icons.Info, category: "基础" },
@@ -17,9 +35,15 @@ const HelpPage = () => {
     { id: "settings", name: "系统设置", icon: Icons.Settings, category: "系统" },
     { id: "changelog", name: "更新日志", icon: Icons.GitCommit, category: "系统" },
     { id: "faq", name: "常见问题", icon: Icons.HelpCircle, category: "系统" },
+    { id: "about", name: "关于我们", icon: Icons.Building2, category: "关于" },
+    { id: "acknowledgements", name: "特别鸣谢", icon: Icons.Heart, category: "关于" },
   ];
 
-  const categories = ["基础", "配置", "计算", "数据", "系统"];
+  const categories = ["基础", "配置", "计算", "数据", "系统", "关于"];
+
+  const filteredSections = searchQuery
+    ? sections.filter((s) => s.name.toLowerCase().includes(searchQuery.toLowerCase()))
+    : sections;
 
   const renderIntro = () => React.createElement(
     "div",
@@ -86,6 +110,169 @@ const HelpPage = () => {
         React.createElement(Tag, { type: "info" }, "Excel 97-2003 (.xls)"),
         React.createElement(Tag, { type: "info" }, "CSV (.csv)"),
         React.createElement(Tag, { type: "info" }, "ZIP 压缩包 (.zip)"),
+      ),
+    ),
+  );
+
+  const renderAbout = () => React.createElement(
+    "div",
+    { className: "help-content" },
+    React.createElement("div", { className: "about-hero" },
+      React.createElement("div", { className: "about-hero-bg" }),
+      React.createElement("div", { className: "about-hero-content" },
+        React.createElement("div", { className: "about-hero-icon" },
+          React.createElement(Icons.Layers, { style: { width: 72, height: 72, color: "var(--color-primary)" } }),
+        ),
+        React.createElement("h1", { className: "about-hero-title" }, "店数智 ShopData"),
+        React.createElement("p", { className: "about-hero-slogan" }, "让数据分析更简单，让经营决策更智能"),
+        React.createElement("div", { className: "about-hero-tags" },
+          React.createElement(Tag, { type: "primary" }, "高效"),
+          React.createElement(Tag, { type: "success" }, "精准"),
+          React.createElement(Tag, { type: "warning" }, "智能"),
+          React.createElement(Tag, { type: "info" }, "易用"),
+        ),
+      ),
+    ),
+    React.createElement("div", { className: "help-section" },
+      React.createElement("h2", { className: "help-section-title" }, "产品定位"),
+      React.createElement("p", { className: "help-section-text" },
+        "店数智（ShopData）是一款专为电商商家打造的店铺数据智能分析平台。我们致力于通过智能化的数据分析工具，帮助商家从繁杂的数据中快速提取有价值的信息，让经营决策更加科学高效。",
+      ),
+      React.createElement("p", { className: "help-section-text" },
+        "平台支持拼多多、淘宝、抖音等主流电商平台的数据分析与利润报表生成。通过智能模板识别、可视化计算规则配置、批量数据处理，一键生成标准化利润报表，帮助商家高效完成数据统计与经营分析。",
+      ),
+    ),
+    React.createElement("div", { className: "help-section" },
+      React.createElement("h2", { className: "help-section-title" }, "适用人群"),
+      React.createElement("div", { className: "about-audience-grid" },
+        React.createElement("div", { className: "about-audience-card" },
+          React.createElement(Icons.Store, { style: { width: 32, height: 32, color: "var(--color-primary)" } }),
+          React.createElement("h4", null, "电商商家"),
+          React.createElement("p", null, "多平台经营的店铺老板，快速了解各店铺经营状况"),
+        ),
+        React.createElement("div", { className: "about-audience-card" },
+          React.createElement(Icons.Users, { style: { width: 32, height: 32, color: "var(--color-success)" } }),
+          React.createElement("h4", null, "运营人员"),
+          React.createElement("p", null, "负责日常运营的工作人员，高效生成数据报表"),
+        ),
+        React.createElement("div", { className: "about-audience-card" },
+          React.createElement(Icons.BarChart3, { style: { width: 32, height: 32, color: "var(--color-warning)" } }),
+          React.createElement("h4", null, "数据分析师"),
+          React.createElement("p", null, "专业数据分析人员，灵活配置复杂计算逻辑"),
+        ),
+      ),
+    ),
+    React.createElement("div", { className: "help-section" },
+      React.createElement("h2", { className: "help-section-title" }, "核心功能"),
+      React.createElement("div", { className: "about-features-grid" },
+        React.createElement("div", { className: "about-feature-card" },
+          React.createElement("div", { className: "about-feature-icon", style: { background: "var(--color-primary-bg)" } },
+            React.createElement(Icons.ScanLine, { style: { width: 28, height: 28, color: "var(--color-primary)" } }),
+          ),
+          React.createElement("h4", null, "智能模板识别"),
+          React.createElement("p", null, "AI自动识别表格结构，智能提取占位符字段，无需手动配置"),
+        ),
+        React.createElement("div", { className: "about-feature-card" },
+          React.createElement("div", { className: "about-feature-icon", style: { background: "var(--color-success-bg)" } },
+            React.createElement(Icons.GitBranch, { style: { width: 28, height: 28, color: "var(--color-success)" } }),
+          ),
+          React.createElement("h4", null, "可视化计算规则"),
+          React.createElement("p", null, "拖拽式步骤配置，40+ 种计算步骤，灵活组合实现复杂逻辑"),
+        ),
+        React.createElement("div", { className: "about-feature-card" },
+          React.createElement("div", { className: "about-feature-icon", style: { background: "var(--color-warning-bg)" } },
+            React.createElement(Icons.Globe, { style: { width: 28, height: 28, color: "var(--color-warning)" } }),
+          ),
+          React.createElement("h4", null, "多平台数据支持"),
+          React.createElement("p", null, "支持拼多多、淘宝、抖音等主流电商平台数据统一管理"),
+        ),
+        React.createElement("div", { className: "about-feature-card" },
+          React.createElement("div", { className: "about-feature-icon", style: { background: "var(--color-danger-bg)" } },
+            React.createElement(Icons.Zap, { style: { width: 28, height: 28, color: "var(--color-danger)" } }),
+          ),
+          React.createElement("h4", null, "批量计算处理"),
+          React.createElement("p", null, "一键批量生成报表，自动命名管理，大幅提升工作效率"),
+        ),
+        React.createElement("div", { className: "about-feature-card" },
+          React.createElement("div", { className: "about-feature-icon", style: { background: "var(--color-info-bg)" } },
+            React.createElement(Icons.Download, { style: { width: 28, height: 28, color: "var(--color-info)" } }),
+          ),
+          React.createElement("h4", null, "灵活导出格式"),
+          React.createElement("p", null, "支持 Excel、CSV、PDF 多种格式导出，满足不同场景需求"),
+        ),
+        React.createElement("div", { className: "about-feature-card" },
+          React.createElement("div", { className: "about-feature-icon", style: { background: "var(--color-accent-bg)" } },
+            React.createElement(Icons.Shield, { style: { width: 28, height: 28, color: "var(--color-accent)" } }),
+          ),
+          React.createElement("h4", null, "数据安全保障"),
+          React.createElement("p", null, "纯前端本地计算，数据不上传服务器，保护您的商业数据安全"),
+        ),
+      ),
+    ),
+    React.createElement("div", { className: "help-section" },
+      React.createElement("h2", { className: "help-section-title" }, "技术特点"),
+      React.createElement("div", { className: "about-tech-grid" },
+        React.createElement("div", { className: "about-tech-item" },
+          React.createElement(Icons.Cpu, { style: { width: 24, height: 24, color: "var(--color-primary)" } }),
+          React.createElement("div", null,
+            React.createElement("h4", null, "纯前端架构"),
+            React.createElement("p", null, "所有数据处理均在本地完成，确保数据安全"),
+          ),
+        ),
+        React.createElement("div", { className: "about-tech-item" },
+          React.createElement(Icons.Gauge, { style: { width: 24, height: 24, color: "var(--color-success)" } }),
+          React.createElement("div", null,
+            React.createElement("h4", null, "高性能计算引擎"),
+            React.createElement("p", null, "优化的计算算法，处理大数据量依然流畅"),
+          ),
+        ),
+        React.createElement("div", { className: "about-tech-item" },
+          React.createElement(Icons.Smartphone, { style: { width: 24, height: 24, color: "var(--color-warning)" } }),
+          React.createElement("div", null,
+            React.createElement("h4", null, "响应式设计"),
+            React.createElement("p", null, "适配电脑、平板、手机等多端设备"),
+          ),
+        ),
+        React.createElement("div", { className: "about-tech-item" },
+          React.createElement(Icons.Palette, { style: { width: 24, height: 24, color: "var(--color-info)" } }),
+          React.createElement("div", null,
+            React.createElement("h4", null, "4种主题定制"),
+            React.createElement("p", null, "深邃商务、清新科技、温暖活力、优雅紫调"),
+          ),
+        ),
+        React.createElement("div", { className: "about-tech-item" },
+          React.createElement(Icons.WifiOff, { style: { width: 24, height: 24, color: "var(--color-danger)" } }),
+          React.createElement("div", null,
+            React.createElement("h4", null, "离线可用"),
+            React.createElement("p", null, "支持 PWA，离线状态也能正常使用"),
+          ),
+        ),
+      ),
+    ),
+    React.createElement("div", { className: "help-section" },
+      React.createElement("h2", { className: "help-section-title" }, "版本信息"),
+      React.createElement("div", { className: "about-version-card" },
+        React.createElement("div", { className: "about-version-info" },
+          React.createElement("div", { className: "about-version-item" },
+            React.createElement("span", { className: "about-version-label" }, "当前版本"),
+            React.createElement("span", { className: "about-version-value" }, typeof appVersion !== "undefined" ? appVersion : "1.0.0"),
+          ),
+          React.createElement("div", { className: "about-version-item" },
+            React.createElement("span", { className: "about-version-label" }, "更新时间"),
+            React.createElement("span", { className: "about-version-value" }, "2026-07-15"),
+          ),
+          React.createElement("div", { className: "about-version-item" },
+            React.createElement("span", { className: "about-version-label" }, "构建号"),
+            React.createElement("span", { className: "about-version-value" }, "BUILD-20260715"),
+          ),
+        ),
+        React.createElement("button", {
+          className: "btn btn-primary",
+          onClick: () => setActiveSection("changelog"),
+        },
+          React.createElement(Icons.GitCommit, null),
+          " 查看更新日志",
+        ),
       ),
     ),
   );
@@ -841,6 +1028,233 @@ const HelpPage = () => {
     ),
   );
 
+  const specialContributors = [
+    {
+      name: "张小明",
+      role: "项目创始人 / 核心开发者",
+      bio: "全栈工程师，专注于数据可视化与前端架构设计，拥有10年电商行业经验",
+      avatar: "ZM",
+      color: "var(--color-primary)",
+      social: { github: "#", twitter: "#" },
+    },
+    {
+      name: "李华",
+      role: "技术架构师",
+      bio: "资深后端架构师，擅长高性能计算引擎设计与优化",
+      avatar: "LH",
+      color: "var(--color-success)",
+      social: { github: "#" },
+    },
+    {
+      name: "王芳",
+      role: "产品设计",
+      bio: "UI/UX设计师，专注于用户体验设计与交互研究",
+      avatar: "WF",
+      color: "var(--color-warning)",
+      social: { dribbble: "#" },
+    },
+  ];
+
+  const techSupporters = [
+    {
+      name: "前端技术社区",
+      desc: "提供技术交流与问题解答支持",
+      icon: Icons.Code,
+      color: "var(--color-primary)",
+      link: "#",
+    },
+    {
+      name: "电商数据联盟",
+      desc: "提供行业数据标准与规范指导",
+      icon: Icons.Database,
+      color: "var(--color-success)",
+      link: "#",
+    },
+    {
+      name: "开源中国",
+      desc: "开源项目推广与社区支持",
+      icon: Icons.Globe,
+      color: "var(--color-warning)",
+      link: "#",
+    },
+  ];
+
+  const openSourceProjects = [
+    {
+      name: "React",
+      desc: "用于构建用户界面的 JavaScript 库",
+      license: "MIT",
+      link: "https://react.dev",
+    },
+    {
+      name: "SheetJS",
+      desc: "Excel 文件读写与处理库",
+      license: "Apache-2.0",
+      link: "https://sheetjs.com",
+    },
+    {
+      name: "Lucide Icons",
+      desc: "精美的开源图标库",
+      license: "ISC",
+      link: "https://lucide.dev",
+    },
+    {
+      name: "PWA",
+      desc: "渐进式 Web 应用技术支持",
+      license: "W3C",
+      link: "#",
+    },
+  ];
+
+  const renderAcknowledgements = () => React.createElement(
+    "div",
+    { className: "help-content" },
+    React.createElement("div", { className: "acknowledgements-hero" },
+      React.createElement("div", { className: "acknowledgements-hero-bg" }),
+      React.createElement("div", { className: "acknowledgements-hero-content" },
+        React.createElement("div", { className: "acknowledgements-hero-icon" },
+          React.createElement(Icons.Heart, { style: { width: 64, height: 64, color: "var(--color-danger)" } }),
+        ),
+        React.createElement("h1", { className: "acknowledgements-hero-title" }, "特别鸣谢"),
+        React.createElement("p", { className: "acknowledgements-hero-desc" },
+          "感谢每一位为店数智 ShopData 做出贡献的朋友",
+        ),
+      ),
+    ),
+    React.createElement("div", { className: "help-section" },
+      React.createElement("h2", { className: "help-section-title" }, "特别贡献者"),
+      React.createElement("p", { className: "help-section-text" },
+        "感谢以下核心贡献者，是他们的付出让产品变得更好。",
+      ),
+      React.createElement("div", { className: "ack-contributors-grid" },
+        specialContributors.map((contributor, idx) => React.createElement(
+          "div",
+          { key: idx, className: "ack-contributor-card" },
+          React.createElement("div", {
+            className: "ack-contributor-avatar",
+            style: { background: `linear-gradient(135deg, ${contributor.color}, ${contributor.color}88)` },
+          },
+            React.createElement("span", null, contributor.avatar),
+          ),
+          React.createElement("h3", { className: "ack-contributor-name" }, contributor.name),
+          React.createElement("div", { className: "ack-contributor-role" }, contributor.role),
+          React.createElement("p", { className: "ack-contributor-bio" }, contributor.bio),
+          React.createElement("div", { className: "ack-contributor-social" },
+            contributor.social.github && React.createElement("a", {
+              href: contributor.social.github,
+              className: "ack-social-link",
+              title: "GitHub",
+            },
+              React.createElement(Icons.Github, { style: { width: 18, height: 18 } }),
+            ),
+            contributor.social.twitter && React.createElement("a", {
+              href: contributor.social.twitter,
+              className: "ack-social-link",
+              title: "Twitter",
+            },
+              React.createElement(Icons.Twitter, { style: { width: 18, height: 18 } }),
+            ),
+            contributor.social.dribbble && React.createElement("a", {
+              href: contributor.social.dribbble,
+              className: "ack-social-link",
+              title: "Dribbble",
+            },
+              React.createElement(Icons.Dribbble, { style: { width: 18, height: 18 } }),
+            ),
+          ),
+        )),
+      ),
+    ),
+    React.createElement("div", { className: "help-section" },
+      React.createElement("h2", { className: "help-section-title" }, "技术支持"),
+      React.createElement("p", { className: "help-section-text" },
+        "感谢以下团队和组织提供的技术支持与帮助。",
+      ),
+      React.createElement("div", { className: "ack-tech-grid" },
+        techSupporters.map((supporter, idx) => React.createElement(
+          "a",
+          { key: idx, href: supporter.link, className: "ack-tech-card" },
+          React.createElement("div", {
+            className: "ack-tech-icon",
+            style: { background: `var(--color-${["primary", "success", "warning"][idx % 3]}-bg)` },
+          },
+            React.createElement(supporter.icon, { style: { width: 28, height: 28, color: supporter.color } }),
+          ),
+          React.createElement("div", null,
+            React.createElement("h4", null, supporter.name),
+            React.createElement("p", null, supporter.desc),
+          ),
+          React.createElement(Icons.ExternalLink, { style: { width: 16, height: 16, color: "var(--color-text-muted)" } }),
+        )),
+      ),
+    ),
+    React.createElement("div", { className: "help-section" },
+      React.createElement("h2", { className: "help-section-title" }, "开源项目"),
+      React.createElement("p", { className: "help-section-text" },
+        "本项目基于以下优秀的开源技术构建，在此向所有开源贡献者致以诚挚的谢意。",
+      ),
+      React.createElement("div", { className: "ack-opensource-grid" },
+        openSourceProjects.map((project, idx) => React.createElement(
+          "a",
+          { key: idx, href: project.link, className: "ack-opensource-card" },
+          React.createElement("div", { className: "ack-opensource-header" },
+            React.createElement("div", { className: "ack-opensource-name" },
+              React.createElement(Icons.Package, { style: { width: 18, height: 18, color: "var(--color-primary)" } }),
+              React.createElement("span", null, project.name),
+            ),
+            React.createElement(Tag, { type: "info", size: "sm" }, project.license),
+          ),
+          React.createElement("p", { className: "ack-opensource-desc" }, project.desc),
+          React.createElement("div", { className: "ack-opensource-link" },
+            "查看项目",
+            React.createElement(Icons.ExternalLink, { style: { width: 14, height: 14 } }),
+          ),
+        )),
+      ),
+    ),
+    React.createElement("div", { className: "help-section" },
+      React.createElement("div", { className: "ack-users-card" },
+        React.createElement("div", { className: "ack-users-icon" },
+          React.createElement(Icons.Users, { style: { width: 48, height: 48, color: "var(--color-primary)" } }),
+        ),
+        React.createElement("h3", null, "致所有用户"),
+        React.createElement("p", null,
+          "感谢您选择店数智 ShopData！您的每一次使用、每一条反馈、每一个建议，都是我们不断前进的动力。",
+        ),
+        React.createElement("p", null,
+          "正是因为有了您的支持与信任，我们才能持续优化产品，为更多电商商家提供更优质的数据分析服务。",
+        ),
+        React.createElement("div", { className: "ack-users-actions" },
+          React.createElement("button", { className: "btn btn-primary" },
+            React.createElement(Icons.Star, null),
+            " 给我们点赞",
+          ),
+          React.createElement("button", { className: "btn btn-ghost" },
+            React.createElement(Icons.MessageCircle, null),
+            " 反馈建议",
+          ),
+        ),
+      ),
+    ),
+    React.createElement("div", { className: "help-section" },
+      React.createElement("div", { className: "ack-contribute-card" },
+        React.createElement("div", { className: "ack-contribute-icon" },
+          React.createElement(Icons.GitPullRequest, { style: { width: 48, height: 48, color: "var(--color-success)" } }),
+        ),
+        React.createElement("div", null,
+          React.createElement("h3", null, "成为贡献者"),
+          React.createElement("p", null,
+            "我们欢迎每一位热爱开源的朋友加入我们，无论是提交代码、修复 Bug、完善文档，还是分享经验，都将是对项目的巨大贡献。",
+          ),
+        ),
+        React.createElement("button", { className: "btn btn-success" },
+          React.createElement(Icons.Github, null),
+          " 参与贡献",
+        ),
+      ),
+    ),
+  );
+
   const renderContent = () => {
     switch (activeSection) {
       case "intro": return renderIntro();
@@ -856,6 +1270,8 @@ const HelpPage = () => {
       case "settings": return renderSettings();
       case "changelog": return renderChangelog();
       case "faq": return renderFAQ();
+      case "about": return renderAbout();
+      case "acknowledgements": return renderAcknowledgements();
       default: return renderIntro();
     }
   };
@@ -869,28 +1285,66 @@ const HelpPage = () => {
           React.createElement(Icons.HelpCircle, { style: { width: "28px", height: "28px", color: "var(--color-primary)" } }),
           React.createElement("span", { className: "help-sidebar-title" }, "使用帮助"),
         ),
-        React.createElement("div", { className: "help-sidebar-nav" },
-          categories.map((category) => {
-            const categorySections = sections.filter((s) => s.category === category);
-            return React.createElement("div", { key: category, className: "help-sidebar-group" },
-              React.createElement("div", { className: "help-sidebar-group-title" }, category),
-              categorySections.map((section) => React.createElement(
-                "button",
-                {
-                  key: section.id,
-                  className: `help-sidebar-item ${activeSection === section.id ? "active" : ""}`,
-                  onClick: () => setActiveSection(section.id),
-                },
-                React.createElement(section.icon, null),
-                React.createElement("span", null, section.name),
-              )),
-            );
+        React.createElement("div", { className: "help-sidebar-search" },
+          React.createElement(Icons.Search, { style: { width: 16, height: 16, color: "var(--color-text-muted)" } }),
+          React.createElement("input", {
+            type: "text",
+            className: "help-search-input",
+            placeholder: "搜索帮助内容...",
+            value: searchQuery,
+            onChange: (e) => setSearchQuery(e.target.value),
           }),
+          searchQuery && React.createElement("button", {
+            className: "help-search-clear",
+            onClick: () => setSearchQuery(""),
+          },
+            React.createElement(Icons.X, { style: { width: 14, height: 14 } }),
+          ),
+        ),
+        React.createElement("div", { className: "help-sidebar-nav" },
+          searchQuery
+            ? (filteredSections.length > 0
+                ? filteredSections.map((section) => React.createElement(
+                    "button",
+                    {
+                      key: section.id,
+                      className: `help-sidebar-item ${activeSection === section.id ? "active" : ""}`,
+                      onClick: () => { setActiveSection(section.id); setSearchQuery(""); },
+                    },
+                    React.createElement(section.icon, null),
+                    React.createElement("span", null, section.name),
+                  ))
+                : React.createElement("div", { className: "help-search-empty" }, "暂无匹配结果")
+              )
+            : categories.map((category) => {
+                const categorySections = sections.filter((s) => s.category === category);
+                if (categorySections.length === 0) return null;
+                return React.createElement("div", { key: category, className: "help-sidebar-group" },
+                  React.createElement("div", { className: "help-sidebar-group-title" }, category),
+                  categorySections.map((section) => React.createElement(
+                    "button",
+                    {
+                      key: section.id,
+                      className: `help-sidebar-item ${activeSection === section.id ? "active" : ""}`,
+                      onClick: () => setActiveSection(section.id),
+                    },
+                    React.createElement(section.icon, null),
+                    React.createElement("span", null, section.name),
+                  )),
+                );
+              }),
         ),
       ),
-      React.createElement("div", { className: "help-main" },
+      React.createElement("div", { className: "help-main", onScroll: handleScroll },
         React.createElement("div", { className: "card help-card-wrapper" },
           renderContent(),
+        ),
+        showScrollTop && React.createElement("button", {
+          className: "help-scroll-top",
+          onClick: scrollToTop,
+          title: "返回顶部",
+        },
+          React.createElement(Icons.ArrowUp, { style: { width: 20, height: 20 } }),
         ),
       ),
     ),

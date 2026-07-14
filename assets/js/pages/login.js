@@ -1,5 +1,5 @@
 // LoginPage - 登录页面组件
-const LoginPage = ({ onLogin }) => {
+const LoginPage = ({ onLogin, onRegister }) => {
   const [username, setUsername] = useState(() => {
     try {
       const saved = localStorage.getItem("app_login_user");
@@ -46,6 +46,19 @@ const LoginPage = ({ onLogin }) => {
   const [captchaCountdown, setCaptchaCountdown] = useState(0);
   const [forgotError, setForgotError] = useState("");
   const [isAdminMode, setIsAdminMode] = useState(false);
+  const [registrationEnabled, setRegistrationEnabled] = useState(true);
+  const [requireAudit, setRequireAudit] = useState(true);
+
+  useEffect(() => {
+    try {
+      const settings = localStorage.getItem("app_system_settings");
+      if (settings) {
+        const s = JSON.parse(settings);
+        setRegistrationEnabled(s.enableRegistration !== false);
+        setRequireAudit(s.requireAudit !== false);
+      }
+    } catch (e) {}
+  }, []);
 
   const validateUsername = (val) => {
     if (!val.trim()) {
@@ -433,6 +446,30 @@ const LoginPage = ({ onLogin }) => {
             },
             loading ? "登录中..." : (isAdminMode ? "后台登录" : "登录"),
           ),
+          registrationEnabled && !isAdminMode &&
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "login-register-entry" },
+              /*#__PURE__*/ React.createElement(
+                "span",
+                null,
+                "还没有账号？",
+              ),
+              /*#__PURE__*/ React.createElement(
+                "a",
+                {
+                  href: "#",
+                  className: "login-register-link",
+                  onClick: (e) => {
+                    e.preventDefault();
+                    if (typeof onRegister === "function") {
+                      onRegister();
+                    }
+                  },
+                },
+                "立即注册",
+              ),
+            ),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "login-admin-entry" },

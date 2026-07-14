@@ -286,6 +286,7 @@ const App = () => {
   const [updateInfo, setUpdateInfo] = useState(null);
   const [updateDetectedAt, setUpdateDetectedAt] = useState(null);
   const [isAdminPage, setIsAdminPage] = useState(false);
+  const [isRegisterPage, setIsRegisterPage] = useState(false);
 
   // 页面加载进度状态
   const [pageLoading, setPageLoading] = useState(false);
@@ -1177,10 +1178,15 @@ const App = () => {
   };
   const handleLogin = (userInfo) => {
     let accounts = [];
+    let pendingUsers = [];
     try {
       const saved = localStorage.getItem("app_accounts");
       if (saved) {
         accounts = JSON.parse(saved);
+      }
+      const savedPending = localStorage.getItem("app_pending_users");
+      if (savedPending) {
+        pendingUsers = JSON.parse(savedPending);
       }
     } catch (e) {}
     if (accounts.length === 0) {
@@ -1207,17 +1213,36 @@ const App = () => {
       ];
       localStorage.setItem("app_accounts", JSON.stringify(accounts));
     }
-    const matchedAccount = accounts.find(
-      (a) =>
-        a.username === userInfo.username.trim() &&
-        a.status === "active",
+    const allUsers = [...accounts, ...pendingUsers];
+    const userAccount = allUsers.find(
+      (a) => a.username === userInfo.username.trim()
     );
-    if (!matchedAccount) {
+    if (!userAccount) {
       if (typeof userInfo.onError === "function") {
-        userInfo.onError("用户名或密码错误，或账户已被禁用");
+        userInfo.onError("用户名或密码错误");
       }
       return;
     }
+    if (userAccount.status === "pending") {
+      if (typeof userInfo.onError === "function") {
+        userInfo.onError("您的账号正在审核中，请等待管理员审核通过");
+      }
+      return;
+    }
+    if (userAccount.status === "rejected") {
+      if (typeof userInfo.onError === "function") {
+        const reason = userAccount.rejectReason ? `原因：${userAccount.rejectReason}` : "";
+        userInfo.onError(`您的注册申请被拒绝。${reason}`);
+      }
+      return;
+    }
+    if (userAccount.status !== "active") {
+      if (typeof userInfo.onError === "function") {
+        userInfo.onError("账户已被禁用，请联系管理员");
+      }
+      return;
+    }
+    const matchedAccount = userAccount;
     
     let passwordMatch = false;
     
@@ -1309,7 +1334,18 @@ const App = () => {
     ActivityLogger.add("退出登录", "");
   };
   if (!isLoggedIn) {
-    return /*#__PURE__*/ React.createElement(LoginPage, { onLogin: handleLogin });
+    if (isRegisterPage && typeof RegisterPage !== "undefined") {
+      return /*#__PURE__*/ React.createElement(RegisterPage, {
+        onBackToLogin: () => setIsRegisterPage(false),
+        onRegisterSuccess: () => {
+          setIsRegisterPage(false);
+        },
+      });
+    }
+    return /*#__PURE__*/ React.createElement(LoginPage, {
+      onLogin: handleLogin,
+      onRegister: () => setIsRegisterPage(true),
+    });
   }
   if (isAdminPage && typeof AdminPage !== "undefined") {
     return /*#__PURE__*/ React.createElement(AdminPage, {

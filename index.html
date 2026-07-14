@@ -3,8 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="app-version" content="czp-1.29.0">
-    <meta name="app-build-time" content="2026-07-15 10:00:00">
+    <meta name="app-version" content="czp-2.0.0">
+    <meta name="app-build-time" content="2026-07-15 18:00:00">
     <title>店数智 - 店铺数据智能分析平台</title>
     
     <link rel="dns-prefetch" href="https://cdn.sheetjs.com" />
@@ -196,60 +196,96 @@
     </script>
     
     <!-- 核心基础设施 -->
-    <script src="assets/js/core/globals.js?v=czp-1.29.0" onload="updateProgress('加载全局变量...')"></script>
-    <script src="assets/js/core/icons.js?v=czp-1.29.0" onload="updateProgress('加载图标库...')"></script>
-    <script src="assets/js/core/version.js?v=czp-1.29.0" onload="updateProgress('加载版本信息...')"></script>
+    <script src="assets/js/core/globals.js?v=czp-2.0.0" onload="updateProgress('加载全局变量...')"></script>
+    <script src="assets/js/core/icons.js?v=czp-2.0.0" onload="updateProgress('加载图标库...')"></script>
+    <script src="assets/js/core/version.js?v=czp-2.0.0" onload="updateProgress('加载版本信息...')"></script>
 
     <!-- 工具函数 -->
-    <script src="assets/js/utils/common.js?v=czp-1.29.0" onload="updateProgress('加载通用工具...')"></script>
-    <script src="assets/js/utils/excel.js?v=czp-1.29.0" onload="updateProgress('加载Excel工具...')"></script>
+    <script src="assets/js/utils/common.js?v=czp-2.0.0" onload="updateProgress('加载通用工具...')"></script>
+    <script src="assets/js/utils/excel.js?v=czp-2.0.0" onload="updateProgress('加载Excel工具...')"></script>
 
     <!-- 持久化存储 -->
-    <script src="assets/js/core/storage.js?v=czp-1.29.0" onload="updateProgress('加载存储引擎...')"></script>
+    <script src="assets/js/core/storage.js?v=czp-2.0.0" onload="updateProgress('加载存储引擎...')"></script>
 
     <!-- 状态管理 -->
-    <script src="assets/js/core/store.js?v=czp-1.29.0" onload="updateProgress('加载状态管理...')"></script>
+    <script src="assets/js/core/store.js?v=czp-2.0.0" onload="updateProgress('加载状态管理...')"></script>
 
     <!-- 账号管理 -->
-    <script src="assets/js/core/accounts.js?v=czp-1.29.0" onload="updateProgress('加载账号管理...')"></script>
+    <script src="assets/js/core/accounts.js?v=czp-2.0.0" onload="updateProgress('加载账号管理...')"></script>
 
     <!-- 通用UI组件 -->
-    <script src="assets/js/components/toast.js?v=czp-1.29.0" onload="updateProgress('加载通知组件...')"></script>
-    <script src="assets/js/components/modal.js?v=czp-1.29.0" onload="updateProgress('加载弹窗组件...')"></script>
-    <script src="assets/js/components/button.js?v=czp-1.29.0" onload="updateProgress('加载按钮组件...')"></script>
-    <script src="assets/js/components/alert.js?v=czp-1.29.0" onload="updateProgress('加载提示组件...')"></script>
-    <script src="assets/js/components/select.js?v=czp-1.29.0" onload="updateProgress('加载下拉组件...')"></script>
+    <script src="assets/js/components/toast.js?v=czp-2.0.0" onload="updateProgress('加载通知组件...')"></script>
+    <script src="assets/js/components/modal.js?v=czp-2.0.0" onload="updateProgress('加载弹窗组件...')"></script>
+    <script src="assets/js/components/button.js?v=czp-2.0.0" onload="updateProgress('加载按钮组件...')"></script>
+    <script src="assets/js/components/alert.js?v=czp-2.0.0" onload="updateProgress('加载提示组件...')"></script>
+    <script src="assets/js/components/select.js?v=czp-2.0.0" onload="updateProgress('加载下拉组件...')"></script>
+    <script src="assets/js/components/Card.js?v=czp-2.0.0" onload="updateProgress('加载卡片组件...')"></script>
+    <script src="assets/js/components/Tabs.js?v=czp-2.0.0" onload="updateProgress('加载标签页组件...')"></script>
+    <script src="assets/js/components/Table.js?v=czp-2.0.0" onload="updateProgress('加载表格组件...')"></script>
+    <script src="assets/js/components/Pagination.js?v=czp-2.0.0" onload="updateProgress('加载分页组件...')"></script>
+    <script src="assets/js/components/Badge.js?v=czp-2.0.0" onload="updateProgress('加载徽标组件...')"></script>
+    <script src="assets/js/components/Avatar.js?v=czp-2.0.0" onload="updateProgress('加载头像组件...')"></script>
+    <script src="assets/js/components/Progress.js?v=czp-2.0.0" onload="updateProgress('加载进度条组件...')"></script>
+    <script src="assets/js/components/Empty.js?v=czp-2.0.0" onload="updateProgress('加载空状态组件...')"></script>
+    <script src="assets/js/components/Skeleton.js?v=czp-2.0.0" onload="updateProgress('加载骨架屏组件...')"></script>
+    <script src="assets/js/components/Tooltip.js?v=czp-2.0.0" onload="updateProgress('加载提示框组件...')"></script>
+    <script src="assets/js/components/index.js?v=czp-2.0.0" onload="updateProgress('加载组件入口...')"></script>
 
-    <!-- 业务规则元数据 -->
-    <script src="assets/js/rules/stepMeta.js?v=czp-1.29.0" onload="updateProgress('加载规则元数据...')"></script>
+    <!-- 数据模型层 -->
+    <script src="assets/js/models/userModel.js?v=czp-2.0.0" onload="updateProgress('加载用户模型...')"></script>
+    <script src="assets/js/models/templateModel.js?v=czp-2.0.0" onload="updateProgress('加载模板模型...')"></script>
+    <script src="assets/js/models/platformModel.js?v=czp-2.0.0" onload="updateProgress('加载平台模型...')"></script>
+    <script src="assets/js/models/ruleModel.js?v=czp-2.0.0" onload="updateProgress('加载规则模型...')"></script>
+    <script src="assets/js/models/recognitionModel.js?v=czp-2.0.0" onload="updateProgress('加载识别模型...')"></script>
+    <script src="assets/js/models/index.js?v=czp-2.0.0" onload="updateProgress('加载模型入口...')"></script>
 
-    <!-- 计算步骤配置组件 -->
-    <script src="assets/js/rules/steps/sourceSteps.js?v=czp-1.29.0" onload="updateProgress('加载步骤组件(数据源)...')"></script>
-    <script src="assets/js/rules/steps/transformSteps1.js?v=czp-1.29.0" onload="updateProgress('加载步骤组件(转换1)...')"></script>
-    <script src="assets/js/rules/steps/transformSteps2.js?v=czp-1.29.0" onload="updateProgress('加载步骤组件(转换2)...')"></script>
-    <script src="assets/js/rules/steps/formatSteps.js?v=czp-1.29.0" onload="updateProgress('加载步骤组件(格式化)...')"></script>
-    <script src="assets/js/rules/steps/advancedSteps.js?v=czp-1.29.0" onload="updateProgress('加载步骤组件(高级)...')"></script>
-    <script src="assets/js/rules/steps/index.js?v=czp-1.29.0" onload="updateProgress('加载步骤组件入口...')"></script>
+    <!-- 服务层 -->
+    <script src="assets/js/services/authService.js?v=czp-2.0.0" onload="updateProgress('加载认证服务...')"></script>
+    <script src="assets/js/services/dataService.js?v=czp-2.0.0" onload="updateProgress('加载数据服务...')"></script>
+    <script src="assets/js/services/notificationService.js?v=czp-2.0.0" onload="updateProgress('加载通知服务...')"></script>
+    <script src="assets/js/services/themeService.js?v=czp-2.0.0" onload="updateProgress('加载主题服务...')"></script>
+    <script src="assets/js/services/syncService.js?v=czp-2.0.0" onload="updateProgress('加载同步服务...')"></script>
+    <script src="assets/js/services/index.js?v=czp-2.0.0" onload="updateProgress('加载服务入口...')"></script>
+
+    <!-- 自定义Hooks -->
+    <script src="assets/js/hooks/useAuth.js?v=czp-2.0.0" onload="updateProgress('加载认证Hook...')"></script>
+    <script src="assets/js/hooks/useTheme.js?v=czp-2.0.0" onload="updateProgress('加载主题Hook...')"></script>
+    <script src="assets/js/hooks/useLocalStorage.js?v=czp-2.0.0" onload="updateProgress('加载本地存储Hook...')"></script>
+    <script src="assets/js/hooks/useDebounce.js?v=czp-2.0.0" onload="updateProgress('加载防抖Hook...')"></script>
+    <script src="assets/js/hooks/useNotification.js?v=czp-2.0.0" onload="updateProgress('加载通知Hook...')"></script>
 
     <!-- 引擎与解析器 -->
-    <script src="assets/js/engine/parser.js?v=czp-1.29.0" onload="updateProgress('加载解析器...')"></script>
-    <script src="assets/js/engine/engine.js?v=czp-1.29.0" onload="updateProgress('加载计算引擎...')"></script>
+    <script src="assets/js/engine/parser.js?v=czp-2.0.0" onload="updateProgress('加载解析器...')"></script>
+    <script src="assets/js/engine/engine.js?v=czp-2.0.0" onload="updateProgress('加载计算引擎...')"></script>
+
+    <!-- 业务规则元数据 -->
+    <script src="assets/js/rules/stepMeta.js?v=czp-2.0.0" onload="updateProgress('加载规则元数据...')"></script>
+
+    <!-- 计算步骤配置组件 -->
+    <script src="assets/js/rules/steps/sourceSteps.js?v=czp-2.0.0" onload="updateProgress('加载步骤组件(数据源)...')"></script>
+    <script src="assets/js/rules/steps/transformSteps1.js?v=czp-2.0.0" onload="updateProgress('加载步骤组件(转换1)...')"></script>
+    <script src="assets/js/rules/steps/transformSteps2.js?v=czp-2.0.0" onload="updateProgress('加载步骤组件(转换2)...')"></script>
+    <script src="assets/js/rules/steps/formatSteps.js?v=czp-2.0.0" onload="updateProgress('加载步骤组件(格式化)...')"></script>
+    <script src="assets/js/rules/steps/advancedSteps.js?v=czp-2.0.0" onload="updateProgress('加载步骤组件(高级)...')"></script>
+    <script src="assets/js/rules/steps/index.js?v=czp-2.0.0" onload="updateProgress('加载步骤组件入口...')"></script>
 
     <!-- 页面组件 -->
-    <script src="assets/js/pages/dashboard.js?v=czp-1.29.0" onload="updateProgress('加载概览页面...')"></script>
-    <script src="assets/js/pages/template.js?v=czp-1.29.0" onload="updateProgress('加载模板页面...')"></script>
-    <script src="assets/js/pages/rules.js?v=czp-1.29.0" onload="updateProgress('加载规则页面...')"></script>
-    <script src="assets/js/pages/externals.js?v=czp-1.29.0" onload="updateProgress('加载数据表页面...')"></script>
-    <script src="assets/js/pages/batch.js?v=czp-1.29.0" onload="updateProgress('加载批量页面...')"></script>
-    <script src="assets/js/pages/history.js?v=czp-1.29.0" onload="updateProgress('加载记录页面...')"></script>
-    <script src="assets/js/pages/data.js?v=czp-1.29.0" onload="updateProgress('加载配置页面...')"></script>
-    <script src="assets/js/pages/storage.js?v=czp-1.29.0" onload="updateProgress('加载数据管理页面...')"></script>
-    <script src="assets/js/pages/shops.js?v=czp-1.29.0" onload="updateProgress('加载店铺页面...')"></script>
-    <script src="assets/js/pages/settings.js?v=czp-1.29.0" onload="updateProgress('加载设置页面...')"></script>
-    <script src="assets/js/pages/help.js?v=czp-1.29.0" onload="updateProgress('加载帮助页面...')"></script>
-    <script src="assets/js/pages/login.js?v=czp-1.29.0" onload="updateProgress('加载登录页面...')"></script>
-    <script src="assets/js/pages/admin.js?v=czp-1.29.0" onload="updateProgress('加载后台管理页面...')"></script>
+    <script src="assets/js/pages/dashboard.js?v=czp-2.0.0" onload="updateProgress('加载概览页面...')"></script>
+    <script src="assets/js/pages/template.js?v=czp-2.0.0" onload="updateProgress('加载模板页面...')"></script>
+    <script src="assets/js/pages/rules.js?v=czp-2.0.0" onload="updateProgress('加载规则页面...')"></script>
+    <script src="assets/js/pages/externals.js?v=czp-2.0.0" onload="updateProgress('加载数据表页面...')"></script>
+    <script src="assets/js/pages/batch.js?v=czp-2.0.0" onload="updateProgress('加载批量页面...')"></script>
+    <script src="assets/js/pages/history.js?v=czp-2.0.0" onload="updateProgress('加载记录页面...')"></script>
+    <script src="assets/js/pages/data.js?v=czp-2.0.0" onload="updateProgress('加载配置页面...')"></script>
+    <script src="assets/js/pages/storage.js?v=czp-2.0.0" onload="updateProgress('加载数据管理页面...')"></script>
+    <script src="assets/js/pages/shops.js?v=czp-2.0.0" onload="updateProgress('加载店铺页面...')"></script>
+    <script src="assets/js/pages/settings.js?v=czp-2.0.0" onload="updateProgress('加载设置页面...')"></script>
+    <script src="assets/js/pages/help.js?v=czp-2.0.0" onload="updateProgress('加载帮助页面...')"></script>
+    <script src="assets/js/pages/login.js?v=czp-2.0.0" onload="updateProgress('加载登录页面...')"></script>
+    <script src="assets/js/pages/register.js?v=czp-2.0.0" onload="updateProgress('加载注册页面...')"></script>
+    <script src="assets/js/pages/modelManager.js?v=czp-2.0.0" onload="updateProgress('加载模型管理页面...')"></script>
+    <script src="assets/js/pages/admin.js?v=czp-2.0.0" onload="updateProgress('加载后台管理页面...')"></script>
     <!-- 主应用入口 -->
-    <script src="assets/js/app.js?v=czp-1.29.0" onload="updateProgress('启动应用...')"></script>
+    <script src="assets/js/app.js?v=czp-2.0.0" onload="updateProgress('启动应用...')"></script>
 </body>
 </html>

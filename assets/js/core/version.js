@@ -1,5 +1,5 @@
-const APP_VERSION = "czp-1.29.0";
-const DATA_VERSION = "8.5.3";
+const APP_VERSION = "czp-2.0.0";
+const DATA_VERSION = "9.0.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
 const BUILD_TIME = (() => {
@@ -11,6 +11,37 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-2.0.0", date: "2026-07-15 18:00:00",
+    summary: "架构重构与主题升级 - 专业模块化架构、四主题深度差异化、注册审核、识别模型独立导入",
+    changes: [
+      { type: "feature", text: "🏗️ 全新架构重构：建立 services/models/hooks/components 四层模块化架构" },
+      { type: "feature", text: "📦 新增 5 大服务层：auth/data/notification/theme/sync 服务，职责清晰" },
+      { type: "feature", text: "🧩 新增 5 大数据模型：user/template/platform/rule/recognition 模型" },
+      { type: "feature", text: "🪝 新增 5 个自定义 Hooks：useAuth/useTheme/useLocalStorage/useDebounce/useNotification" },
+      { type: "feature", text: "🎨 新增 10 个 UI 组件：Card/Tabs/Table/Pagination/Badge/Avatar/Progress/Empty/Skeleton/Tooltip" },
+      { type: "feature", text: "🌈 四主题深度差异化：商务/科技/活力/优雅，不只是换色，布局/风格/动效全面区分" },
+      { type: "feature", text: "🔐 三级权限体系：超级管理员/普通管理员/普通用户，权限精确控制" },
+      { type: "feature", text: "📝 注册审核机制：用户注册需管理员审核通过，支持审核原因反馈" },
+      { type: "feature", text: "🧠 识别模型独立导入：成本模型/尺码模型/平台模型，支持 JSON 导入导出" },
+      { type: "feature", text: "🔔 全局通知系统：Toast/Alert/Confirm/声音/桌面通知/徽章，6 种通知方式" },
+      { type: "feature", text: "🎵 Web Audio 提示音：成功/错误/警告/信息，四种不同音效，无需音频文件" },
+      { type: "feature", text: "📋 计算步骤 6 大分类：数据源/筛选/字段/转换/高级/输出，分类明确引导清晰" },
+      { type: "feature", text: "📖 步骤元信息完善：每个步骤含详细描述/配置说明/使用示例/注意事项/相关步骤/常用预设" },
+      { type: "feature", text: "🏛️ 关于系统页面升级：产品定位/核心价值/6大功能/技术特点/版本信息" },
+      { type: "feature", text: "❤️ 特别鸣谢页面升级：特别贡献者/技术支持/开源项目/用户致谢，重要性提升" },
+      { type: "feature", text: "🔍 帮助页面搜索功能：支持按名称搜索帮助条目，快速定位" },
+      { type: "optimize", text: "代码架构全面升级：从单文件大组件改为分层模块化，便于维护扩展" },
+      { type: "optimize", text: "后台管理系统升级：8大功能模块，权限动态菜单，前后端功能明确分离" },
+      { type: "optimize", text: "四主题视觉体验升级：每个主题有独特的圆角/阴影/字体/动效/卡片风格" },
+      { type: "optimize", text: "全局交互体验统一：成功/失败反馈、危险操作确认、加载状态指示" },
+    ],
+    bugfixes: [
+      { text: "修复计算引擎 crossMatch 筛选运算符不完整问题，补充13种操作符" },
+      { text: "修复步骤执行出错时 stepResult 缺少字段的问题" },
+      { text: "修复 formula 步骤 window.Math 兼容性问题，改为 globalThis.Math" },
+      { text: "修复 selfFilter 缺少 row.val 回退的问题，与 filter 步骤行为对齐" },
+    ],
+  },
   { version: "czp-1.29.0", date: "2026-07-15 10:00:00",
     summary: "计算规则重构与后台管理系统上线",
     changes: [
