@@ -2293,9 +2293,10 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
         const getAvailableFields = () => {
           const avail = [];
           avail.push({ key: "val", name: "上一步结果", type: "result" });
-          if (stepResults && stepResults.length > 0) {
-            const lastResult = stepResults[stepResults.length - 1];
-            if (lastResult.preview && lastResult.preview.length > 0) {
+          const previewSteps = previewResult?.stepResults;
+          if (Array.isArray(previewSteps) && previewSteps.length > 0) {
+            const lastResult = previewSteps[previewSteps.length - 1];
+            if (lastResult && lastResult.preview && lastResult.preview.length > 0) {
               const sampleRow = lastResult.preview[0];
               Object.keys(sampleRow).forEach((k) => {
                 if (k !== "val" && k !== "_groupCount") {
@@ -2304,15 +2305,47 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               });
             }
           }
-          Object.keys(savedRules).forEach((fieldId) => {
-            const field = fields.find((f) => f.id === fieldId);
-            if (field && field.id !== activeField?.id && savedRules[fieldId]?.steps?.length > 0) {
-              avail.push({ key: field.name, name: field.name + " (已计算字段)", type: "computed" });
-            }
-          });
+          // 始终展示已配置字段（不依赖预览结果）
+          if (savedRules && typeof savedRules === "object") {
+            Object.keys(savedRules).forEach((fieldId) => {
+              const field = fields.find((f) => f.id === fieldId);
+              if (
+                field &&
+                field.id !== (activeFieldRef?.id || activeField?.id) &&
+                savedRules[fieldId]?.steps?.length > 0
+              ) {
+                const chipName = field.name + " (已配置)";
+                if (!avail.some((a) => a.key === field.name)) {
+                  avail.push({ key: field.name, name: chipName, type: "computed" });
+                }
+              }
+            });
+          }
+          // 加入当前源表中的字段，方便用户直接引用
+          if (Array.isArray(sourceTableHeaders) && sourceTableHeaders.length > 0) {
+            sourceTableHeaders.forEach((h) => {
+              if (!avail.some((a) => a.key === h)) {
+                avail.push({ key: h, name: h + " (源表字段)", type: "field" });
+              }
+            });
+          }
           return avail;
         };
         const availFields = getAvailableFields();
+        const formatOptions = (CalcEngine.getOutputFormats && typeof CalcEngine.getOutputFormats === "function")
+          ? CalcEngine.getOutputFormats()
+          : [
+              { value: "none", label: "不处理（原始数值）" },
+              { value: "round2", label: "保留 2 位小数（四舍五入）" },
+              { value: "thousands", label: "千分位格式化（如 1,234.56）" },
+              { value: "money", label: "货币格式（¥1,234.56）" },
+              { value: "percent", label: "百分比格式（12.34%）" },
+            ];
+        const currentFormat = step.config.format || "none";
+        const insertAtCursor = (insertText) => {
+          const expr = step.config.expr || "";
+          updateStepConfig(step.id, "expr", expr + insertText);
+        };
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
@@ -2347,13 +2380,33 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 { className: "formula-editor" },
                 /*#__PURE__*/ React.createElement("textarea", {
                   className: "input formula-textarea",
-                  value: step.config.expr,
+                  value: step.config.expr || "",
                   onChange: (e) =>
                     updateStepConfig(step.id, "expr", e.target.value),
                   placeholder: "{val} * 0.7 + {销售额} * 0.3",
                   style: { fontFamily: "var(--font-mono)", minHeight: "80px" },
                 }),
               )
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "输出值格式",
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  { className: "form-label-hint" },
+                  "对计算结果进行格式转换"
+                )
+              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: currentFormat,
+                onChange: (val) => updateStepConfig(step.id, "format", val),
+                options: formatOptions,
+                placeholder: "请选择输出格式",
+              })
             ),
             availFields.length > 1 && /*#__PURE__*/ React.createElement(
               "div",
@@ -2378,9 +2431,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                       key: i,
                       className: `formula-field-chip ${f.type}`,
                       onClick: () => {
-                        const insert = f.type === "result" ? `{${f.key}}` : `{${f.name}}`;
-                        const newExpr = (step.config.expr || "") + insert;
-                        updateStepConfig(step.id, "expr", newExpr);
+                        const insert = `{${f.key}}`;
+                        insertAtCursor(insert);
                       },
                       title: "点击插入公式",
                     },
@@ -2412,10 +2464,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   {
                     key: i,
                     className: "formula-hint-item",
-                    onClick: () => {
-                      const newExpr = (step.config.expr || "") + hint.key;
-                      updateStepConfig(step.id, "expr", newExpr);
-                    },
+                    onClick: () => insertAtCursor(hint.key),
                   },
                   /*#__PURE__*/ React.createElement(
                     "span",
@@ -2435,7 +2484,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             /*#__PURE__*/ React.createElement("code", null, "{字段名}"),
             " 引用字段值，",
             /*#__PURE__*/ React.createElement("code", null, "{val}"),
-            " 代表上一步结果，支持所有JavaScript数学函数。",
+            " 代表上一步结果。支持所有JavaScript数学函数；计算结果可按所选格式输出。",
           ),
         );
       case "virtual":
@@ -5903,13 +5952,31 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                               "\u6700\u7EC8\u7ED3\u679C",
                             ),
                             /*#__PURE__*/ React.createElement(
+                            "div",
+                            { className: "debug-final-value" },
+                            typeof previewResult.value === "number"
+                              ? previewResult.value.toLocaleString("zh-CN", {
+                                  maximumFractionDigits: 2,
+                                })
+                              : String(previewResult.value ?? "-"),
+                          ),
+                          previewResult.data &&
+                            previewResult.data[0] &&
+                            previewResult.data[0]._format &&
+                            previewResult.data[0]._format !== "none" &&
+                            typeof previewResult.data[0]._raw === "number" &&
+                            /*#__PURE__*/ React.createElement(
                               "div",
-                              { className: "debug-final-value" },
-                              typeof previewResult.value === "number"
-                                ? previewResult.value.toLocaleString("zh-CN", {
-                                    maximumFractionDigits: 2,
-                                  })
-                                : String(previewResult.value ?? "-"),
+                              {
+                                className: "debug-final-meta",
+                                style: { marginTop: 4, color: "var(--color-text-tertiary)" },
+                              },
+                              "\u539F\u59CB\u503C\uFF1A",
+                              previewResult.data[0]._raw.toLocaleString("zh-CN", {
+                                maximumFractionDigits: 4,
+                              }),
+                              " \u00B7 \u8F93\u51FA\u683C\u5F0F\uFF1A",
+                              previewResult.data[0]._format,
                             ),
                             /*#__PURE__*/ React.createElement(
                               "div",

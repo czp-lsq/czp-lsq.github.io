@@ -832,11 +832,12 @@ const CalcEngine = {
               });
             }
             try {
-              const val = Function(`"use strict"; 
+              const rawVal = Function(`"use strict";
                                         const Math = window.Math;
                                         return (${expr})
                                     `)();
-              data = [{ val: Number(val) || 0 }];
+              const formattedVal = this._applyOutputFormat(rawVal, step.config.format);
+              data = [{ val: formattedVal, _raw: Number(rawVal) || 0, _format: step.config.format || "none" }];
             } catch (e) {
               console.error("Formula error:", e);
               data = [{ val: 0, error: e.message }];
@@ -1897,6 +1898,65 @@ const CalcEngine = {
       { key: "Math.cos()", desc: "余弦函数" },
       { key: "toFixed(2)", desc: "保留2位小数" },
       { key: " ? : ", desc: "三元条件判断（条件 ? 真值 : 假值）" },
+    ];
+  },
+  // 对公式/聚合等步骤的输出值进行格式转换
+  _applyOutputFormat(value, format) {
+    if (value === null || value === undefined) return value;
+    if (!format || format === "none") {
+      // 不处理；保持原样（数字或字符串均可）
+      return value;
+    }
+    // 非数字且要求数值类格式时，先尝试转换
+    const n = Number(value);
+    switch (format) {
+      case "round2":
+        return Math.round((isNaN(n) ? 0 : n) * 100) / 100;
+      case "floor2":
+        return Math.floor((isNaN(n) ? 0 : n) * 100) / 100;
+      case "ceil2":
+        return Math.ceil((isNaN(n) ? 0 : n) * 100) / 100;
+      case "round0":
+        return Math.round(isNaN(n) ? 0 : n);
+      case "thousands": {
+        const v = isNaN(n) ? 0 : n;
+        return v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      }
+      case "money": {
+        const v = isNaN(n) ? 0 : n;
+        return "¥" + v.toFixed(2).replace(/\B(?=(\d{3})+(?!\d))/g, ",");
+      }
+      case "percent": {
+        const v = isNaN(n) ? 0 : n;
+        // 若传入的是 0~1 的小数，按 0.x 输出 0%~100%；若已 >1，按 v 输出
+        const ratio = Math.abs(v) <= 1 ? v * 100 : v;
+        return ratio.toFixed(2) + "%";
+      }
+      case "toNumber":
+        return isNaN(n) ? 0 : n;
+      case "toString":
+        return String(value);
+      default:
+        return value;
+    }
+  },
+  // 公共：根据已配置的 format 格式化单个值（供其它调用方使用）
+  formatValue(value, format) {
+    return this._applyOutputFormat(value, format);
+  },
+  // 公共：获取所有支持的输出格式（供UI使用）
+  getOutputFormats() {
+    return [
+      { value: "none", label: "不处理（原始数值）", group: "基础" },
+      { value: "round2", label: "保留 2 位小数（四舍五入）", group: "小数处理" },
+      { value: "floor2", label: "保留 2 位小数（向下取整）", group: "小数处理" },
+      { value: "ceil2", label: "保留 2 位小数（向上取整）", group: "小数处理" },
+      { value: "round0", label: "取整（四舍五入）", group: "小数处理" },
+      { value: "thousands", label: "千分位格式化（如 1,234.56）", group: "展示格式" },
+      { value: "money", label: "货币格式（¥1,234.56）", group: "展示格式" },
+      { value: "percent", label: "百分比格式（12.34%）", group: "展示格式" },
+      { value: "toNumber", label: "强制转为数字", group: "类型转换" },
+      { value: "toString", label: "强制转为文本", group: "类型转换" },
     ];
   },
 }; // ========== Common Components ==========
