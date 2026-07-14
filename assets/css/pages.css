@@ -1177,25 +1177,29 @@
 
 .rules-page .card-header {
   display: flex;
-  align-items: center;
+  align-items: flex-start;
   justify-content: space-between;
-  padding: 14px 20px;
+  padding: 12px 16px;
   border-bottom: 1px solid var(--color-border-light);
   background: var(--gradient-bg-header);
   flex-shrink: 0;
-  gap: 16px;
+  gap: 12px;
+  flex-wrap: wrap;
 }
 
 .rules-page .card-header-left {
   flex: 1;
   min-width: 0;
+  min-width: 220px;
 }
 
 .rules-page .card-header-actions {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 8px;
+  gap: 6px;
   flex-shrink: 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
 }
 
 .rules-page .header-divider {
@@ -1207,21 +1211,25 @@
 }
 
 .rules-page .field-nav {
-  display: flex;
+  display: inline-flex;
   align-items: center;
-  gap: 4px;
+  gap: 3px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 2px;
 }
 
 .rules-page .field-nav-btn {
-  width: 28px;
-  height: 28px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border: 1px solid var(--color-border);
-  background: var(--color-bg-secondary);
+  border: none;
+  background: transparent;
   color: var(--color-text-secondary);
-  border-radius: var(--radius-md);
+  border-radius: var(--radius-sm);
   cursor: pointer;
   font-size: 12px;
   transition: var(--transition-fast);
@@ -1230,7 +1238,6 @@
 }
 
 .rules-page .field-nav-btn:hover:not(:disabled) {
-  border-color: var(--color-primary);
   color: var(--color-primary);
   background: var(--color-primary-50);
 }
@@ -1243,9 +1250,10 @@
 .rules-page .field-nav-count {
   font-size: 11px;
   color: var(--color-text-tertiary);
-  min-width: 40px;
+  min-width: 36px;
   text-align: center;
   font-weight: 500;
+  padding: 0 4px;
 }
 
 .rules-page .card-title {
@@ -1319,7 +1327,7 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  padding: 12px 16px;
+  padding: 10px 14px;
   border-bottom: 1px solid var(--color-border-light);
   background: var(--color-bg-secondary);
   flex-shrink: 0;
@@ -1389,21 +1397,28 @@
 
 .rules-page .field-filter-tabs {
   display: flex;
-  padding: 8px 12px;
-  gap: 4px;
+  padding: 6px 10px;
+  gap: 2px;
   border-bottom: 1px solid var(--color-border-light);
   background: var(--color-bg-tertiary);
   flex-shrink: 0;
+  overflow-x: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.rules-page .field-filter-tabs::-webkit-scrollbar {
+  display: none;
 }
 
 .rules-page .field-filter-tab {
-  flex: 1;
-  display: flex;
+  flex: 1 0 auto;
+  display: inline-flex;
   align-items: center;
   justify-content: center;
-  gap: 6px;
-  padding: 8px 12px;
-  font-size: 13px;
+  gap: 4px;
+  padding: 6px 8px;
+  font-size: 12px;
   font-weight: 500;
   color: var(--color-text-secondary);
   background: transparent;
@@ -1411,6 +1426,7 @@
   border-radius: var(--radius-md);
   cursor: pointer;
   transition: var(--transition-fast);
+  white-space: nowrap;
 }
 
 .rules-page .field-filter-tab:hover {
@@ -1428,15 +1444,16 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  min-width: 20px;
-  height: 18px;
-  padding: 0 6px;
-  font-size: 11px;
+  min-width: 16px;
+  height: 16px;
+  padding: 0 4px;
+  font-size: 10px;
   font-weight: 600;
   background: var(--color-bg-tertiary);
   color: var(--color-text-tertiary);
   border-radius: var(--radius-full);
   transition: var(--transition-fast);
+  flex-shrink: 0;
 }
 
 .rules-page .field-filter-tab.active .field-filter-count {
@@ -2017,19 +2034,20 @@
 .rules-page .step-alert {
   display: flex;
   align-items: flex-start;
-  gap: 10px;
-  padding: 12px 16px;
+  gap: 8px;
+  padding: 10px 14px;
   margin: 0 16px 12px;
   font-size: 13px;
   line-height: 1.5;
   border-radius: var(--radius-md);
+  flex-wrap: nowrap;
 }
 
 .rules-page .step-alert svg {
-  width: 18px;
-  height: 18px;
+  width: 16px;
+  height: 16px;
   flex-shrink: 0;
-  margin-top: 1px;
+  margin-top: 2px;
 }
 
 .rules-page .step-alert.error {
@@ -2059,20 +2077,31 @@
 /* 步骤说明 */
 .rules-page .step-description {
   display: flex;
-  gap: 10px;
-  padding: 12px 14px;
+  align-items: flex-start;
+  gap: 8px;
+  padding: 10px 14px;
   margin: 0 0 12px;
   background: linear-gradient(135deg, var(--color-primary-50), var(--color-info-50));
   border: 1px solid var(--color-primary-100);
   border-radius: var(--radius-md);
   font-size: 12px;
-  line-height: 1.6;
+  line-height: 1.5;
+  flex-wrap: nowrap;
 }
 
 .rules-page .step-description-icon {
-  font-size: 18px;
-  line-height: 1.2;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 18px;
+  height: 18px;
   flex-shrink: 0;
+  margin-top: 1px;
+}
+
+.rules-page .step-description-icon svg {
+  width: 16px;
+  height: 16px;
 }
 
 .rules-page .step-description-text {
@@ -2083,13 +2112,6 @@
 .rules-page .step-description-title {
   color: var(--color-text-primary);
   font-weight: 500;
-  margin-bottom: 4px;
-}
-
-.rules-page .step-description-usecase {
-  color: var(--color-text-tertiary);
-  font-size: 11px;
-  font-style: italic;
 }
 
 /* 步骤调试面板 */
@@ -3202,6 +3224,176 @@
   background: var(--color-bg-tertiary);
   border-top: 1px solid var(--color-border-light);
   font-weight: 500;
+}
+
+/* 步骤调试数据预览（新） */
+.rules-page .debug-data-table {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.rules-page .debug-table-scroll {
+  overflow-x: auto;
+  max-width: 100%;
+}
+
+.rules-page .debug-data-table .debug-table {
+  width: auto;
+  min-width: 100%;
+  border-collapse: collapse;
+  font-size: 12px;
+}
+
+.rules-page .debug-data-table .debug-table thead th {
+  padding: 8px 12px;
+  text-align: left;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-tertiary);
+  border-bottom: 1px solid var(--color-border);
+  white-space: nowrap;
+  font-size: 11px;
+  position: sticky;
+  top: 0;
+  z-index: 2;
+}
+
+.rules-page .debug-data-table .debug-table thead th.debug-col-relevant {
+  color: var(--color-primary);
+  background: linear-gradient(180deg, var(--color-primary-50), var(--color-bg-tertiary));
+  border-bottom-color: var(--color-primary-200);
+}
+
+.rules-page .debug-data-table .debug-table tbody td {
+  padding: 6px 12px;
+  border-bottom: 1px solid var(--color-border-light);
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  transition: background-color var(--transition-fast);
+  max-width: 240px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.rules-page .debug-data-table .debug-table tbody td.debug-col-relevant {
+  background: var(--color-primary-50);
+  font-weight: 500;
+}
+
+.rules-page .debug-data-table .debug-table tbody tr:nth-child(even) td {
+  background: var(--color-bg-tertiary);
+}
+
+.rules-page .debug-data-table .debug-table tbody tr:nth-child(even) td.debug-col-relevant {
+  background: var(--color-primary-100);
+}
+
+.rules-page .debug-data-table .debug-table tbody tr:hover td {
+  background: var(--color-primary-50);
+}
+
+.rules-page .debug-data-table .debug-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.rules-page .debug-table-more {
+  padding: 8px 12px;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  background: var(--color-bg-tertiary);
+  border-top: 1px solid var(--color-border-light);
+  text-align: center;
+}
+
+/* 单列数据卡片式展示 */
+.rules-page .debug-single-column {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.rules-page .debug-single-column-header {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 10px 14px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text-secondary);
+  background: var(--color-bg-tertiary);
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.rules-page .debug-single-column-header svg {
+  width: 14px;
+  height: 14px;
+  color: var(--color-primary);
+}
+
+.rules-page .debug-single-column-row {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--color-border-light);
+  font-size: 12px;
+}
+
+.rules-page .debug-single-column-row:last-child {
+  border-bottom: none;
+}
+
+.rules-page .debug-single-column-row:nth-child(even) {
+  background: var(--color-bg-tertiary);
+}
+
+.rules-page .debug-single-column-index {
+  width: 28px;
+  flex-shrink: 0;
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  font-family: var(--font-mono);
+  text-align: right;
+}
+
+.rules-page .debug-single-column-value {
+  flex: 1;
+  min-width: 0;
+  color: var(--color-text-primary);
+  word-break: break-all;
+  white-space: normal;
+}
+
+.rules-page .debug-data-object {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border-light);
+  border-radius: var(--radius-md);
+  padding: 10px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.rules-page .debug-object-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 12px;
+}
+
+.rules-page .debug-object-key {
+  color: var(--color-text-tertiary);
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.rules-page .debug-object-value {
+  flex: 1;
+  color: var(--color-text-primary);
+  word-break: break-all;
 }
 
 .rules-page .debug-steps {

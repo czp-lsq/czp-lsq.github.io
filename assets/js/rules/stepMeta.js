@@ -192,7 +192,7 @@
         color: "var(--color-info)",
         bg: "var(--color-info-50)",
         category: "advanced",
-        description: "对比两个数据集的交集或差集",
+        description: "对比两个数据集的交集或差集（已合并到交叉匹配能力，保留以兼容旧配置）",
         useCase: "适用：找出新增客户、对比新旧订单",
       },
       limit: {
@@ -466,12 +466,20 @@
         if (!cfg.column) return { valid: false, message: "请选择排序字段" };
         return { valid: true, message: "配置完整" };
       case "crossMatch":
-        if (!cfg.columns || cfg.columns.length === 0) return { valid: false, message: "请填写匹配列" };
-        if (cfg.mode === "keepIntersection" || cfg.mode === "keepDifference") {
+      case "intersect": {
+        const matchColumns = cfg.columns && cfg.columns.length > 0
+          ? cfg.columns
+          : (cfg.key ? [cfg.key] : []);
+        const cmpColumns = cfg.compareColumns && cfg.compareColumns.length > 0
+          ? cfg.compareColumns
+          : (cfg.compareKey ? [cfg.compareKey] : []);
+        if (!matchColumns || matchColumns.length === 0) return { valid: false, message: "请填写匹配列" };
+        if (cfg.mode === "keepIntersection" || cfg.mode === "keepDifference" || cfg.mode === "keepExist" || cfg.mode === "keepNotExist") {
           if (!cfg.table) return { valid: false, message: "请选择对比表" };
-          if (!cfg.compareColumns || cfg.compareColumns.length === 0) return { valid: false, message: "请填写对比表匹配列" };
+          if (!cmpColumns || cmpColumns.length === 0) return { valid: false, message: "请填写对比表匹配列" };
         }
         return { valid: true, message: "配置完整" };
+      }
       case "runningTotal":
         if (!cfg.column) return { valid: false, message: "请选择累计列" };
         return { valid: true, message: "配置完整" };
@@ -660,10 +668,17 @@
       case "keepUnique":
         return `保留唯一: ${c.column || "val"}列`;
       case "intersect":
-        return `对比筛选: ${c.key || "?"} ${c.mode === "keepExist" ? "存在于" : "不存在于"} ${c.table || "?"}`;
       case "crossMatch": {
-        const modeNames = { keepIntersection: "交集", keepDifference: "差集", removeDuplicates: "去重", keepDuplicates: "保留重复" };
-        return `${modeNames[c.mode] || c.mode}: ${(c.columns || []).join(",")}${c.table ? ` / ${c.table}` : ""}`;
+        const modeNames = {
+          keepIntersection: "交集",
+          keepDifference: "差集",
+          keepExist: "存在于对比表",
+          keepNotExist: "不存在于对比表",
+          removeDuplicates: "去重",
+          keepDuplicates: "保留重复",
+        };
+        const matchCols = c.columns && c.columns.length > 0 ? c.columns : (c.key ? [c.key] : []);
+        return `${modeNames[c.mode] || c.mode}: ${matchCols.join(",")}${c.table ? ` / ${c.table}` : ""}`;
       }
       case "runningTotal":
         return `累计: ${c.column || "val"}${c.orderColumn ? ` 按${c.orderColumn}排序` : ""}`;

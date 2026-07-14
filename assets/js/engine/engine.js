@@ -1183,59 +1183,6 @@ const CalcEngine = {
             });
             break;
           }
-          case "intersect": {
-            let compareRows = null;
-            const cmpTable = tables.find((t) => t.id === step.config.table);
-            if (cmpTable) {
-              compareRows = cmpTable.rows;
-            }
-            if (!compareRows || !step.config.key || !step.config.compareKey) break;
-            if (step.config.filterColumn) {
-              const filterCol = step.config.filterColumn;
-              const filterOp = step.config.filterOp || "==";
-              const filterVal = step.config.filterValue;
-              compareRows = compareRows.filter((row) => {
-                const cellVal = String(row[filterCol] ?? "");
-                switch (filterOp) {
-                  case "==":
-                    return cellVal === String(filterVal);
-                  case "!=":
-                    return cellVal !== String(filterVal);
-                  case ">":
-                    return Number(cellVal) > Number(filterVal);
-                  case "<":
-                    return Number(cellVal) < Number(filterVal);
-                  case ">=":
-                    return Number(cellVal) >= Number(filterVal);
-                  case "<=":
-                    return Number(cellVal) <= Number(filterVal);
-                  case "contains":
-                    return cellVal.includes(String(filterVal));
-                  case "notContains":
-                    return !cellVal.includes(String(filterVal));
-                  case "isEmpty":
-                    return cellVal.trim() === "";
-                  case "notEmpty":
-                    return cellVal.trim() !== "";
-                  default:
-                    return true;
-                }
-              });
-            }
-            const compareSet = new Set(
-              compareRows.map((r) => String(r[step.config.compareKey] ?? ""))
-            );
-            if (step.config.mode === "keepExist") {
-              data = data.filter((row) =>
-                compareSet.has(String(row[step.config.key] ?? ""))
-              );
-            } else if (step.config.mode === "keepNotExist") {
-              data = data.filter(
-                (row) => !compareSet.has(String(row[step.config.key] ?? ""))
-              );
-            }
-            break;
-          }
           case "aggregate": {
             if (data.length === 0) {
               data = [{ val: 0 }];
@@ -1780,9 +1727,17 @@ const CalcEngine = {
             data = allData;
             break;
           }
-          case "crossMatch": {
-            const mode = step.config.mode || "keepIntersection";
-            const columns = step.config.columns || ["val"];
+          case "crossMatch":
+          case "intersect": {
+            const cfg = step.config || {};
+            // 兼容旧版 intersect 的单列配置（key/compareKey）
+            const columns = cfg.columns && cfg.columns.length > 0
+              ? cfg.columns
+              : (cfg.key ? [cfg.key] : ["val"]);
+            const compareColumns = cfg.compareColumns && cfg.compareColumns.length > 0
+              ? cfg.compareColumns
+              : (cfg.compareKey ? [cfg.compareKey] : columns);
+            const mode = cfg.mode || (step.type === "intersect" ? "keepExist" : "keepIntersection");
             const makeKey = (row, cols) => cols.map((c) => String(row[c] ?? row.val ?? "")).join("||");
             if (mode === "removeDuplicates") {
               const seen = new Set();
@@ -1800,15 +1755,34 @@ const CalcEngine = {
               });
               data = data.filter((row) => countMap[makeKey(row, columns)] > 1);
             } else {
-              const cmpTable = tables.find((t) => t.id === step.config.table);
-              const cmpRows = cmpTable ? cmpTable.rows : [];
-              const cmpColumns = step.config.compareColumns && step.config.compareColumns.length > 0
-                ? step.config.compareColumns
-                : columns;
-              const cmpSet = new Set(cmpRows.map((r) => makeKey(r, cmpColumns)));
-              if (mode === "keepIntersection") {
+              const cmpTable = tables.find((t) => t.id === cfg.table);
+              let cmpRows = cmpTable ? cmpTable.rows : [];
+              // 支持先筛选对比表，再进行匹配（兼容原 intersect 的筛选能力）
+              if (cfg.filterColumn && cmpRows.length > 0) {
+                const filterCol = cfg.filterColumn;
+                const filterOp = cfg.filterOp || "==";
+                const filterVal = cfg.filterValue;
+                cmpRows = cmpRows.filter((row) => {
+                  const cellVal = String(row[filterCol] ?? "");
+                  switch (filterOp) {
+                    case "==": return cellVal === String(filterVal);
+                    case "!=": return cellVal !== String(filterVal);
+                    case ">": return Number(cellVal) > Number(filterVal);
+                    case "<": return Number(cellVal) < Number(filterVal);
+                    case ">=": return Number(cellVal) >= Number(filterVal);
+                    case "<=": return Number(cellVal) <= Number(filterVal);
+                    case "contains": return cellVal.includes(String(filterVal));
+                    case "notContains": return !cellVal.includes(String(filterVal));
+                    case "isEmpty": return cellVal.trim() === "";
+                    case "notEmpty": return cellVal.trim() !== "";
+                    default: return true;
+                  }
+                });
+              }
+              const cmpSet = new Set(cmpRows.map((r) => makeKey(r, compareColumns)));
+              if (mode === "keepIntersection" || mode === "keepExist") {
                 data = data.filter((row) => cmpSet.has(makeKey(row, columns)));
-              } else if (mode === "keepDifference") {
+              } else if (mode === "keepDifference" || mode === "keepNotExist") {
                 data = data.filter((row) => !cmpSet.has(makeKey(row, columns)));
               }
             }

@@ -47,13 +47,14 @@ const TemplatePage = ({ state, currentPlatform }) => {
         sheet.aoa,
         sheet.worksheet,
       );
-      setTemplateData({
+      const newTemplateData = {
         fileName: file.name,
         sheetName: firstSheetName,
         aoa: sheet.aoa,
         headers: sheet.headers,
         rows: sheet.rows,
-      });
+      };
+      setTemplateData(newTemplateData);
       setParseResult(fieldsResult);
       addToast(
         "success",
@@ -61,6 +62,20 @@ const TemplatePage = ({ state, currentPlatform }) => {
         `识别到 ${fieldsResult.fields.length} 个字段`,
       );
       ActivityLogger.add("上传模板", `${platform?.name} - ${file.name}`);
+      // 自动保存上传的模板，避免用户忘记点击保存
+      Store.set((s) => ({
+        ...s,
+        templates: {
+          ...s.templates,
+          [currentPlatform]: {
+            ...newTemplateData,
+            parseResult: fieldsResult,
+            savedAt: new Date().toISOString(),
+          },
+        },
+      }));
+      Store.flush();
+      ActivityLogger.add("保存模板", `${platform?.name}模板`);
     } catch (err) {
       console.error(err);
       addToast("error", "解析失败", err.message || "文件解析出错");

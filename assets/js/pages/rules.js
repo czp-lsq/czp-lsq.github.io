@@ -573,38 +573,65 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [filteredFields, activeField]);
-  const recommendPreset = (fieldName) => {
+  const recommendPreset = (field) => {
+    if (!field) return null;
+    const fieldName = typeof field === "string" ? field : field.name;
     if (!fieldName) return null;
     const n = fieldName.toLowerCase();
+    const semanticType = (typeof field === "object" && field.semanticType) || "";
     const allPresets = CalcEngine.getPresetTemplates();
     const list = [
       ...(allPresets[currentPlatform] || []),
       ...(allPresets.all || []),
     ];
-    let score = list.map((p) => {
+    const score = list.map((p) => {
       let s = 0;
       const pn = p.name.toLowerCase();
+      const pd = (p.desc || "").toLowerCase();
+      // 按字段语义匹配预设分类
       if (
         n.includes("销售") ||
         n.includes("收入") ||
         n.includes("实收") ||
-        n.includes("gmv")
+        n.includes("gmv") ||
+        n.includes("营业额")
       ) {
-        if (p.category === "sales") s += 10;
+        if (p.category === "sales") s += 12;
+        if (pd.includes("销售") || pd.includes("收入")) s += 4;
       }
       if (
         n.includes("成本") ||
         n.includes("扣点") ||
         n.includes("费用") ||
-        n.includes("退款")
+        n.includes("退款") ||
+        n.includes("推广") ||
+        n.includes("佣金")
       ) {
-        if (p.category === "cost") s += 10;
+        if (p.category === "cost") s += 12;
+        if (pd.includes("成本") || pd.includes("费用")) s += 4;
       }
-      if (n.includes("利润") || n.includes("净利") || n.includes("roi")) {
-        if (p.category === "profit") s += 10;
+      if (
+        n.includes("利润") ||
+        n.includes("净利") ||
+        n.includes("roi") ||
+        n.includes("毛利")
+      ) {
+        if (p.category === "profit") s += 12;
+        if (pd.includes("利润")) s += 4;
       }
-      if (pn.includes(n) || n.includes(pn.split("·").pop().toLowerCase()))
-        s += 5;
+      // 填充类型字段不推荐计算预设
+      if (["shop", "year", "month", "day", "date", "text"].includes(semanticType)) {
+        s -= 20;
+      }
+      // 名称直接包含关系
+      const pnTail = pn.split("·").pop().toLowerCase();
+      if (pn.includes(n) || n.includes(pnTail) || pnTail.includes(n)) s += 8;
+      // 关键词匹配
+      const pKeywords = [p.category, p.name, p.desc].filter(Boolean).join(" ");
+      const fieldKeywords = n.split(/[^\u4e00-\u9fa5a-z0-9]+/);
+      fieldKeywords.forEach((kw) => {
+        if (kw.length >= 2 && pKeywords.toLowerCase().includes(kw)) s += 2;
+      });
       return { p, s };
     });
     score.sort((a, b) => b.s - a.s);
@@ -1976,6 +2003,11 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
         const firstSelectedTableHeaders = selectedTables.length > 0
           ? allTables.find((t) => t.id === selectedTables[0])?.headers || []
           : [];
+        const tableOpts = [
+          { value: "", label: "请选择数据表", group: "" },
+          ...sampleTables.map((t) => ({ value: t.id, label: t.name, group: "样表数据" })),
+          ...externalTables.map((t) => ({ value: t.id, label: t.name, group: "外部数据" })),
+        ];
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
@@ -2003,77 +2035,68 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               /*#__PURE__*/ React.createElement(
                 "label",
                 { className: "form-label" },
-                "数据表",
+                "主数据表",
                 /*#__PURE__*/ React.createElement(
                   "span",
                   { className: "form-label-hint" },
-                  "勾选需要的数据表"
+                  "选择要计算的数据来源（显示为备注名称）"
+                )
+              ),
+              /*#__PURE__*/ React.createElement(SearchableSelect, {
+                value: step.config.table || "",
+                onChange: (val) => {
+                  updateStepConfig(step.id, "table", val);
+                  updateStepConfig(step.id, "tables", val ? [val] : []);
+                  updateStepConfig(step.id, "column", "");
+                },
+                options: tableOpts,
+                placeholder: "请选择数据表",
+                groupBy: "group",
+              })
+            ),
+            step.config.table && /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement(
+                "label",
+                { className: "form-label" },
+                "附加数据表（可选）",
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  { className: "form-label-hint" },
+                  "多表将自动合并，主表列优先"
                 )
               ),
               /*#__PURE__*/ React.createElement(
                 "div",
                 { className: "table-select-grid" },
-                sampleTables.length > 0 && /*#__PURE__*/ React.createElement(
+                /*#__PURE__*/ React.createElement(
                   "div",
-                  { className: "table-select-group" },
-                  /*#__PURE__*/ React.createElement(
-                    "div",
-                    { className: "table-select-group-label" },
-                    "样表数据"
-                  ),
-                  /*#__PURE__*/ React.createElement(
-                    "div",
-                    { className: "table-select-items table-select-items-grid" },
-                    sampleTables.map((t) =>
-                      /*#__PURE__*/ React.createElement(
-                        "label",
-                        {
-                          key: t.id,
-                          className: `table-select-item ${selectedTables.includes(t.id) ? "selected" : ""}`
+                  { className: "table-select-items table-select-items-grid" },
+                  allTables.filter((t) => t.id !== step.config.table).map((t) =>
+                    /*#__PURE__*/ React.createElement(
+                      "label",
+                      {
+                        key: t.id,
+                        className: `table-select-item ${selectedTables.includes(t.id) ? "selected" : ""}`
+                      },
+                      /*#__PURE__*/ React.createElement("input", {
+                        type: "checkbox",
+                        checked: selectedTables.includes(t.id),
+                        onChange: (e) => {
+                          const newTables = e.target.checked
+                            ? [...selectedTables, t.id]
+                            : selectedTables.filter((id) => id !== t.id);
+                          updateStepConfig(step.id, "tables", [step.config.table, ...newTables.filter((id) => id !== step.config.table)]);
                         },
-                        /*#__PURE__*/ React.createElement("input", {
-                          type: "checkbox",
-                          checked: selectedTables.includes(t.id),
-                          onChange: (e) => {
-                            const newTables = e.target.checked
-                              ? [...selectedTables, t.id]
-                              : selectedTables.filter((id) => id !== t.id);
-                            updateStepConfig(step.id, "tables", newTables);
-                          },
-                        }),
+                      }),
+                      /*#__PURE__*/ React.createElement(
+                        "div",
+                        { className: "table-select-item-info" },
                         /*#__PURE__*/ React.createElement(
-                          "div",
-                          { className: "table-select-item-info" },
-                          /*#__PURE__*/ React.createElement(
-                            "span",
-                            { className: "table-select-item-name" },
-                            t.name
-                          ),
-                          (() => {
-                            const nameLower = (t.name || "").toLowerCase();
-                            const origLower = (t.originalName || "").toLowerCase();
-                            const combined = nameLower + origLower;
-                            let tag = null;
-                            if (combined.includes("订单") || combined.includes("order")) tag = { text: "订单", color: "var(--color-primary)" };
-                            else if (combined.includes("退款") || combined.includes("refund")) tag = { text: "退款", color: "var(--color-warning)" };
-                            else if (combined.includes("推广") || combined.includes("ad")) tag = { text: "推广", color: "var(--color-success)" };
-                            else if (combined.includes("账务") || combined.includes("账单") || combined.includes("bill")) tag = { text: "账务", color: "var(--color-info)" };
-                            else if (combined.includes("成本") || combined.includes("cost")) tag = { text: "成本", color: "var(--color-danger)" };
-                            if (tag && nameLower.includes(tag.text)) return null;
-                            return tag && /*#__PURE__*/ React.createElement(
-                              "span",
-                              {
-                                className: "table-select-item-tag",
-                                style: { color: tag.color, borderColor: tag.color },
-                              },
-                              tag.text
-                            );
-                          })(),
-                          t.originalName && t.name !== t.originalName && /*#__PURE__*/ React.createElement(
-                            "span",
-                            { className: "table-select-item-desc" },
-                            t.originalName
-                          )
+                          "span",
+                          { className: "table-select-item-name" },
+                          t.name
                         )
                       )
                     )
@@ -2124,7 +2147,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             "div",
             { className: "step-desc" },
             /*#__PURE__*/ React.createElement(Icons.Info, null),
-            " 💡 可选择多个数据表，数据将自动合并。选择列后仅获取该列数据，不选则获取全部列。",
+            /*#__PURE__*/ React.createElement("span", null, "选择主数据表后，可勾选附加表合并数据；选择列后仅获取该列，不选则获取全部列。"),
           ),
         );
       }
@@ -4558,12 +4581,31 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
           ),
         );
       case "intersect":
+      case "crossMatch":
         return (() => {
-          const intersectModeOptions = [
-            { value: "keepExist", label: "保留存在于对比表的行（交集）" },
-            { value: "keepNotExist", label: "保留不存在于对比表的行（差集）" },
-          ];
-          const intersectTableHeaders = getTableHeaders(step.config.table);
+          // 统一使用 crossMatch 的配置方式：columns/compareColumns 数组
+          // 对旧版 intersect 的 key/compareKey 做兼容
+          const isIntersect = step.type === "intersect";
+          const modeOptions = isIntersect
+            ? [
+                { value: "keepExist", label: "保留存在于对比表的行（交集）" },
+                { value: "keepNotExist", label: "保留不存在于对比表的行（差集）" },
+              ]
+            : [
+                { value: "keepIntersection", label: "保留与对比表的交集行" },
+                { value: "keepDifference", label: "保留不在对比表的差集行" },
+                { value: "removeDuplicates", label: "当前数据多列去重" },
+                { value: "keepDuplicates", label: "当前数据保留重复行" },
+              ];
+          const compareTableHeaders = getTableHeaders(step.config.table);
+          const columns = step.config.columns && step.config.columns.length > 0
+            ? step.config.columns
+            : (step.config.key ? [step.config.key] : [""]);
+          const compareColumns = step.config.compareColumns && step.config.compareColumns.length > 0
+            ? step.config.compareColumns
+            : (step.config.compareKey ? [step.config.compareKey] : [""]);
+          const currentMode = step.config.mode || (isIntersect ? "keepExist" : "keepIntersection");
+          const needCompareTable = currentMode === "keepIntersection" || currentMode === "keepDifference" || currentMode === "keepExist" || currentMode === "keepNotExist";
           const allTableOptions = [{ value: "", label: "请选择数据表" }, ...allTables.map((t) => ({ value: t.id, label: t.name }))];
           return /*#__PURE__*/ React.createElement(
             "div",
@@ -4571,28 +4613,52 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             /*#__PURE__*/ React.createElement(
               "div",
               { className: "form-item" },
-              /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "对比模式"),
+              /*#__PURE__*/ React.createElement("label", { className: "form-label" }, isIntersect ? "对比模式" : "处理模式"),
               /*#__PURE__*/ React.createElement(SearchableSelect, {
-                value: step.config.mode || "keepExist",
+                value: currentMode,
                 onChange: (val) => updateStepConfig(step.id, "mode", val),
-                options: intersectModeOptions,
-                placeholder: "请选择对比模式",
+                options: modeOptions,
+                placeholder: isIntersect ? "请选择对比模式" : "请选择处理模式",
               }),
             ),
             /*#__PURE__*/ React.createElement(
               "div",
-              { className: "grid-2" },
-              /*#__PURE__*/ React.createElement(
+              { className: "form-item" },
+              /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "当前表匹配列"),
+              columns.map((col, idx) => /*#__PURE__*/ React.createElement(
                 "div",
-                { className: "form-item" },
-                /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "当前表关联列"),
+                { key: idx, className: "grid-2", style: { marginBottom: 6, gap: 6 } },
                 /*#__PURE__*/ React.createElement(SearchableSelect, {
-                  value: step.config.key || "",
-                  onChange: (val) => updateStepConfig(step.id, "key", val),
-                  options: [{ value: "", label: "请选择列" }, ...sourceTableHeaders.map((h) => ({ value: h, label: h }))],
-                  placeholder: "请选择列",
+                  value: col,
+                  onChange: (val) => {
+                    const newCols = [...columns];
+                    newCols[idx] = val;
+                    const filtered = newCols.filter(Boolean);
+                    updateStepConfig(step.id, "columns", filtered.length ? filtered : [""]);
+                    if (isIntersect) updateStepConfig(step.id, "key", filtered[0] || "");
+                  },
+                  options: sourceTableHeaders.map((h) => ({ value: h, label: h })),
+                  placeholder: "选择匹配列",
                 }),
-              ),
+                columns.length > 1 && /*#__PURE__*/ React.createElement("button", {
+                  className: "btn-icon",
+                  onClick: () => {
+                    const newCols = columns.filter((_, i) => i !== idx);
+                    updateStepConfig(step.id, "columns", newCols.length ? newCols : [""]);
+                    if (isIntersect) updateStepConfig(step.id, "key", newCols[0] || "");
+                  },
+                  title: "删除此列",
+                }, "×"),
+              )),
+              /*#__PURE__*/ React.createElement("button", {
+                className: "btn-text",
+                onClick: () => updateStepConfig(step.id, "columns", [...columns, ""]),
+                style: { marginTop: 4 },
+              }, "+ 添加匹配列"),
+            ),
+            needCompareTable && /*#__PURE__*/ React.createElement(
+              React.Fragment,
+              null,
               /*#__PURE__*/ React.createElement(
                 "div",
                 { className: "form-item" },
@@ -4601,26 +4667,50 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   value: step.config.table || "",
                   onChange: (val) => {
                     updateStepConfig(step.id, "table", val);
-                    updateStepConfig(step.id, "compareKey", "");
+                    updateStepConfig(step.id, "compareColumns", [""]);
+                    if (isIntersect) updateStepConfig(step.id, "compareKey", "");
                   },
                   options: allTableOptions,
                   placeholder: "请选择数据表",
                 }),
               ),
+              step.config.table && /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "form-item" },
+                /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "对比表匹配列"),
+                compareColumns.map((col, idx) => /*#__PURE__*/ React.createElement(
+                  "div",
+                  { key: idx, className: "grid-2", style: { marginBottom: 6, gap: 6 } },
+                  /*#__PURE__*/ React.createElement(SearchableSelect, {
+                    value: col,
+                    onChange: (val) => {
+                      const newCols = [...compareColumns];
+                      newCols[idx] = val;
+                      const filtered = newCols.filter(Boolean);
+                      updateStepConfig(step.id, "compareColumns", filtered.length ? filtered : [""]);
+                      if (isIntersect) updateStepConfig(step.id, "compareKey", filtered[0] || "");
+                    },
+                    options: compareTableHeaders.map((h) => ({ value: h, label: h })),
+                    placeholder: "选择对比列",
+                  }),
+                  compareColumns.length > 1 && /*#__PURE__*/ React.createElement("button", {
+                    className: "btn-icon",
+                    onClick: () => {
+                      const newCols = compareColumns.filter((_, i) => i !== idx);
+                      updateStepConfig(step.id, "compareColumns", newCols.length ? newCols : [""]);
+                      if (isIntersect) updateStepConfig(step.id, "compareKey", newCols[0] || "");
+                    },
+                    title: "删除此列",
+                  }, "×"),
+                )),
+                /*#__PURE__*/ React.createElement("button", {
+                  className: "btn-text",
+                  onClick: () => updateStepConfig(step.id, "compareColumns", [...compareColumns, ""]),
+                  style: { marginTop: 4 },
+                }, "+ 添加对比列"),
+              ),
             ),
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "对比表关联列"),
-              /*#__PURE__*/ React.createElement(SearchableSelect, {
-                value: step.config.compareKey || "",
-                onChange: (val) => updateStepConfig(step.id, "compareKey", val),
-                options: [{ value: "", label: "请选择列" }, ...intersectTableHeaders.map((h) => ({ value: h, label: h }))],
-                placeholder: step.config.table ? "请选择列" : "请先选择对比表",
-                disabled: !step.config.table,
-              }),
-            ),
-            step.config.table && /*#__PURE__*/ React.createElement(
+            needCompareTable && step.config.table && /*#__PURE__*/ React.createElement(
               "div",
               { className: "intersect-filter-section" },
               /*#__PURE__*/ React.createElement(
@@ -4652,7 +4742,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   /*#__PURE__*/ React.createElement(SearchableSelect, {
                     value: step.config.filterColumn || "",
                     onChange: (val) => updateStepConfig(step.id, "filterColumn", val),
-                    options: [{ value: "", label: "不筛选" }, ...intersectTableHeaders.map((h) => ({ value: h, label: h }))],
+                    options: [{ value: "", label: "不筛选" }, ...compareTableHeaders.map((h) => ({ value: h, label: h }))],
                     placeholder: "请选择列",
                   }),
                 ),
@@ -4701,124 +4791,9 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               "div",
               { className: "step-desc" },
               /*#__PURE__*/ React.createElement(Icons.Info, null),
-              " 将当前表与另一表按指定列进行对比，筛选出匹配或不匹配的行",
-            ),
-          );
-        })();
-      case "crossMatch":
-        return (() => {
-          const crossMatchModeOptions = [
-            { value: "keepIntersection", label: "保留与对比表的交集行" },
-            { value: "keepDifference", label: "保留不在对比表的差集行" },
-            { value: "removeDuplicates", label: "当前数据多列去重" },
-            { value: "keepDuplicates", label: "当前数据保留重复行" },
-          ];
-          const compareTableHeaders = getTableHeaders(step.config.table);
-          const columns = step.config.columns || [""];
-          const compareColumns = step.config.compareColumns || [""];
-          const needCompareTable = step.config.mode === "keepIntersection" || step.config.mode === "keepDifference";
-          const allTableOptions = [{ value: "", label: "请选择数据表" }, ...allTables.map((t) => ({ value: t.id, label: t.name }))];
-          return /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "step-config" },
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "处理模式"),
-              /*#__PURE__*/ React.createElement(SearchableSelect, {
-                value: step.config.mode || "keepIntersection",
-                onChange: (val) => updateStepConfig(step.id, "mode", val),
-                options: crossMatchModeOptions,
-                placeholder: "请选择处理模式",
-              }),
-            ),
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "当前表匹配列"),
-              columns.map((col, idx) => /*#__PURE__*/ React.createElement(
-                "div",
-                { key: idx, className: "grid-2", style: { marginBottom: 6, gap: 6 } },
-                /*#__PURE__*/ React.createElement(SearchableSelect, {
-                  value: col,
-                  onChange: (val) => {
-                    const newCols = [...columns];
-                    newCols[idx] = val;
-                    updateStepConfig(step.id, "columns", newCols.filter(Boolean));
-                  },
-                  options: sourceTableHeaders.map((h) => ({ value: h, label: h })),
-                  placeholder: "选择匹配列",
-                }),
-                columns.length > 1 && /*#__PURE__*/ React.createElement("button", {
-                  className: "btn-icon",
-                  onClick: () => {
-                    const newCols = columns.filter((_, i) => i !== idx);
-                    updateStepConfig(step.id, "columns", newCols.length ? newCols : [""]);
-                  },
-                  title: "删除此列",
-                }, "×"),
-              )),
-              /*#__PURE__*/ React.createElement("button", {
-                className: "btn-text",
-                onClick: () => updateStepConfig(step.id, "columns", [...columns, ""]),
-                style: { marginTop: 4 },
-              }, "+ 添加匹配列"),
-            ),
-            needCompareTable && /*#__PURE__*/ React.createElement(
-              React.Fragment,
-              null,
-              /*#__PURE__*/ React.createElement(
-                "div",
-                { className: "form-item" },
-                /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "对比数据表"),
-                /*#__PURE__*/ React.createElement(SearchableSelect, {
-                  value: step.config.table || "",
-                  onChange: (val) => {
-                    updateStepConfig(step.id, "table", val);
-                    updateStepConfig(step.id, "compareColumns", [""]);
-                  },
-                  options: allTableOptions,
-                  placeholder: "请选择数据表",
-                }),
-              ),
-              step.config.table && /*#__PURE__*/ React.createElement(
-                "div",
-                { className: "form-item" },
-                /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "对比表匹配列"),
-                compareColumns.map((col, idx) => /*#__PURE__*/ React.createElement(
-                  "div",
-                  { key: idx, className: "grid-2", style: { marginBottom: 6, gap: 6 } },
-                  /*#__PURE__*/ React.createElement(SearchableSelect, {
-                    value: col,
-                    onChange: (val) => {
-                      const newCols = [...compareColumns];
-                      newCols[idx] = val;
-                      updateStepConfig(step.id, "compareColumns", newCols.filter(Boolean));
-                    },
-                    options: compareTableHeaders.map((h) => ({ value: h, label: h })),
-                    placeholder: "选择对比列",
-                  }),
-                  compareColumns.length > 1 && /*#__PURE__*/ React.createElement("button", {
-                    className: "btn-icon",
-                    onClick: () => {
-                      const newCols = compareColumns.filter((_, i) => i !== idx);
-                      updateStepConfig(step.id, "compareColumns", newCols.length ? newCols : [""]);
-                    },
-                    title: "删除此列",
-                  }, "×"),
-                )),
-                /*#__PURE__*/ React.createElement("button", {
-                  className: "btn-text",
-                  onClick: () => updateStepConfig(step.id, "compareColumns", [...compareColumns, ""]),
-                  style: { marginTop: 4 },
-                }, "+ 添加对比列"),
-              ),
-            ),
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "step-desc" },
-              /*#__PURE__*/ React.createElement(Icons.Info, null),
-              " 按多个列组合进行跨表交集、差集或当前数据的去重/保留重复。",
+              isIntersect
+                ? " 将当前表与另一表按指定列进行对比，筛选出匹配或不匹配的行（已合并到交叉匹配能力）"
+                : " 按多列与另一表取交集、差集，或对当前数据进行多列去重/保留重复",
             ),
           );
         })();
@@ -6024,7 +5999,19 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
           if (data.length === 0) {
             return /*#__PURE__*/ React.createElement("span", { className: "debug-empty" }, "空数组");
           }
-          const allHeaders = data.length > 0 ? Object.keys(data[0]).filter((k) => !k.startsWith("_")) : [];
+          // 从所有行收集列名，避免首行缺失列导致显示不完整
+          const headerSet = new Set();
+          data.forEach((row) => {
+            if (row && typeof row === "object") {
+              Object.keys(row).forEach((k) => {
+                if (!k.startsWith("_")) headerSet.add(k);
+              });
+            }
+          });
+          const allHeaders = Array.from(headerSet);
+          if (allHeaders.length === 0) {
+            return /*#__PURE__*/ React.createElement("span", { className: "debug-empty" }, "无可见列");
+          }
           const cfg = step.config || {};
           let relevantHeaders = [];
           const extractExprFields = (expr) => {
@@ -6034,6 +6021,9 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
           };
           switch (step.type) {
             case "filter":
+            case "filterEqual":
+            case "filterContain":
+            case "filterRange":
               relevantHeaders = [cfg.column].filter(Boolean);
               break;
             case "virtual":
@@ -6043,64 +6033,154 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               relevantHeaders = [cfg.key, cfg.fk, cfg.col, cfg.sizeField].filter(Boolean);
               break;
             case "aggregate":
+            case "group":
               if (cfg.column === "__expr__" && cfg.expr) {
                 relevantHeaders = extractExprFields(cfg.expr);
               } else {
-                relevantHeaders = [cfg.column].filter(Boolean);
+                relevantHeaders = [cfg.column, cfg.aggColumn, cfg.groupBy].filter(Boolean);
               }
               break;
             case "formula":
+            case "math":
+            case "ratio":
+            case "diff":
               relevantHeaders = extractExprFields(cfg.expr);
               break;
             case "sort":
+            case "topN":
+            case "runningTotal":
+            case "movingAverage":
+            case "percentOfTotal":
+            case "normalize":
+            case "fillNA":
+            case "binning":
+            case "conditionalTag":
+            case "stringExtract":
+            case "round":
+            case "date":
+            case "rank":
+            case "valueNormalize":
+              relevantHeaders = [cfg.column, cfg.targetColumn, cfg.orderColumn].filter(Boolean);
+              break;
+            case "concat":
+              relevantHeaders = (cfg.columns || []).filter(Boolean);
+              break;
+            case "substring":
+            case "lookup":
               relevantHeaders = [cfg.column].filter(Boolean);
+              break;
+            case "condition":
+              relevantHeaders = [cfg.column].filter(Boolean);
+              break;
+            case "crossMatch":
+            case "intersect":
+              relevantHeaders = [...(cfg.columns || []), ...(cfg.compareColumns || []), cfg.key, cfg.compareKey].filter(Boolean);
+              break;
+            case "keepDuplicate":
+            case "keepUnique":
+              relevantHeaders = [cfg.column].filter(Boolean);
+              break;
+            case "union":
+              relevantHeaders = (cfg.tables || []).map((t) => (typeof t === "string" ? t : t.id)).filter(Boolean);
               break;
             case "source":
             case "limit":
+            case "constant":
+            case "text":
+            case "fill":
             default:
-              relevantHeaders = allHeaders.slice(0, 5);
+              relevantHeaders = [];
               break;
           }
-          const validHeaders = relevantHeaders.filter((h) => allHeaders.includes(h));
-          const displayHeaders = validHeaders.length > 0 ? validHeaders : allHeaders.slice(0, 5);
+          const validRelevant = relevantHeaders.filter((h) => allHeaders.includes(h));
+          // 单列数据使用卡片式展示，避免表格过宽
+          if (allHeaders.length === 1) {
+            const key = allHeaders[0];
+            return /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "debug-single-column" },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "debug-single-column-header" },
+                /*#__PURE__*/ React.createElement(Icons.Column, { size: 14 }),
+                key,
+              ),
+              data.slice(0, 50).map((row, ri) => /*#__PURE__*/ React.createElement(
+                "div",
+                { key: ri, className: "debug-single-column-row" },
+                /*#__PURE__*/ React.createElement("span", { className: "debug-single-column-index" }, ri + 1),
+                /*#__PURE__*/ React.createElement("span", { className: "debug-single-column-value" },
+                  row[key] != null
+                    ? typeof row[key] === "number"
+                      ? row[key].toLocaleString("zh-CN", { maximumFractionDigits: 4 })
+                      : String(row[key]).slice(0, 80)
+                    : "-",
+                ),
+              )),
+              data.length > 50 && /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "debug-table-more" },
+                `... 共 ${data.length} 行，显示前50行`,
+              ),
+            );
+          }
+          // 多列数据：优先高亮相关列，但展示所有列，支持横向滚动
+          const displayHeaders = validRelevant.length > 0
+            ? Array.from(new Set([...validRelevant, ...allHeaders]))
+            : allHeaders;
           const displayRows = data.slice(0, 100);
           return /*#__PURE__*/ React.createElement(
             "div",
             { className: "debug-data-table" },
             /*#__PURE__*/ React.createElement(
-              "table",
-              { className: "debug-table" },
+              "div",
+              { className: "debug-table-scroll" },
               /*#__PURE__*/ React.createElement(
-                "thead",
-                null,
+                "table",
+                { className: "debug-table" },
                 /*#__PURE__*/ React.createElement(
-                  "tr",
+                  "thead",
                   null,
-                  displayHeaders.map((h) => /*#__PURE__*/ React.createElement("th", { key: h, title: h }, h)),
+                  /*#__PURE__*/ React.createElement(
+                    "tr",
+                    null,
+                    displayHeaders.map((h) => /*#__PURE__*/ React.createElement(
+                      "th",
+                      {
+                        key: h,
+                        title: h,
+                        className: validRelevant.includes(h) ? "debug-col-relevant" : "",
+                      },
+                      h,
+                    )),
+                  ),
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "tbody",
+                  null,
+                  displayRows.map((row, ri) => /*#__PURE__*/ React.createElement(
+                    "tr",
+                    { key: ri },
+                    displayHeaders.map((h) => /*#__PURE__*/ React.createElement(
+                      "td",
+                      {
+                        key: h,
+                        className: validRelevant.includes(h) ? "debug-col-relevant" : "",
+                      },
+                      row[h] != null
+                        ? typeof row[h] === "number"
+                          ? row[h].toLocaleString("zh-CN", { maximumFractionDigits: 2 })
+                          : String(row[h]).slice(0, 50)
+                        : "-",
+                    )),
+                  )),
                 ),
               ),
-              /*#__PURE__*/ React.createElement(
-                "tbody",
-                null,
-                displayRows.map((row, ri) => /*#__PURE__*/ React.createElement(
-                  "tr",
-                  { key: ri },
-                  displayHeaders.map((h) => /*#__PURE__*/ React.createElement(
-                    "td",
-                    { key: h },
-                    row[h] != null
-                      ? typeof row[h] === "number"
-                        ? row[h].toLocaleString("zh-CN", { maximumFractionDigits: 2 })
-                        : String(row[h]).slice(0, 50)
-                      : "-",
-                  )),
-                )),
-              ),
             ),
-            displayHeaders.length < allHeaders.length && /*#__PURE__*/ React.createElement(
+            validRelevant.length > 0 && validRelevant.length < allHeaders.length && /*#__PURE__*/ React.createElement(
               "div",
               { className: "debug-table-more" },
-              `... 共 ${allHeaders.length} 列，仅显示参与计算的 ${displayHeaders.length} 列`,
+              `💡 高亮列：${validRelevant.join("、")}（共 ${allHeaders.length} 列，可横向滚动查看全部）`,
             ),
             data.length > 100 && /*#__PURE__*/ React.createElement(
               "div",
@@ -6121,7 +6201,6 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               "div",
               { key: key, className: "debug-object-row" },
               /*#__PURE__*/ React.createElement("span", { className: "debug-object-key" }, key),
-              ": ",
               /*#__PURE__*/ React.createElement("span", { className: "debug-object-value" },
                 typeof val === "number"
                   ? val.toLocaleString("zh-CN", { maximumFractionDigits: 2 })
@@ -6236,7 +6315,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
       taobao: "淘宝",
       douyin: "抖音",
     };
-    const recommend = activeField ? recommendPreset(activeField.name) : null;
+    const recommend = activeField ? recommendPreset(activeField) : null;
     return /*#__PURE__*/ React.createElement(
       React.Fragment,
       null,
@@ -7747,7 +7826,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                             /*#__PURE__*/ React.createElement(
                               "div",
                               { className: "step-body" },
-                              info.description &&
+                              info.desc &&
                                 /*#__PURE__*/ React.createElement(
                                   "div",
                                   { className: "step-description" },
@@ -7770,17 +7849,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                       },
                                       info.name,
                                       " \u2014 ",
-                                      info.description,
+                                      info.desc,
                                     ),
-                                    info.useCase &&
-                                      /*#__PURE__*/ React.createElement(
-                                        "div",
-                                        {
-                                          className:
-                                            "step-description-usecase",
-                                        },
-                                        info.useCase,
-                                      ),
                                   ),
                                 ),
                               !stepValidation.valid &&
@@ -7789,7 +7859,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                   { className: "step-alert error" },
                                   /*#__PURE__*/ React.createElement(
                                     Icons.AlertCircle,
-                                    null,
+                                    { size: 16 },
                                   ),
                                   /*#__PURE__*/ React.createElement(
                                     "span",
@@ -7806,6 +7876,11 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                       key: hi,
                                       className: `step-alert ${hint.type}`,
                                     },
+                                    hint.type === "warning"
+                                      ? /*#__PURE__*/ React.createElement(Icons.AlertTriangle, { size: 16 })
+                                      : hint.type === "error"
+                                        ? /*#__PURE__*/ React.createElement(Icons.AlertCircle, { size: 16 })
+                                        : /*#__PURE__*/ React.createElement(Icons.Info, { size: 16 }),
                                     /*#__PURE__*/ React.createElement(
                                       "span",
                                       null,
@@ -7880,7 +7955,221 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                       }
                                       break;
                                     case "limit":
-                                      previews.push({ icon: "", text: `限制输出前 ${cfg.limit || 10} 条数据` });
+                                      previews.push({ icon: "", text: `限制输出前 ${cfg.limit || cfg.count || 10} 条数据` });
+                                      break;
+                                    case "fill":
+                                      if (cfg.fillType) {
+                                        const fillTypeNames = { auto: "自动识别", shop: "店铺名", date: "数据周期日期", dateNow: "当前系统日期", field: "数据字段取值", manual: "手动输入" };
+                                        previews.push({ icon: "", text: `填充方式: ${fillTypeNames[cfg.fillType] || cfg.fillType}` });
+                                        if (cfg.fillType === "field" && cfg.sourceField) {
+                                          previews.push({ icon: "", text: `从「${cfg.sourceField}」字段取值` });
+                                        }
+                                        if ((cfg.fillType === "date" || cfg.fillType === "dateNow") && cfg.dateFormat) {
+                                          previews.push({ icon: "", text: `日期格式: ${cfg.dateFormat}` });
+                                        }
+                                      } else {
+                                        previews.push({ icon: "", text: "请选择填充方式", warn: true });
+                                      }
+                                      break;
+                                    case "filterEqual":
+                                    case "filterContain":
+                                    case "filterRange":
+                                      if (cfg.column) {
+                                        previews.push({ icon: "", text: `筛选条件: ${cfg.column} ${cfg.op || "=="} ${cfg.value != null ? String(cfg.value) : ""}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请配置筛选条件", warn: true });
+                                      }
+                                      break;
+                                    case "topN":
+                                      if (cfg.column) {
+                                        previews.push({ icon: "", text: `取前 ${cfg.count || 10} 条，按 ${cfg.column} ${cfg.order === "desc" ? "降序" : "升序"}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请选择排序列", warn: true });
+                                      }
+                                      break;
+                                    case "distinct":
+                                      if (cfg.column) {
+                                        previews.push({ icon: "", text: `按 ${cfg.column} 去重` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请选择去重列", warn: true });
+                                      }
+                                      break;
+                                    case "group":
+                                      if (cfg.column) {
+                                        previews.push({ icon: "", text: `按 ${cfg.column} 分组，${cfg.func || "sum"}(${cfg.aggColumn || "val"})` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请选择分组列", warn: true });
+                                      }
+                                      break;
+                                    case "condition":
+                                      if (cfg.column && cfg.op) {
+                                        previews.push({ icon: "", text: `条件: ${cfg.column} ${cfg.op} ${cfg.value != null ? String(cfg.value) : ""} → ${cfg.trueValue}/${cfg.falseValue}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请配置条件判断", warn: true });
+                                      }
+                                      break;
+                                    case "crossMatch":
+                                    case "intersect": {
+                                      const modeNames = {
+                                        keepIntersection: "保留交集行",
+                                        keepDifference: "保留差集行",
+                                        keepExist: "保留存在于对比表的行",
+                                        keepNotExist: "保留不存在于对比表的行",
+                                        removeDuplicates: "当前数据多列去重",
+                                        keepDuplicates: "当前数据保留重复行",
+                                      };
+                                      const modeName = modeNames[cfg.mode] || cfg.mode;
+                                      previews.push({ icon: "", text: `处理模式: ${modeName}` });
+                                      if (cfg.columns && cfg.columns.length > 0 && cfg.columns[0]) {
+                                        previews.push({ icon: "", text: `当前表匹配列: ${cfg.columns.join(", ")}` });
+                                      }
+                                      if ((cfg.mode === "keepIntersection" || cfg.mode === "keepDifference" || cfg.mode === "keepExist" || cfg.mode === "keepNotExist") && cfg.table) {
+                                        previews.push({ icon: "", text: `对比表: ${cfg.table}` });
+                                        if (cfg.compareColumns && cfg.compareColumns.length > 0 && cfg.compareColumns[0]) {
+                                          previews.push({ icon: "", text: `对比表匹配列: ${cfg.compareColumns.join(", ")}` });
+                                        }
+                                      }
+                                      break;
+                                    }
+                                    case "keepDuplicate":
+                                    case "keepUnique":
+                                      if (cfg.column) {
+                                        previews.push({ icon: "", text: `${step.type === "keepDuplicate" ? "保留重复行" : "保留唯一行"}，判断列: ${cfg.column}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请选择判断列", warn: true });
+                                      }
+                                      break;
+                                    case "union":
+                                      if (cfg.tables && cfg.tables.length > 0) {
+                                        previews.push({ icon: "", text: `合并 ${cfg.tables.length} 个数据表` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请添加合并数据表", warn: true });
+                                      }
+                                      break;
+                                    case "lookup":
+                                      if (cfg.column && cfg.pairs && cfg.pairs.length > 0) {
+                                        previews.push({ icon: "", text: `对 ${cfg.column} 查找替换，共 ${cfg.pairs.length} 条规则` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请配置查找替换规则", warn: true });
+                                      }
+                                      break;
+                                    case "runningTotal":
+                                      if (cfg.column) {
+                                        previews.push({ icon: "", text: `累计求和: ${cfg.column}${cfg.orderColumn ? `，按 ${cfg.orderColumn} ${cfg.direction === "desc" ? "降序" : "升序"}` : ""}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请选择累计列", warn: true });
+                                      }
+                                      break;
+                                    case "percentOfTotal":
+                                      if (cfg.column) {
+                                        previews.push({ icon: "", text: `占比计算: ${cfg.column}${cfg.asPercent !== false ? "（以百分比输出）" : ""}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请选择计算列", warn: true });
+                                      }
+                                      break;
+                                    case "movingAverage":
+                                      if (cfg.column) {
+                                        previews.push({ icon: "", text: `移动平均: ${cfg.column}，窗口 ${cfg.windowSize || 3}，输出到 ${cfg.targetColumn || "moving_avg"}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请选择计算列", warn: true });
+                                      }
+                                      break;
+                                    case "binning":
+                                      if (cfg.column) {
+                                        previews.push({ icon: "", text: `数据分箱: ${cfg.column}，分箱数 ${cfg.binCount || 5}，输出到 ${cfg.targetColumn || "bin"}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请选择分箱列", warn: true });
+                                      }
+                                      break;
+                                    case "conditionalTag":
+                                      if (cfg.conditions && cfg.conditions.length > 0) {
+                                        previews.push({ icon: "", text: `条件标记: ${cfg.conditions.length} 条规则，输出到 ${cfg.targetColumn || "tag"}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请添加条件规则", warn: true });
+                                      }
+                                      break;
+                                    case "stringExtract":
+                                      if (cfg.column && cfg.extractType) {
+                                        previews.push({ icon: "", text: `字符串提取: ${cfg.column}，方式 ${cfg.extractType}，输出到 ${cfg.targetColumn || "extracted"}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请配置源字段和提取方式", warn: true });
+                                      }
+                                      break;
+                                    case "fillNA":
+                                      if (cfg.column) {
+                                        previews.push({ icon: "", text: `空值填充: ${cfg.column}，策略 ${cfg.fillType || "value"}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请选择填充列", warn: true });
+                                      }
+                                      break;
+                                    case "normalize":
+                                      if (cfg.column) {
+                                        previews.push({ icon: "", text: `数据标准化: ${cfg.column}，方法 ${cfg.normType || "minmax"}，输出到 ${cfg.targetColumn || "normalized"}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请选择标准化列", warn: true });
+                                      }
+                                      break;
+                                    case "concat":
+                                      if (cfg.columns && cfg.columns.length > 0 && cfg.columns[0]) {
+                                        previews.push({ icon: "", text: `拼接字段: ${cfg.columns.join(" + ")}${cfg.separator ? `，分隔符「${cfg.separator}」` : ""}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请添加拼接字段", warn: true });
+                                      }
+                                      break;
+                                    case "substring":
+                                      if (cfg.column) {
+                                        previews.push({ icon: "", text: `截取子串: ${cfg.column}[${cfg.start || 0}:${(cfg.start || 0) + (cfg.length || 10)}]` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请选择源字段", warn: true });
+                                      }
+                                      break;
+                                    case "date":
+                                      if (cfg.column) {
+                                        previews.push({ icon: "", text: `日期处理: ${cfg.column} → ${cfg.format || "yyyy-mm-dd"}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请选择日期字段", warn: true });
+                                      }
+                                      break;
+                                    case "math":
+                                      if (cfg.column) {
+                                        previews.push({ icon: "", text: `数学运算: ${cfg.column} ${cfg.operation || "+"} ${cfg.value != null ? String(cfg.value) : ""}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请选择输入列", warn: true });
+                                      }
+                                      break;
+                                    case "rank":
+                                      if (cfg.column) {
+                                        previews.push({ icon: "", text: `排名: ${cfg.column} ${cfg.direction === "desc" ? "降序" : "升序"}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请选择排名列", warn: true });
+                                      }
+                                      break;
+                                    case "diff":
+                                      if (cfg.column && cfg.baseColumn) {
+                                        previews.push({ icon: "", text: `差值: ${cfg.column} - ${cfg.baseColumn}${cfg.percent ? "（百分比）" : ""}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请选择当前列和基准列", warn: true });
+                                      }
+                                      break;
+                                    case "ratio":
+                                      if (cfg.numerator && cfg.denominator) {
+                                        previews.push({ icon: "", text: `比率: ${cfg.numerator} / ${cfg.denominator}${cfg.percent !== false ? "（百分比）" : ""}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请选择分子和分母", warn: true });
+                                      }
+                                      break;
+                                    case "constant":
+                                      previews.push({ icon: "", text: `常量值: ${cfg.value != null ? String(cfg.value) : ""}` });
+                                      break;
+                                    case "text":
+                                      previews.push({ icon: "", text: `文本值: ${cfg.value != null ? String(cfg.value) : ""}` });
+                                      break;
+                                    case "valueNormalize":
+                                      if (cfg.column) {
+                                        previews.push({ icon: "", text: `值规范化: ${cfg.column}，规则数 ${(cfg.rules || []).length}` });
+                                      } else {
+                                        previews.push({ icon: "", text: "请选择需要规范化的字段", warn: true });
+                                      }
                                       break;
                                   }
                                   if (previews.length === 0) return null;
@@ -8158,10 +8447,39 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 recommendations.push({ type, reason, priority });
               }
             };
-            if (!hasSource) {
+            // 根据字段语义判断是否需要数据源
+            const semanticType = activeField?.semanticType || "";
+            const isFillField = ["shop", "year", "month", "day", "date", "text"].includes(semanticType);
+            const isValueField = semanticType === "value";
+            // 判断当前规则是否依赖外部数据（公式/常量/文本等纯计算不依赖）
+            const dataDependentTypes = ["source", "filter", "aggregate", "join", "group", "union", "limit", "sort", "crossMatch", "keepDuplicate", "keepUnique", "intersect", "lookup", "runningTotal", "percentOfTotal", "movingAverage", "binning", "conditionalTag", "stringExtract", "fillNA", "normalize", "valueNormalize"];
+            const needsDataSource = steps.some((s) => dataDependentTypes.includes(s.type));
+            const hasPureCompute = steps.some((s) => ["formula", "constant", "text", "math", "ratio", "diff", "round", "concat", "substring", "date", "condition", "rank"].includes(s.type));
+            if (isFillField) {
+              // 填充类型字段优先推荐填充步骤，不提示选择数据源
+              const hasFill = steps.some((s) => s.type === "fill");
+              if (!hasFill) {
+                addRec("fill", `该字段为${semanticType === "shop" ? "店铺名" : semanticType.includes("date") || semanticType === "year" || semanticType === "month" || semanticType === "day" ? "日期" : "文本"}占位符，建议添加填充步骤`, 100);
+              }
+            } else if (!needsDataSource && !hasPureCompute) {
+              // 数值字段且尚未配置任何计算步骤时，才提示选择数据源
               addRec("source", "首先需要选择数据源", 100);
-            } else {
-              // 数据列特征识别
+            }
+            // 数据列特征识别（仅对需要数据操作的字段推荐）
+            if ((hasSource || needsDataSource) && !isFillField) {
+              // 合并已选源表和外部表的列，提升识别准确性
+              const sourceStep = steps.find((s) => s.type === "source");
+              const sourceTableIds = sourceStep?.config?.tables || [];
+              sourceTableIds.forEach((tid) => {
+                const t = samples.find((s) => s.id === tid);
+                const sheet = t?.sheets[Object.keys(t?.sheets || {})[0]];
+                (sheet?.headers || []).forEach((h) => sourceHeaders.add(h));
+              });
+              (state.externals || []).forEach((e) => {
+                (e.headers || []).forEach((h) => sourceHeaders.add(h));
+              });
+              const headers = Array.from(sourceHeaders).map((h) => h.toLowerCase());
+              const hasCol = (keys) => headers.some((h) => keys.some((k) => h.includes(k)));
               const hasSpec = hasCol(["规格", "型号", "商品规格", "款式"]);
               const hasSku = hasCol(["款号", "sku", "商品编码", "货号"]);
               const hasSize = hasCol(["尺码", "size", "码数"]);
@@ -8179,29 +8497,25 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               } else if (!hasPieces && hasSpec && hasVirtual) {
                 addRec("virtual", "建议添加条数识别虚拟字段", 85);
               }
-              // 跨表关联：有款号+尺码+全局成本表
+              // 跨表关联：有款号+尺码/规格+全局成本表
               if (hasSku && (hasSize || hasSpec) && hasCostTable && !hasJoin) {
                 addRec("join", "检测到款号与全局成本表，建议关联匹配单件成本", 80);
               }
-              // 公式计算：有条数和成本
-              if ((hasPieces || hasVirtual) && (hasCost || hasJoin) && !hasFormula && hasAmount) {
+              // 公式计算：有条数和成本，且目标是数值字段
+              if (isValueField && (hasPieces || hasVirtual) && (hasCost || hasJoin) && !hasFormula) {
                 addRec("formula", "建议用公式计算金额（数量×单价）", 75);
-              } else if ((hasPieces || hasVirtual) && hasCost && !hasFormula) {
-                addRec("formula", "建议用公式计算总成本（数量×单价）", 75);
+              }
+              // 聚合：数值字段且检测到金额/数量列，且前面没有公式
+              if (isValueField && (hasAmount || hasCost || hasPieces) && !hasAggregate && !hasFormula) {
+                addRec("aggregate", `检测到${hasAmount || hasCost ? "金额" : "数量"}列，建议聚合汇总数据`, 70);
               }
               // 筛选
               if (hasShop && !hasFilter) {
                 addRec("filter", "检测到店铺/来源列，建议按店铺筛选数据", 60);
               } else if (hasRefund && !hasFilter) {
                 addRec("filter", "检测到退款列，建议过滤退款订单", 60);
-              } else if (!hasFilter && steps.length >= 2) {
+              } else if (!hasFilter && steps.length >= 2 && isValueField) {
                 addRec("filter", "建议添加筛选条件过滤数据", 50);
-              }
-              // 聚合
-              if ((hasAmount || hasCost) && !hasAggregate && !hasFormula) {
-                addRec("aggregate", "检测到金额列，建议聚合汇总数据", 55);
-              } else if ((hasPieces || hasSpec) && !hasAggregate && !hasFormula) {
-                addRec("aggregate", "建议聚合统计数量", 50);
               }
               // 排序
               if (hasDate && !hasSort) {
