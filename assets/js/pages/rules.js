@@ -8026,6 +8026,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                         keepDifference: "保留差集行",
                                         keepExist: "保留存在于对比表的行",
                                         keepNotExist: "保留不存在于对比表的行",
+                                        mergeWithFilter: "合并两表并筛选",
                                         removeDuplicates: "当前数据多列去重",
                                         keepDuplicates: "当前数据保留重复行",
                                       };
@@ -8034,7 +8035,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                       if (cfg.columns && cfg.columns.length > 0 && cfg.columns[0]) {
                                         previews.push({ icon: "", text: `当前表匹配列: ${cfg.columns.join(", ")}` });
                                       }
-                                      if ((cfg.mode === "keepIntersection" || cfg.mode === "keepDifference" || cfg.mode === "keepExist" || cfg.mode === "keepNotExist") && cfg.table) {
+                                      if ((cfg.mode === "keepIntersection" || cfg.mode === "keepDifference" || cfg.mode === "keepExist" || cfg.mode === "keepNotExist" || cfg.mode === "mergeWithFilter") && cfg.table) {
                                         previews.push({ icon: "", text: `对比表: ${cfg.table}` });
                                         if (cfg.compareColumns && cfg.compareColumns.length > 0 && cfg.compareColumns[0]) {
                                           previews.push({ icon: "", text: `对比表匹配列: ${cfg.compareColumns.join(", ")}` });

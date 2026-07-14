@@ -1103,6 +1103,22 @@ body.dark .table-highlight-row {
   max-width: 720px;
 }
 
+.modal-draggable {
+  max-width: none;
+  max-height: 90vh;
+  resize: none;
+  user-select: none;
+}
+
+.modal-draggable .modal-header {
+  cursor: move;
+  user-select: none;
+}
+
+.modal-draggable .modal-header:active {
+  cursor: grabbing;
+}
+
 .modal-xl {
   max-width: 960px;
 }

@@ -474,7 +474,7 @@
           ? cfg.compareColumns
           : (cfg.compareKey ? [cfg.compareKey] : []);
         if (!matchColumns || matchColumns.length === 0) return { valid: false, message: "请填写匹配列" };
-        if (cfg.mode === "keepIntersection" || cfg.mode === "keepDifference" || cfg.mode === "keepExist" || cfg.mode === "keepNotExist") {
+        if (cfg.mode === "keepIntersection" || cfg.mode === "keepDifference" || cfg.mode === "keepExist" || cfg.mode === "keepNotExist" || cfg.mode === "mergeWithFilter") {
           if (!cfg.table) return { valid: false, message: "请选择对比表" };
           if (!cmpColumns || cmpColumns.length === 0) return { valid: false, message: "请填写对比表匹配列" };
         }
@@ -674,6 +674,7 @@
           keepDifference: "差集",
           keepExist: "存在于对比表",
           keepNotExist: "不存在于对比表",
+          mergeWithFilter: "合并筛选",
           removeDuplicates: "去重",
           keepDuplicates: "保留重复",
         };
