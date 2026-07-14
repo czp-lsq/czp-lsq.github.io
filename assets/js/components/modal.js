@@ -164,6 +164,116 @@ const AlertModal = ({ title, message, onConfirm, type = "info", confirmText = "æ
   );
 };
 
+const DraggableModal = ({ title, children, onClose, width = 800, height = 600 }) => {
+  const portalContainerRef = useRef(null);
+  const [containerReady, setContainerReady] = useState(false);
+  const [position, setPosition] = useState({ x: 100, y: 100 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const onCloseRef = useRef(onClose);
+
+  useEffect(() => {
+    onCloseRef.current = onClose;
+  });
+
+  useEffect(() => {
+    if (!portalContainerRef.current) {
+      portalContainerRef.current = document.createElement('div');
+      document.body.appendChild(portalContainerRef.current);
+    }
+    setContainerReady(true);
+    document.body.style.overflow = "hidden";
+
+    const handleKey = (e) => { if (e.key === "Escape" && onCloseRef.current) onCloseRef.current(); };
+    window.addEventListener("keydown", handleKey);
+
+    return () => {
+      window.removeEventListener("keydown", handleKey);
+      document.body.style.overflow = "";
+      try {
+        if (portalContainerRef.current && document.body.contains(portalContainerRef.current)) {
+          document.body.removeChild(portalContainerRef.current);
+        }
+      } catch (e) {}
+      portalContainerRef.current = null;
+      setContainerReady(false);
+    };
+  }, []);
+
+  useEffect(() => {
+    const handleMouseMove = (e) => {
+      if (!isDragging) return;
+      setPosition({
+        x: e.clientX - dragOffset.x,
+        y: e.clientY - dragOffset.y,
+      });
+    };
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+    if (isDragging) {
+      window.addEventListener("mousemove", handleMouseMove);
+      window.addEventListener("mouseup", handleMouseUp);
+    }
+    return () => {
+      window.removeEventListener("mousemove", handleMouseMove);
+      window.removeEventListener("mouseup", handleMouseUp);
+    };
+  }, [isDragging, dragOffset]);
+
+  const handleMouseDown = (e) => {
+    if (e.target.closest('.modal-close') || e.target.closest('.modal-body')) return;
+    setIsDragging(true);
+    setDragOffset({
+      x: e.clientX - position.x,
+      y: e.clientY - position.y,
+    });
+  };
+
+  if (!containerReady || !portalContainerRef.current) return null;
+
+  return ReactDOM.createPortal(
+    React.createElement("div", {
+      className: "modal-mask",
+      onClick: (e) => {
+        if (e.target === e.currentTarget && onCloseRef.current) onCloseRef.current();
+      }
+    },
+      React.createElement("div", {
+        className: "modal modal-draggable",
+        style: {
+          maxWidth: 'none',
+          width: width,
+          height: height,
+          left: position.x,
+          top: position.y,
+          position: 'fixed',
+          transform: 'none',
+        },
+        onClick: (e) => e.stopPropagation(),
+      },
+        React.createElement("div", {
+          className: "modal-header",
+          onMouseDown: handleMouseDown,
+          style: { cursor: 'move' },
+        },
+          React.createElement("div", { className: "modal-title" }, title),
+          React.createElement("button", {
+            className: "modal-close",
+            onClick: () => onCloseRef.current && onCloseRef.current(),
+            style: { cursor: 'pointer' },
+          },
+            React.createElement(Icons.X, null)
+          )
+        ),
+        React.createElement("div", { className: "modal-body", style: { height: 'calc(100% - 56px)', overflow: 'auto' } }, children),
+      )
+    ),
+    portalContainerRef.current
+  );
+};
+
 window.Modal = Modal;
 window.ConfirmModal = ConfirmModal;
 window.AlertModal = AlertModal;
+window.DraggableModal = DraggableModal;

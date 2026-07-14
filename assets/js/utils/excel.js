@@ -146,6 +146,31 @@ const ExcelUtils = {
       ).length;
       if (dataNonEmpty >= nonEmptyCells.length * 0.7) score += 10;
     }
+    // 基于表格整体内容分析：统计后续数据行的数值密度
+    const totalRows = aoa.length;
+    if (totalRows > rowIdx + 1) {
+      const sampleRows = aoa.slice(rowIdx + 1, Math.min(rowIdx + 51, totalRows));
+      let totalNumericCount = 0;
+      let totalCellCount = 0;
+      let hasDatePattern = false;
+      for (const sRow of sampleRows) {
+        for (const cell of sRow) {
+          if (cell !== null && cell !== undefined) {
+            totalCellCount++;
+            if (!isNaN(Number(cell)) && String(cell).trim() !== "") {
+              totalNumericCount++;
+            }
+            const str = String(cell).trim();
+            if (/^\d{4}[-/.]\d{1,2}/.test(str)) {
+              hasDatePattern = true;
+            }
+          }
+        }
+      }
+      const numericDensity = totalCellCount > 0 ? totalNumericCount / totalCellCount : 0;
+      if (numericDensity > 0.3) score += 15;
+      if (hasDatePattern) score += 10;
+    }
     return score;
   },
   deduplicateHeaders(headers) {

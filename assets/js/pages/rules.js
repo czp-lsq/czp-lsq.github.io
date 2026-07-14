@@ -376,6 +376,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   const [stepSearchKeyword, setStepSearchKeyword] = useState("");
   const [stepCategory, setStepCategory] = useState("all");
   const [debugStepId, setDebugStepId] = useState(null);
+  const [showPreviewModal, setShowPreviewModal] = useState(false);
+  const [previewStepId, setPreviewStepId] = useState(null);
   const platform = state.platforms.find((p) => p.id === currentPlatform);
   const template = state.templates[currentPlatform];
   const savedRules = state.rules[currentPlatform] || {};
@@ -2597,7 +2599,11 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                             type: "button",
                             className: "quick-tag",
                             style: { cursor: "pointer", minWidth: "32px", textAlign: "center", padding: "4px 10px", fontFamily: "var(--font-mono)", fontSize: "13px", fontWeight: 600 },
-                            onClick: () => updateStepConfig(step.id, "expr", (step.config.expr || "") + op),
+                            onClick: (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              updateStepConfig(step.id, "expr", (step.config.expr || "") + op);
+                            },
                           },
                           op.trim(),
                         )),
@@ -2621,7 +2627,11 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                             className: "quick-tag",
                             style: { cursor: "pointer", maxWidth: "140px", overflow: "hidden", textOverflow: "ellipsis", whiteSpace: "nowrap" },
                             title: h,
-                            onClick: () => updateStepConfig(step.id, "expr", (step.config.expr || "") + `{${h}}`),
+                            onClick: (e) => {
+                              e.preventDefault();
+                              e.stopPropagation();
+                              updateStepConfig(step.id, "expr", (step.config.expr || "") + `{${h}}`);
+                            },
                           },
                           h,
                         )),
@@ -4594,6 +4604,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             : [
                 { value: "keepIntersection", label: "保留与对比表的交集行" },
                 { value: "keepDifference", label: "保留不在对比表的差集行" },
+                { value: "mergeWithFilter", label: "合并两表并筛选" },
                 { value: "removeDuplicates", label: "当前数据多列去重" },
                 { value: "keepDuplicates", label: "当前数据保留重复行" },
               ];
@@ -4605,7 +4616,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             ? step.config.compareColumns
             : (step.config.compareKey ? [step.config.compareKey] : [""]);
           const currentMode = step.config.mode || (isIntersect ? "keepExist" : "keepIntersection");
-          const needCompareTable = currentMode === "keepIntersection" || currentMode === "keepDifference" || currentMode === "keepExist" || currentMode === "keepNotExist";
+          const needCompareTable = currentMode === "keepIntersection" || currentMode === "keepDifference" || currentMode === "keepExist" || currentMode === "keepNotExist" || currentMode === "mergeWithFilter";
           const allTableOptions = [{ value: "", label: "请选择数据表" }, ...allTables.map((t) => ({ value: t.id, label: t.name }))];
           return /*#__PURE__*/ React.createElement(
             "div",
@@ -4793,7 +4804,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               /*#__PURE__*/ React.createElement(Icons.Info, null),
               isIntersect
                 ? " 将当前表与另一表按指定列进行对比，筛选出匹配或不匹配的行（已合并到交叉匹配能力）"
-                : " 按多列与另一表取交集、差集，或对当前数据进行多列去重/保留重复",
+                : " 按多列与另一表取交集、差集、合并筛选，或对当前数据进行多列去重/保留重复",
             ),
           );
         })();
@@ -8194,42 +8205,18 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                 "div",
                                 { className: "step-debug-panel" },
                                 /*#__PURE__*/ React.createElement(
-                                  "div",
+                                  "button",
                                   {
-                                    className: "step-debug-title",
+                                    className: "btn btn-text btn-sm",
                                     onClick: () => {
-                                      setDebugStepId(
-                                        debugStepId === step.id
-                                          ? null
-                                          : step.id,
-                                      );
+                                      setPreviewStepId(step.id);
+                                      setShowPreviewModal(true);
                                     },
+                                    style: { fontSize: "12px", padding: "4px 12px", gap: "6px" },
                                   },
-                                  /*#__PURE__*/ React.createElement(
-                                    "span",
-                                    null,
-                                    "\uD83D\uDD0D",
-                                  ),
-                                  " \u8C03\u8BD5\u9884\u89C8",
-                                  /*#__PURE__*/ React.createElement(
-                                    "span",
-                                    {
-                                      className: `step-debug-toggle ${debugStepId === step.id ? "open" : ""}`,
-                                    },
-                                    /*#__PURE__*/ React.createElement(
-                                      Icons.ChevronDown,
-                                      null,
-                                    ),
-                                  ),
+                                  /*#__PURE__*/ React.createElement(Icons.Eye, { size: 14 }),
+                                  "查看数据预览",
                                 ),
-                                debugStepId === step.id &&
-                                  /*#__PURE__*/ React.createElement(
-                                    "div",
-                                    {
-                                      className: "step-debug-content",
-                                    },
-                                    renderStepDebug(step, idx),
-                                  ),
                               ),
                             ),
                         );
@@ -8374,6 +8361,70 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
         onConfirm: confirmDialog.onConfirm,
         onCancel: confirmDialog.onCancel,
       }),
+    showPreviewModal && (() => {
+      const step = currentRule?.steps?.find((s) => s.id === previewStepId);
+      const stepIdx = currentRule?.steps?.findIndex((s) => s.id === previewStepId);
+      if (!step) return null;
+      return /*#__PURE__*/ React.createElement(
+        DraggableModal,
+        {
+          title: `步骤预览 - ${getStepTypeInfo(step.type).name} (第${stepIdx + 1}步)`,
+          onClose: () => { setShowPreviewModal(false); setPreviewStepId(null); },
+          width: 900,
+          height: 600,
+        },
+        /*#__PURE__*/ React.createElement(
+          "div",
+          { style: { padding: "16px" } },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { style: { marginBottom: "16px", padding: "12px", background: "#f8fafc", borderRadius: "8px", border: "1px solid #e2e8f0" } },
+            /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", fontWeight: 600, color: "#64748b", marginBottom: "6px", display: "flex", alignItems: "center", gap: "4px" } },
+              /*#__PURE__*/ React.createElement(Icons.Eye, { size: 12 }),
+              "配置预览",
+            ),
+            (() => {
+              const cfg = step.config || {};
+              const previews = [];
+              switch (step.type) {
+                case "source":
+                  previews.push({ text: cfg.tables && cfg.tables.length > 0 ? `已选择 ${cfg.tables.length} 个数据表` : "请至少选择一个数据表", warn: !cfg.tables?.length });
+                  break;
+                case "filter":
+                  previews.push({ text: cfg.column && cfg.op ? `筛选条件: ${cfg.column} ${cfg.op} ${cfg.value != null ? String(cfg.value) : ""}` : "请配置筛选条件", warn: !cfg.column });
+                  break;
+                case "virtual":
+                  previews.push({ text: cfg.source && cfg.target ? `从「${cfg.source}」提取 → 生成「${cfg.target}」` : "请配置源字段和目标字段", warn: !cfg.source });
+                  break;
+                case "join":
+                  previews.push({ text: cfg.key && cfg.fk ? `关联: ${cfg.key} = ${cfg.fk}` : "请配置关联键", warn: !cfg.key });
+                  break;
+                case "aggregate":
+                  previews.push({ text: cfg.column ? `聚合: ${cfg.func || "sum"}(${cfg.column})` : "请选择聚合列", warn: !cfg.column });
+                  break;
+                case "formula":
+                  previews.push({ text: cfg.expr ? `公式: ${cfg.expr.replace(/{([^}]+)}/g, "【$1】")}` : "请输入计算公式", warn: !cfg.expr });
+                  break;
+                default:
+                  previews.push({ text: getStepTypeInfo(step.type).description });
+              }
+              return previews.map((p, pi) => /*#__PURE__*/ React.createElement(
+                "div",
+                { key: pi, style: { fontSize: "12px", color: p.warn ? "#d97706" : "#334155", marginBottom: "3px" } },
+                p.text,
+              ));
+            })(),
+          ),
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { style: { fontSize: "11px", fontWeight: 600, color: "#64748b", marginBottom: "8px", display: "flex", alignItems: "center", gap: "4px" } },
+            /*#__PURE__*/ React.createElement(Icons.Database, { size: 12 }),
+            "数据预览",
+          ),
+          renderStepDebug(step, stepIdx),
+        ),
+      );
+    })(),
     showAddStepModal &&
       /*#__PURE__*/ React.createElement(
         Modal,

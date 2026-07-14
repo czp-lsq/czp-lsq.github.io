@@ -78,49 +78,61 @@ const CalcEngine = {
       if (day !== null && (day < 1 || day > 31)) return false;
       return true;
     };
+    const dateCandidates = [];
+    const monthCounts = {};
     for (const table of tables) {
       if (table.rows && table.rows.length > 0) {
-        for (const row of table.rows.slice(0, 50)) {
+        for (const row of table.rows) {
           for (const val of Object.values(row)) {
+            let year = null, month = null, day = null;
             if (val instanceof Date && !isNaN(val)) {
-              const year = val.getFullYear();
-              const month = val.getMonth() + 1;
-              const day = val.getDate();
-              if (isValidDate(year, month, day)) {
-                return { year, month, day };
+              year = val.getFullYear();
+              month = val.getMonth() + 1;
+              day = val.getDate();
+            } else {
+              const str = String(val || "").trim();
+              if (str.length < 6 || str.length > 30) continue;
+              const datePatterns = [
+                { regex: /(\d{4})[\-_年\.](\d{1,2})[\-_月\.](\d{1,2})[\-_日]?/, hasDay: true },
+                { regex: /(\d{4})[\-_年\.](\d{1,2})[\-_月]?/, hasDay: false },
+                { regex: /(\d{4})[\-_\/\.](\d{1,2})[\-_\/\.](\d{1,2})/, hasDay: true },
+                { regex: /^(\d{4})(\d{2})(\d{2})$/, hasDay: true },
+                { regex: /(\d{2})[\-_年\.](\d{1,2})[\-_月\.](\d{1,2})[\-_日]?/, hasDay: true, shortYear: true },
+                { regex: /(\d{2})[\-_年\.](\d{1,2})[\-_月]?/, hasDay: false, shortYear: true },
+              ];
+              for (const p of datePatterns) {
+                const match = str.match(p.regex);
+                if (match) {
+                  year = parseInt(match[1], 10);
+                  if (p.shortYear) {
+                    year += year < 50 ? 2000 : 1900;
+                  }
+                  month = parseInt(match[2], 10);
+                  day = p.hasDay && match[3] ? parseInt(match[3], 10) : null;
+                  break;
+                }
               }
             }
-            const str = String(val || "").trim();
-            if (str.length < 6 || str.length > 30) continue;
-            const datePatterns = [
-              { regex: /(\d{4})[\-_年\.](\d{1,2})[\-_月\.](\d{1,2})[\-_日]?/, hasDay: true },
-              { regex: /(\d{4})[\-_年\.](\d{1,2})[\-_月]?/, hasDay: false },
-              { regex: /(\d{4})[\-_\/\.](\d{1,2})[\-_\/\.](\d{1,2})/, hasDay: true },
-              { regex: /^(\d{4})(\d{2})(\d{2})$/, hasDay: true },
-              { regex: /(\d{2})[\-_年\.](\d{1,2})[\-_月\.](\d{1,2})[\-_日]?/, hasDay: true, shortYear: true },
-              { regex: /(\d{2})[\-_年\.](\d{1,2})[\-_月]?/, hasDay: false, shortYear: true },
-            ];
-            for (const p of datePatterns) {
-              const match = str.match(p.regex);
-              if (match) {
-                let year = parseInt(match[1], 10);
-                if (p.shortYear) {
-                  year += year < 50 ? 2000 : 1900;
-                }
-                const month = parseInt(match[2], 10);
-                const day = p.hasDay && match[3]
-                  ? parseInt(match[3], 10)
-                  : null;
-                if (isValidDate(year, month, day)) {
-                  return { year, month, day };
-                }
-              }
+            if (year !== null && isValidDate(year, month, day)) {
+              dateCandidates.push({ year, month, day });
+              monthCounts[month] = (monthCounts[month] || 0) + 1;
             }
           }
         }
       }
     }
-    return null;
+    if (dateCandidates.length === 0) return null;
+    let mostFreqMonth = null;
+    let maxCount = 0;
+    for (const [m, cnt] of Object.entries(monthCounts)) {
+      if (cnt > maxCount) {
+        maxCount = cnt;
+        mostFreqMonth = parseInt(m, 10);
+      }
+    }
+    const finalYear = dateCandidates[0].year;
+    const finalDay = dateCandidates[0].day;
+    return { year: finalYear, month: mostFreqMonth || dateCandidates[0].month, day: finalDay };
   },
   exec(rule, tables, context = {}) {
     if (!rule || !rule.steps || rule.steps.length === 0) return null;
@@ -1754,6 +1766,31 @@ const CalcEngine = {
                 countMap[key] = (countMap[key] || 0) + 1;
               });
               data = data.filter((row) => countMap[makeKey(row, columns)] > 1);
+            } else if (mode === "mergeWithFilter") {
+              const cmpTable = tables.find((t) => t.id === cfg.table);
+              let cmpRows = cmpTable ? cmpTable.rows : [];
+              if (cfg.filterColumn && cmpRows.length > 0) {
+                const filterCol = cfg.filterColumn;
+                const filterOp = cfg.filterOp || "==";
+                const filterVal = cfg.filterValue;
+                cmpRows = cmpRows.filter((row) => {
+                  const cellVal = String(row[filterCol] ?? "");
+                  switch (filterOp) {
+                    case "==": return cellVal === String(filterVal);
+                    case "!=": return cellVal !== String(filterVal);
+                    case ">": return Number(cellVal) > Number(filterVal);
+                    case "<": return Number(cellVal) < Number(filterVal);
+                    case ">=": return Number(cellVal) >= Number(filterVal);
+                    case "<=": return Number(cellVal) <= Number(filterVal);
+                    case "contains": return cellVal.includes(String(filterVal));
+                    case "notContains": return !cellVal.includes(String(filterVal));
+                    case "isEmpty": return cellVal.trim() === "";
+                    case "notEmpty": return cellVal.trim() !== "";
+                    default: return true;
+                  }
+                });
+              }
+              data = [...data, ...cmpRows];
             } else {
               const cmpTable = tables.find((t) => t.id === cfg.table);
               let cmpRows = cmpTable ? cmpTable.rows : [];
