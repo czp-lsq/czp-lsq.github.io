@@ -389,6 +389,53 @@ const CalcEngine = {
             }
             break;
           }
+          // 辅助函数：中文数字转阿拉伯数字
+          const _chineseToNumber = (() => {
+            const map = {
+              "零": 0, "〇": 0, "O": 0, "o": 0,
+              "一": 1, "壹": 1, "幺": 1,
+              "二": 2, "贰": 2, "两": 2,
+              "三": 3, "叁": 3,
+              "四": 4, "肆": 4,
+              "五": 5, "伍": 5,
+              "六": 6, "陆": 6,
+              "七": 7, "柒": 7,
+              "八": 8, "捌": 8,
+              "九": 9, "玖": 9,
+              "十": 10, "拾": 10,
+              "百": 100, "佰": 100,
+              "千": 1000, "仟": 1000,
+              "万": 10000, "萬": 10000,
+              "亿": 100000000, "億": 100000000,
+            };
+            return (text) => {
+              if (!text) return NaN;
+              let num = 0, temp = 0, result = 0;
+              let valid = false;
+              for (const char of String(text)) {
+                const n = map[char];
+                if (n !== undefined) {
+                  valid = true;
+                  if (n >= 100000000) {
+                    result = (result + temp) * n;
+                    temp = 0;
+                  } else if (n >= 10000) {
+                    result = (result + temp) * n;
+                    temp = 0;
+                  } else if (n >= 1000) {
+                    temp = (temp || 1) * n;
+                  } else if (n >= 100) {
+                    temp = (temp || 1) * n;
+                  } else if (n >= 10) {
+                    temp = (temp || 1) * n;
+                  } else {
+                    temp = temp + n;
+                  }
+                }
+              }
+              return valid ? result + temp : NaN;
+            };
+          })();
           case "virtual": {
             if (!step.config.source || !step.config.target) break;
             data = data.map((row) => {
@@ -425,6 +472,64 @@ const CalcEngine = {
                     }
                   }
                   result = qty;
+                  break;
+                }
+                case "parsePieces": {
+                  // 条数识别：从商品规格中识别每包的条数
+                  const s = String(src || "").trim();
+                  if (!s) { result = 1; break; }
+                  // 模式1: X条装（优先级最高）
+                  const pattern1 = /(\d+|[一二三四五六七八九十]+)\s*条装/;
+                  const m1 = s.match(pattern1);
+                  if (m1) {
+                    const num = Number(m1[1]) || _chineseToNumber(m1[1]);
+                    result = num || 1;
+                    break;
+                  }
+                  // 模式2: X条（数字+条 或 中文数字+条）
+                  const pattern2 = /(\d+)\s*条/;
+                  const m2 = s.match(pattern2);
+                  if (m2) {
+                    result = Number(m2[1]) || 1;
+                    break;
+                  }
+                  // 模式2b: 中文数字+条
+                  const pattern2b = /([一二三四五六七八九十]+)\s*条/;
+                  const m2b = s.match(pattern2b);
+                  if (m2b) {
+                    result = _chineseToNumber(m2b[1]) || 1;
+                    break;
+                  }
+                  // 模式3: X色各一（如 6色各一、三色各一、5色各一条）
+                  const pattern3 = /(\d+|[一二三四五六七八九十]+)\s*色各一/;
+                  const m3 = s.match(pattern3);
+                  if (m3) {
+                    const num = Number(m3[1]) || _chineseToNumber(m3[1]);
+                    result = num || 1;
+                    break;
+                  }
+                  // 模式4: 加号分隔（条数 = 加号数量 + 1）
+                  const plusCount = (s.match(/\+/g) || []).length;
+                  if (plusCount > 0) {
+                    result = plusCount + 1;
+                    break;
+                  }
+                  // 模式5: 颜色词模式（兜底模式）
+                  const colorWords = ["黑","白","灰","粉","红","蓝","绿","黄","紫","肤","杏","咖","米","棕","橙","藏","青"];
+                  let colorCount = 0;
+                  for (const color of colorWords) {
+                    const regex = new RegExp(color, "g");
+                    const matches = s.match(regex);
+                    if (matches) {
+                      colorCount += matches.length;
+                    }
+                  }
+                  if (colorCount > 0) {
+                    result = colorCount;
+                    break;
+                  }
+                  // 默认返回1
+                  result = 1;
                   break;
                 }
                 case "splitPlus": {
@@ -795,8 +900,14 @@ const CalcEngine = {
             break;
           }
           case "formula": {
-            if (!step.config.expr || data.length === 0) break;
-            const row = data[0];
+            if (!step.config.expr) break;
+            // 如果data为空，但存在已配置字段值，创建虚拟数据行
+            let row = data[0] || {};
+            if (data.length === 0 && context.savedFieldValues) {
+              row = { ...context.savedFieldValues };
+              data = [row];
+            }
+            if (data.length === 0) break;
             let expr = step.config.expr;
             Object.keys(row).forEach((k) => {
               const v =
@@ -1967,6 +2078,12 @@ const CalcEngine = {
       };
     }
     return { value: null, data: [], stepResults };
+  },
+  // 调试预览用的步骤执行器
+  runSteps(steps, context = {}) {
+    if (!steps || steps.length === 0) return null;
+    const mockRule = { steps: steps };
+    return this.exec(mockRule, context.tables || [], context);
   },
   getPresetTemplates() {
     return {};

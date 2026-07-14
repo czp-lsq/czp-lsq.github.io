@@ -375,7 +375,27 @@ const BatchPage = ({ state, currentPlatform }) => {
         fields.forEach((field) => {
           const rule = rules[field.id];
           if (rule?.steps?.length) {
-            const val = CalcEngine.exec(rule, tables, {
+            // 批量计算时，将规则中的 sample 表替换为当前上传的文件（main）
+            const adaptedRule = {
+              ...rule,
+              steps: rule.steps.map((step) => {
+                if (step.type === "source") {
+                  const cfg = { ...step.config };
+                  // 将 sample 表 ID 替换为 main（当前上传的文件）
+                  if (cfg.table && cfg.table.startsWith("sample_")) {
+                    cfg.table = "main";
+                  }
+                  if (cfg.tables && cfg.tables.length > 0) {
+                    cfg.tables = cfg.tables.map((tid) =>
+                      tid.startsWith("sample_") ? "main" : tid
+                    );
+                  }
+                  return { ...step, config: cfg };
+                }
+                return step;
+              }),
+            };
+            const val = CalcEngine.exec(adaptedRule, tables, {
               shopName: fileItem.detectedShop?.name || "",
               fieldSemanticType: field.semanticType || "",
               fieldType: field.type || "",

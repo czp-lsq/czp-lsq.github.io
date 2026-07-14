@@ -1,5 +1,5 @@
-const APP_VERSION = "czp-1.28.1";
-const DATA_VERSION = "8.1.0";
+const APP_VERSION = "czp-1.28.2";
+const DATA_VERSION = "8.2.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
 const BUILD_TIME = (() => {
@@ -11,6 +11,24 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-1.28.2", date: "2026-07-14 18:00:00",
+    summary: "表名统一、公式优化、条数识别、批量计算修复、智能验证",
+    changes: [
+      { type: "feature", text: "新增条数识别虚拟字段规则：支持5种模式（X条装/X条/X色各一/加号分隔/颜色词），自动识别商品规格中的条数" },
+      { type: "feature", text: "新增runSteps调试预览方法：支持公式计算步骤的实时调试" },
+      { type: "feature", text: "批量计算表名自动映射：计算时将sample表自动替换为上传文件数据" },
+      { type: "feature", text: "公式计算支持空数据源：当公式只引用已配置字段时，无需数据源即可计算" },
+      { type: "optimize", text: "表名识别格式统一：单文件上传时默认使用generateTableName生成规范表名" },
+      { type: "optimize", text: "已配置字段显示顺序优化：公式编辑器中已配置字段显示在运算符之上" },
+      { type: "optimize", text: "公式输入框默认值移除：不再预填充{val}，避免用户困惑" },
+      { type: "optimize", text: "步骤验证智能化：公式/常量等纯计算步骤不再强制要求数据源" },
+    ],
+    bugfixes: [
+      { text: "修复公式计算无结果的问题：当data为空时使用savedFieldValues创建虚拟数据行" },
+      { text: "修复批量计算表名不匹配的问题：sample表ID自动映射为main" },
+      { text: "修复退款率等纯计算字段提示'缺少数据源步骤'的错误" },
+    ],
+  },
   { version: "czp-1.28.1", date: "2026-07-14 16:00:00",
     summary: "UI布局优化、填充验证修复、值规范化步骤、交互体验完善",
     changes: [

@@ -117,6 +117,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
     }
     const firstStep = rule.steps[0];
     const semanticType = field?.semanticType || "";
+    // 填充类型字段的验证
     if (
       ["shop", "year", "month", "day", "date", "text"].includes(semanticType) &&
       firstStep.type === "fill"
@@ -141,13 +142,35 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
         return { valid: true, msg: "配置完整" };
       }
     }
+    // 检查是否需要数据源步骤：公式/常量/文本等纯计算步骤不需要数据源
+    const needsDataSource = rule.steps.some((s) => {
+      const dataDependentTypes = ["source", "filter", "aggregate", "join", "group", "union", "limit", "sort", "crossMatch", "keepDuplicate", "keepUnique", "intersect", "lookup", "runningTotal", "percentOfTotal", "movingAverage", "binning", "conditionalTag", "stringExtract", "fillNA", "normalize", "valueNormalize"];
+      return dataDependentTypes.includes(s.type);
+    });
+    // 对于formula步骤，如果只引用已配置字段（不含{val}），则不需要数据源
+    const hasFormulaStep = rule.steps.some((s) => s.type === "formula");
+    if (hasFormulaStep) {
+      const formulaStep = rule.steps.find((s) => s.type === "formula");
+      const expr = formulaStep.config?.expr || "";
+      // 如果公式包含{val}或引用数据列，则需要数据源
+      const needsDataForFormula = /\{val\}/.test(expr) || (needsDataSource && !/^\s*\{[^}]+\}\s*([+\-*\/]\s*\{[^}]+\}\s*)*$/s.test(expr));
+      if (!needsDataForFormula && !needsDataSource) {
+        return { valid: true, msg: "配置完整（引用已配置字段计算）" };
+      }
+    }
+    // 常量、文本等纯值步骤不需要数据源
+    if (!needsDataSource && (rule.steps.some((s) => s.type === "constant" || s.type === "text"))) {
+      return { valid: true, msg: "配置完整（固定值）" };
+    }
     const source = rule.steps.find((s) => s.type === "source");
-    if (!source) {
+    if (!source && needsDataSource) {
       return { valid: false, msg: "缺少「数据源」步骤" };
     }
-    const hasTable = source.config.table || (source.config.tables && source.config.tables.length > 0);
-    if (!hasTable) {
-      return { valid: false, msg: "「数据源」步骤未选择数据表" };
+    if (source) {
+      const hasTable = source.config.table || (source.config.tables && source.config.tables.length > 0);
+      if (!hasTable) {
+        return { valid: false, msg: "「数据源」步骤未选择数据表" };
+      }
     }
     return { valid: true, msg: "配置完整" };
   };
@@ -1054,7 +1077,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
       virtual: { source: "", target: "", rule: "copy" },
       join: { table: "", key: "", fk: "", col: "" },
       aggregate: { column: "", func: "sum" },
-      formula: { expr: "{val}" },
+      formula: { expr: "" },
       constant: { value: 0 },
       text: { value: "" },
       distinct: { column: "" },
@@ -2373,9 +2396,9 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
           { key: "Math.exp(", name: "指数", type: "function", category: "数学函数", desc: "Math.exp(val)" },
         ];
         const allFormulaOptions = [
+          ...availFields.map(f => ({ ...f, insert: `{${f.key}}` })),
           ...formulaOperators,
           ...formulaFunctions,
-          ...availFields.map(f => ({ ...f, insert: `{${f.key}}` })),
         ];
         const formatOptions = (CalcEngine.getOutputFormats && typeof CalcEngine.getOutputFormats === "function")
           ? CalcEngine.getOutputFormats()
@@ -2562,7 +2585,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
           { value: "toString", label: "转文本", group: "类型转换" },
           { value: "trim", label: "去除空格", group: "文本处理" },
           { value: "parseQty", label: "提取数量", group: "文本处理" },
-          { value: "splitPlus", label: "按+号拆分计数", group: "文本处理" },
+        { value: "parsePieces", label: "条数识别（商品规格）", group: "文本处理" },
+        { value: "splitPlus", label: "按+号拆分计数", group: "文本处理" },
           { value: "abs", label: "绝对值", group: "数值计算" },
           { value: "round", label: "四舍五入", group: "数值计算" },
           { value: "floor", label: "向下取整", group: "数值计算" },

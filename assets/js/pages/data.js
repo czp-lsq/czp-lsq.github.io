@@ -140,8 +140,10 @@ const DataPage = ({ state, currentPlatform }) => {
     e.target.value = "";
     if (files.length === 1) {
       const file = files[0];
-      const defaultAlias = file.name.replace(/\.(xlsx|xls|csv|zip)$/i, "");
-      setAliasInput(defaultAlias);
+      // 解析文件以获取表类型信息，生成统一的表名
+      const tempResult = await ExcelUtils.parse(file);
+      const autoName = generateTableName(file.name, tempResult);
+      setAliasInput(autoName);
       setPendingFiles([file]);
       return;
     }
