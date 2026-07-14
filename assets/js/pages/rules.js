@@ -4620,6 +4620,83 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 disabled: !step.config.table,
               }),
             ),
+            step.config.table && /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "intersect-filter-section" },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "filter-header-bar" },
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "filter-header-title" },
+                  /*#__PURE__*/ React.createElement(
+                    "span",
+                    { className: "filter-header-icon" },
+                    "🔍",
+                  ),
+                  "对比表筛选条件",
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "span",
+                  { className: "filter-header-hint" },
+                  "先筛选出对比表中符合条件的行，再进行两表对比",
+                ),
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "grid-3" },
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "form-item" },
+                  /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "筛选列"),
+                  /*#__PURE__*/ React.createElement(SearchableSelect, {
+                    value: step.config.filterColumn || "",
+                    onChange: (val) => updateStepConfig(step.id, "filterColumn", val),
+                    options: [{ value: "", label: "不筛选" }, ...intersectTableHeaders.map((h) => ({ value: h, label: h }))],
+                    placeholder: "请选择列",
+                  }),
+                ),
+                step.config.filterColumn && /*#__PURE__*/ React.createElement(
+                  React.Fragment,
+                  null,
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "form-item" },
+                    /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "条件"),
+                    /*#__PURE__*/ React.createElement(SearchableSelect, {
+                      value: step.config.filterOp || "==",
+                      onChange: (val) => updateStepConfig(step.id, "filterOp", val),
+                      options: [
+                        { value: "==", label: "等于" },
+                        { value: "!=", label: "不等于" },
+                        { value: ">", label: "大于" },
+                        { value: "<", label: "小于" },
+                        { value: ">=", label: "大于等于" },
+                        { value: "<=", label: "小于等于" },
+                        { value: "contains", label: "包含" },
+                        { value: "notContains", label: "不包含" },
+                        { value: "isEmpty", label: "为空" },
+                        { value: "notEmpty", label: "不为空" },
+                      ],
+                      placeholder: "请选择条件",
+                    }),
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "form-item" },
+                    /*#__PURE__*/ React.createElement("label", { className: "form-label" }, "筛选值"),
+                    /*#__PURE__*/ React.createElement(SearchableSelect, {
+                      value: step.config.filterValue || "",
+                      onChange: (val) => updateStepConfig(step.id, "filterValue", val),
+                      options: [{ value: "", label: "请输入值" }, ...getColumnValues(step.config.filterColumn).map((v) => ({ value: v, label: v }))],
+                      placeholder: "选择或输入值",
+                      allowCreate: true,
+                      disabled: step.config.filterOp === "isEmpty" || step.config.filterOp === "notEmpty",
+                    }),
+                  ),
+                ),
+              ),
+            ),
             /*#__PURE__*/ React.createElement(
               "div",
               { className: "step-desc" },

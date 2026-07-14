@@ -1190,6 +1190,38 @@ const CalcEngine = {
               compareRows = cmpTable.rows;
             }
             if (!compareRows || !step.config.key || !step.config.compareKey) break;
+            if (step.config.filterColumn) {
+              const filterCol = step.config.filterColumn;
+              const filterOp = step.config.filterOp || "==";
+              const filterVal = step.config.filterValue;
+              compareRows = compareRows.filter((row) => {
+                const cellVal = String(row[filterCol] ?? "");
+                switch (filterOp) {
+                  case "==":
+                    return cellVal === String(filterVal);
+                  case "!=":
+                    return cellVal !== String(filterVal);
+                  case ">":
+                    return Number(cellVal) > Number(filterVal);
+                  case "<":
+                    return Number(cellVal) < Number(filterVal);
+                  case ">=":
+                    return Number(cellVal) >= Number(filterVal);
+                  case "<=":
+                    return Number(cellVal) <= Number(filterVal);
+                  case "contains":
+                    return cellVal.includes(String(filterVal));
+                  case "notContains":
+                    return !cellVal.includes(String(filterVal));
+                  case "isEmpty":
+                    return cellVal.trim() === "";
+                  case "notEmpty":
+                    return cellVal.trim() !== "";
+                  default:
+                    return true;
+                }
+              });
+            }
             const compareSet = new Set(
               compareRows.map((r) => String(r[step.config.compareKey] ?? ""))
             );
