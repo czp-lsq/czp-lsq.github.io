@@ -4688,7 +4688,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                     /*#__PURE__*/ React.createElement(SearchableSelect, {
                       value: step.config.filterValue || "",
                       onChange: (val) => updateStepConfig(step.id, "filterValue", val),
-                      options: [{ value: "", label: "请输入值" }, ...getColumnValues(step.config.filterColumn).map((v) => ({ value: v, label: v }))],
+                      options: [{ value: "", label: "请输入值" }, ...getColumnValues(step.config.filterColumn, step.config.table).map((v) => ({ value: v, label: v }))],
                       placeholder: "选择或输入值",
                       allowCreate: true,
                       disabled: step.config.filterOp === "isEmpty" || step.config.filterOp === "notEmpty",
