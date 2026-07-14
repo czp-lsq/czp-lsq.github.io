@@ -2292,7 +2292,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
       case "formula":
         const getAvailableFields = () => {
           const avail = [];
-          avail.push({ key: "val", name: "上一步结果", type: "result" });
+          avail.push({ key: "val", name: "上一步结果", type: "result", category: "变量" });
           const previewSteps = previewResult?.stepResults;
           if (Array.isArray(previewSteps) && previewSteps.length > 0) {
             const lastResult = previewSteps[previewSteps.length - 1];
@@ -2300,12 +2300,11 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               const sampleRow = lastResult.preview[0];
               Object.keys(sampleRow).forEach((k) => {
                 if (k !== "val" && k !== "_groupCount") {
-                  avail.push({ key: k, name: k, type: "field" });
+                  avail.push({ key: k, name: k, type: "field", category: "字段" });
                 }
               });
             }
           }
-          // 始终展示已配置字段（不依赖预览结果）
           if (savedRules && typeof savedRules === "object") {
             Object.keys(savedRules).forEach((fieldId) => {
               const field = fields.find((f) => f.id === fieldId);
@@ -2316,22 +2315,48 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               ) {
                 const chipName = field.name + " (已配置)";
                 if (!avail.some((a) => a.key === field.name)) {
-                  avail.push({ key: field.name, name: chipName, type: "computed" });
+                  avail.push({ key: field.name, name: chipName, type: "computed", category: "已配置字段" });
                 }
               }
             });
           }
-          // 加入当前源表中的字段，方便用户直接引用
           if (Array.isArray(sourceTableHeaders) && sourceTableHeaders.length > 0) {
             sourceTableHeaders.forEach((h) => {
               if (!avail.some((a) => a.key === h)) {
-                avail.push({ key: h, name: h + " (源表字段)", type: "field" });
+                avail.push({ key: h, name: h + " (源表字段)", type: "field", category: "字段" });
               }
             });
           }
           return avail;
         };
         const availFields = getAvailableFields();
+        const formulaOperators = [
+          { key: "+", name: "加法", type: "operator", category: "运算符", desc: "加法运算" },
+          { key: "-", name: "减法", type: "operator", category: "运算符", desc: "减法运算" },
+          { key: "*", name: "乘法", type: "operator", category: "运算符", desc: "乘法运算" },
+          { key: "/", name: "除法", type: "operator", category: "运算符", desc: "除法运算" },
+          { key: "%", name: "取余", type: "operator", category: "运算符", desc: "取余运算" },
+          { key: "(", name: "左括号", type: "operator", category: "运算符", desc: "左括号" },
+          { key: ")", name: "右括号", type: "operator", category: "运算符", desc: "右括号" },
+          { key: " ? : ", name: "三元判断", type: "operator", category: "运算符", desc: "条件 ? 真值 : 假值" },
+        ];
+        const formulaFunctions = [
+          { key: "Math.abs(", name: "绝对值", type: "function", category: "数学函数", desc: "Math.abs(val)" },
+          { key: "Math.round(", name: "四舍五入", type: "function", category: "数学函数", desc: "Math.round(val)" },
+          { key: "Math.floor(", name: "向下取整", type: "function", category: "数学函数", desc: "Math.floor(val)" },
+          { key: "Math.ceil(", name: "向上取整", type: "function", category: "数学函数", desc: "Math.ceil(val)" },
+          { key: "Math.max(", name: "最大值", type: "function", category: "数学函数", desc: "Math.max(a, b, ...)" },
+          { key: "Math.min(", name: "最小值", type: "function", category: "数学函数", desc: "Math.min(a, b, ...)" },
+          { key: "Math.pow(", name: "幂运算", type: "function", category: "数学函数", desc: "Math.pow(base, exp)" },
+          { key: "Math.sqrt(", name: "平方根", type: "function", category: "数学函数", desc: "Math.sqrt(val)" },
+          { key: "Math.log(", name: "自然对数", type: "function", category: "数学函数", desc: "Math.log(val)" },
+          { key: "Math.exp(", name: "指数", type: "function", category: "数学函数", desc: "Math.exp(val)" },
+        ];
+        const allFormulaOptions = [
+          ...formulaOperators,
+          ...formulaFunctions,
+          ...availFields.map(f => ({ ...f, insert: `{${f.key}}` })),
+        ];
         const formatOptions = (CalcEngine.getOutputFormats && typeof CalcEngine.getOutputFormats === "function")
           ? CalcEngine.getOutputFormats()
           : [
@@ -2346,6 +2371,19 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
           const expr = step.config.expr || "";
           updateStepConfig(step.id, "expr", expr + insertText);
         };
+        const handleOptionSelect = (opt) => {
+          if (opt.insert) {
+            insertAtCursor(opt.insert);
+          } else {
+            insertAtCursor(opt.key);
+          }
+        };
+        const groupedOptions = allFormulaOptions.reduce((acc, opt) => {
+          const cat = opt.category || "其他";
+          if (!acc[cat]) acc[cat] = [];
+          acc[cat].push(opt);
+          return acc;
+        }, {});
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
@@ -2372,7 +2410,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 /*#__PURE__*/ React.createElement(
                   "span",
                   { className: "form-label-hint" },
-                  "支持数学运算和函数"
+                  "支持下拉选择或手动输入"
                 )
               ),
               /*#__PURE__*/ React.createElement(
@@ -2386,6 +2424,42 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   placeholder: "{val} * 0.7 + {销售额} * 0.3",
                   style: { fontFamily: "var(--font-mono)", minHeight: "80px" },
                 }),
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "formula-dropdown-panel" },
+                Object.keys(groupedOptions).map((cat) => /*#__PURE__*/ React.createElement(
+                  "div",
+                  { key: cat, className: "formula-dropdown-group" },
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "formula-dropdown-group-title" },
+                    cat
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "formula-dropdown-options" },
+                    groupedOptions[cat].map((opt, i) => /*#__PURE__*/ React.createElement(
+                      "button",
+                      {
+                        key: i,
+                        className: `formula-dropdown-option ${opt.type}`,
+                        onClick: () => handleOptionSelect(opt),
+                        title: opt.desc || opt.name,
+                      },
+                      /*#__PURE__*/ React.createElement(
+                        "span",
+                        { className: "formula-option-key" },
+                        opt.key
+                      ),
+                      /*#__PURE__*/ React.createElement(
+                        "span",
+                        { className: "formula-option-name" },
+                        opt.name
+                      ),
+                    ))
+                  )
+                ))
               )
             ),
             /*#__PURE__*/ React.createElement(
@@ -2407,73 +2481,6 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 options: formatOptions,
                 placeholder: "请选择输出格式",
               })
-            ),
-            availFields.length > 1 && /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "可用字段",
-                /*#__PURE__*/ React.createElement(
-                  "span",
-                  { className: "form-label-hint" },
-                  "点击插入到公式"
-                )
-              ),
-              /*#__PURE__*/ React.createElement(
-                "div",
-                { className: "formula-field-list" },
-                availFields.map((f, i) =>
-                  /*#__PURE__*/ React.createElement(
-                    "span",
-                    {
-                      key: i,
-                      className: `formula-field-chip ${f.type}`,
-                      onClick: () => {
-                        const insert = `{${f.key}}`;
-                        insertAtCursor(insert);
-                      },
-                      title: "点击插入公式",
-                    },
-                    f.name,
-                  ),
-                ),
-              )
-            )
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "config-section collapsible" },
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "config-section-header" },
-              /*#__PURE__*/ React.createElement(
-                "span",
-                { className: "config-section-title" },
-                /*#__PURE__*/ React.createElement(Icons.Function, null),
-                " 常用函数（点击插入）"
-              )
-            ),
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "formula-hints" },
-              CalcEngine.getFormulaHints().slice(0, 10).map((hint, i) =>
-                /*#__PURE__*/ React.createElement(
-                  "div",
-                  {
-                    key: i,
-                    className: "formula-hint-item",
-                    onClick: () => insertAtCursor(hint.key),
-                  },
-                  /*#__PURE__*/ React.createElement(
-                    "span",
-                    { className: "formula-hint-key" },
-                    hint.key,
-                  ),
-                  /*#__PURE__*/ React.createElement("span", null, hint.desc),
-                ),
-              ),
             )
           ),
           /*#__PURE__*/ React.createElement(
