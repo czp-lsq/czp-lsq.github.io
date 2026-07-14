@@ -1,5 +1,5 @@
-const APP_VERSION = "czp-1.30.0";
-const DATA_VERSION = "8.5.0";
+const APP_VERSION = "czp-1.30.1";
+const DATA_VERSION = "8.5.1";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
 const BUILD_TIME = (() => {
@@ -11,6 +11,21 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-1.30.1", date: "2026-07-15 20:00:00",
+    summary: "修复页面语法错误、表识别名称优化、特别致谢配色重构",
+    changes: [
+      { type: "feature", text: "表识别名称全面重构：统一格式为「关键词+月份+明细」（如账务2月明细、订单6月明细）" },
+      { type: "feature", text: "月份智能识别：优先从表数据中的日期/时间/月份列提取月份，其次从文件名提取" },
+      { type: "feature", text: "关键词智能分析：新增extractKeywordFromHeaders函数，从表头列名自动分析识别内容类型（订单/退款/推广/账务/成本等）" },
+      { type: "feature", text: "特别致谢模块配色重构：采用深蓝藏青(#1a2332)+淡金(#c9a96e)配色方案，更专业和谐" },
+      { type: "feature", text: "字体层次区分：姓名28px粗体/标签12px大写金色/正文14px正常字重/署名12px斜体金色" },
+      { type: "optimize", text: "去除渐变色背景，改用纯色+细边框设计，视觉更稳重专业" },
+    ],
+    bugfixes: [
+      { text: "修复rules.js中文引号导致SyntaxError（成本表款号列名提示中的中文引号破坏字符串）" },
+      { text: "修复rules.js中React.createElement调用onClick参数位置错误（在props对象外导致括号不匹配）" },
+    ],
+  },
   { version: "czp-1.30.0", date: "2026-07-15 18:00:00",
     summary: "商品规格智能识别模型、尺码识别、成本查找、全局表自动匹配、智能步骤推荐",
     changes: [

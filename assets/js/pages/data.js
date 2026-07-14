@@ -93,8 +93,9 @@ const DataPage = ({ state, currentPlatform }) => {
       const [, year, month, day] = fullMatch;
       return {
         date: `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`,
-        monthLabel: `${Number(month)}月份`,
-        yearMonthLabel: `${year}-${Number(month)}月份`,
+        month: Number(month),
+        monthLabel: `${Number(month)}月`,
+        yearMonthLabel: `${year}-${Number(month)}月`,
       };
     }
     const yearMonthMatch = fileName.match(/(\d{4})[-_.年](\d{1,2})/);
@@ -102,26 +103,99 @@ const DataPage = ({ state, currentPlatform }) => {
       const [, year, month] = yearMonthMatch;
       return {
         date: `${year}-${month.padStart(2, "0")}-01`,
-        monthLabel: `${Number(month)}月份`,
-        yearMonthLabel: `${year}-${Number(month)}月份`,
+        month: Number(month),
+        monthLabel: `${Number(month)}月`,
+        yearMonthLabel: `${year}-${Number(month)}月`,
       };
     }
-    const cnMonthMatch = fileName.match(/(\d{1,2})月份/);
+    const cnMonthMatch = fileName.match(/(\d{1,2})月份?/);
     if (cnMonthMatch) {
       const m = Number(cnMonthMatch[1]);
       const yearMatch = fileName.match(/(\d{4})/);
       const year = yearMatch ? Number(yearMatch[1]) : new Date().getFullYear();
       return {
         date: `${year}-${String(m).padStart(2, "0")}-01`,
-        monthLabel: `${m}月份`,
-        yearMonthLabel: `${year}-${m}月份`,
+        month: m,
+        monthLabel: `${m}月`,
+        yearMonthLabel: `${year}-${m}月`,
       };
     }
     return null;
   };
 
-  // 提取表主要类型（前两个字）
-  const extractTableKeyword = (fileName) => {
+  // 从数据中提取月份（优先从日期/时间列）
+  const extractMonthFromData = (fileData) => {
+    const sheets = fileData?.sheets || {};
+    const sheetNames = Object.keys(sheets);
+    if (sheetNames.length === 0) return null;
+    const firstSheet = sheets[sheetNames[0]];
+    const rows = firstSheet?.rows || [];
+    const headers = firstSheet?.headers || [];
+    if (rows.length === 0) return null;
+
+    // 查找日期/时间/月份相关列
+    const dateColPatterns = [
+      /日期/, /时间/, /创建时间/, /下单时间/, /订单时间/, /成交时间/,
+      /月份/, /周期/, /数据周期/, /月份/, /年月/
+    ];
+    let dateColIdx = -1;
+    for (let i = 0; i < headers.length; i++) {
+      const h = String(headers[i] || "");
+      if (dateColPatterns.some((p) => p.test(h))) {
+        dateColIdx = i;
+        break;
+      }
+    }
+    if (dateColIdx >= 0) {
+      const firstVal = String(rows[0][dateColIdx] || "");
+      // 尝试提取月份
+      const m1 = firstVal.match(/(\d{4})[-_/年]?(\d{1,2})[-_/]?\d{0,2}/);
+      if (m1) return Number(m1[2]);
+      const m2 = firstVal.match(/(\d{1,2})月/);
+      if (m2) return Number(m2[1]);
+      // 尝试解析日期字符串
+      const d = new Date(firstVal);
+      if (!isNaN(d.getTime())) {
+        return d.getMonth() + 1;
+      }
+    }
+    return null;
+  };
+
+  // 从表头分析提取关键词
+  const extractKeywordFromHeaders = (fileData) => {
+    const sheets = fileData?.sheets || {};
+    const sheetNames = Object.keys(sheets);
+    if (sheetNames.length === 0) return null;
+    const firstSheet = sheets[sheetNames[0]];
+    const headers = (firstSheet?.headers || []).map((h) => String(h || "").toLowerCase());
+    const headerText = headers.join(" ");
+
+    // 按优先级匹配
+    const keywordMap = [
+      { keywords: ["订单号", "订单状态", "订单编号", "订单时间", "成交时间"], result: "订单" },
+      { keywords: ["退款", "售后", "退货", "退款金额", "退款状态"], result: "退款" },
+      { keywords: ["推广", "广告", "花费", "投放", "曝光", "点击", "推广费"], result: "推广" },
+      { keywords: ["账单", "账务", "结算", "账单金额", "应结金额", "到账"], result: "账务" },
+      { keywords: ["成本", "费用", "支出", "成本价", "单价"], result: "成本" },
+      { keywords: ["商品", "sku", "商品id", "商品规格", "spu"], result: "商品" },
+      { keywords: ["利润", "毛利", "净利", "利润率", "收益"], result: "利润" },
+      { keywords: ["资金", "流水", "收支", "打款", "提现"], result: "资金" },
+    ];
+    for (const item of keywordMap) {
+      if (item.keywords.some((k) => headers.some((h) => h.includes(k)))) {
+        return item.result;
+      }
+    }
+    return null;
+  };
+
+  // 提取表主要类型
+  const extractTableKeyword = (fileName, fileData) => {
+    // 优先从表头分析
+    const fromHeaders = extractKeywordFromHeaders(fileData);
+    if (fromHeaders) return fromHeaders;
+
     const cleanName = fileName.replace(/\.[^.]+$/, "").trim();
     const detailMatch = cleanName.match(/^([^\s_\-\.]+?)(明细|详情|清单|统计|报表|记录|流水)/);
     if (detailMatch) {
@@ -139,24 +213,24 @@ const DataPage = ({ state, currentPlatform }) => {
   };
 
   const generateTableName = (fileName, fileData) => {
-    const tableType = detectTableType(fileName, fileData);
     const dateInfo = extractDateFromFileName(fileName);
-    const keyword = extractTableKeyword(fileName);
-    const baseName = fileName.replace(/\.[^.]+$/, "").replace(/[\s_\-\.]+/g, "");
-    let nameParts = [];
+    const keyword = extractTableKeyword(fileName, fileData);
+    // 优先从数据中提取月份，其次从文件名
+    const monthFromData = extractMonthFromData(fileData);
+    const month = monthFromData || (dateInfo ? dateInfo.month : null);
 
-    // 核心格式：XX明细 - X月份
-    let mainPart = keyword;
-    if (dateInfo) {
-      mainPart = `${keyword} - ${dateInfo.monthLabel}`;
+    // 统一格式：关键词 + 月份 + 明细
+    // 如: 账务2月明细, 订单6月明细, 推广7月明细
+    if (keyword && month) {
+      return `${keyword}${month}月明细`;
     }
-    nameParts.push(tableType.icon + " " + mainPart);
-
-    if (nameParts.length === 0) {
-      nameParts.push(baseName.substring(0, 20));
+    if (keyword) {
+      return `${keyword}明细`;
     }
-
-    return nameParts.join(" - ");
+    if (month) {
+      return `${month}月明细`;
+    }
+    return fileName.replace(/\.[^.]+$/, "").substring(0, 20) + "明细";
   };
   const [aliasInput, setAliasInput] = useState("");
   const [pendingFiles, setPendingFiles] = useState(null);

@@ -3114,7 +3114,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 "label",
                 { className: "form-label" },
                 "成本表款号列名",
-                /*#__PURE__*/ React.createElement("span", { className: "form-label-hint" }, "成本表中的款号列，默认"款号"")
+                /*#__PURE__*/ React.createElement("span", { className: "form-label-hint" }, "成本表中的款号列，默认值为 款号")
               ),
               /*#__PURE__*/ React.createElement("input", {
                 type: "text",
@@ -3200,10 +3200,12 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               }),
               autoMatchedExt && !step.config.table && /*#__PURE__*/ React.createElement(
                 "div",
-                { style: { marginTop: "8px", padding: "8px 12px", background: "var(--color-primary-50)", borderRadius: "var(--radius-md)", fontSize: "12px", color: "var(--color-primary)", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" },
-                onClick: () => {
-                  updateStepConfig(step.id, "table", autoMatchedExt.id);
-                  updateStepConfig(step.id, "externalId", autoMatchedExt.externalId || "");
+                {
+                  style: { marginTop: "8px", padding: "8px 12px", background: "var(--color-primary-50)", borderRadius: "var(--radius-md)", fontSize: "12px", color: "var(--color-primary)", display: "flex", alignItems: "center", gap: "6px", cursor: "pointer" },
+                  onClick: () => {
+                    updateStepConfig(step.id, "table", autoMatchedExt.id);
+                    updateStepConfig(step.id, "externalId", autoMatchedExt.externalId || "");
+                  },
                 },
                 /*#__PURE__*/ React.createElement(Icons.Lightbulb, { size: 14 }),
                 `检测到店铺"${shopName}"匹配全局表"${autoMatchedExt.name}"，点击自动关联`,
