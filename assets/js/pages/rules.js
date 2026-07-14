@@ -1551,11 +1551,19 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
         const table = allTables.find((t) => t.id === sourceTableId);
         table?.headers?.forEach((h) => allHeaders.add(h));
       }
-      // 添加前面虚拟字段步骤生成的列，使虚拟字段可参与后续计算
-      const virtualSteps = currentRule?.steps?.filter((s) => s.type === "virtual") || [];
-      virtualSteps.forEach((s) => {
+      const allSteps = currentRule?.steps || [];
+      // 添加前面虚拟字段步骤生成的列
+      allSteps.filter((s) => s.type === "virtual").forEach((s) => {
         const targets = (s.config.target || "").split(",").map((t) => t.trim()).filter(Boolean);
         targets.forEach((t) => allHeaders.add(t));
+      });
+      // 添加前面join步骤导入的列
+      allSteps.filter((s) => s.type === "join").forEach((s) => {
+        const cfg = s.config || {};
+        if (cfg.col) allHeaders.add(cfg.col);
+        if (cfg.cols && Array.isArray(cfg.cols)) {
+          cfg.cols.forEach((c) => allHeaders.add(c));
+        }
       });
       return Array.from(allHeaders);
     })();
@@ -2015,7 +2023,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   ),
                   /*#__PURE__*/ React.createElement(
                     "div",
-                    { className: "table-select-items" },
+                    { className: "table-select-items table-select-items-grid" },
                     sampleTables.map((t) =>
                       /*#__PURE__*/ React.createElement(
                         "label",
@@ -2051,7 +2059,6 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                             else if (combined.includes("推广") || combined.includes("ad")) tag = { text: "推广", color: "var(--color-success)" };
                             else if (combined.includes("账务") || combined.includes("账单") || combined.includes("bill")) tag = { text: "账务", color: "var(--color-info)" };
                             else if (combined.includes("成本") || combined.includes("cost")) tag = { text: "成本", color: "var(--color-danger)" };
-                            // 如果名称已包含标签文字，不重复显示标签
                             if (tag && nameLower.includes(tag.text)) return null;
                             return tag && /*#__PURE__*/ React.createElement(
                               "span",
@@ -2062,51 +2069,10 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                               tag.text
                             );
                           })(),
-                          t.originalName && t.name === t.originalName && /*#__PURE__*/ React.createElement(
+                          t.originalName && t.name !== t.originalName && /*#__PURE__*/ React.createElement(
                             "span",
                             { className: "table-select-item-desc" },
                             t.originalName
-                          )
-                        )
-                      )
-                    )
-                  )
-                ),
-                externalTables.length > 0 && /*#__PURE__*/ React.createElement(
-                  "div",
-                  { className: "table-select-group" },
-                  /*#__PURE__*/ React.createElement(
-                    "div",
-                    { className: "table-select-group-label" },
-                    "🌐 全局数据表"
-                  ),
-                  /*#__PURE__*/ React.createElement(
-                    "div",
-                    { className: "table-select-items" },
-                    externalTables.map((t) =>
-                      /*#__PURE__*/ React.createElement(
-                        "label",
-                        {
-                          key: t.id,
-                          className: `table-select-item ${selectedTables.includes(t.id) ? "selected" : ""}`
-                        },
-                        /*#__PURE__*/ React.createElement("input", {
-                          type: "checkbox",
-                          checked: selectedTables.includes(t.id),
-                          onChange: (e) => {
-                            const newTables = e.target.checked
-                              ? [...selectedTables, t.id]
-                              : selectedTables.filter((id) => id !== t.id);
-                            updateStepConfig(step.id, "tables", newTables);
-                          },
-                        }),
-                        /*#__PURE__*/ React.createElement(
-                          "div",
-                          { className: "table-select-item-info" },
-                          /*#__PURE__*/ React.createElement(
-                            "span",
-                            { className: "table-select-item-name" },
-                            t.name
                           )
                         )
                       )
@@ -2523,9 +2489,11 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
         ];
         const columnOptionsWithVal = [
           { value: "", label: "当前值 (val)", group: "上一步结果" },
+          { value: "__expr__", label: "计算表达式", group: "高级" },
           ...sourceTableHeaders.map((h) => ({ value: h, label: h, group: "数据列" }))
         ];
         const quickAggFuncs = ["sum", "avg", "count", "max", "min"];
+        const showExprInput = step.config.column === "__expr__";
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
@@ -2555,7 +2523,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   /*#__PURE__*/ React.createElement(
                     "span",
                     { className: "form-label-hint" },
-                    "选择要聚合的数据"
+                    "选择要聚合的数据或使用计算表达式"
                   )
                 ),
                 /*#__PURE__*/ React.createElement(SearchableSelect, {
@@ -2564,7 +2532,43 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   options: columnOptionsWithVal,
                   placeholder: "请选择列",
                   groupBy: "group",
-                })
+                }),
+                showExprInput && /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "form-item", style: { marginTop: "10px" } },
+                  /*#__PURE__*/ React.createElement(
+                    "label",
+                    { className: "form-label" },
+                    "计算表达式",
+                    /*#__PURE__*/ React.createElement(
+                      "span",
+                      { className: "form-label-hint" },
+                      "如: {单价} * {数量}，先计算每行的值再聚合"
+                    )
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "form-control" },
+                    /*#__PURE__*/ React.createElement("input", {
+                      type: "text",
+                      value: step.config.expr || "",
+                      onChange: (e) => updateStepConfig(step.id, "expr", e.target.value),
+                      placeholder: "输入计算表达式，如: {单价} * {数量}",
+                      className: "form-input",
+                    }),
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { className: "form-hint" },
+                      "可用字段: ",
+                      sourceTableHeaders.slice(0, 5).map((h) => /*#__PURE__*/ React.createElement(
+                        "span",
+                        { key: h, className: "quick-tag", onClick: () => updateStepConfig(step.id, "expr", (step.config.expr || "") + `{${h}}`) },
+                        h,
+                      )),
+                      sourceTableHeaders.length > 5 && "...",
+                    ),
+                  ),
+                ),
               ),
               /*#__PURE__*/ React.createElement(
                 "div",
@@ -2613,7 +2617,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             "div",
             { className: "step-desc" },
             /*#__PURE__*/ React.createElement(Icons.Info, null),
-            ' 💡 将多行数据聚合成单个结果值。选择具体列名时使用该列数据；选择"当前值"时使用上一步输出的val字段。',
+            ' 💡 将多行数据聚合成单个结果值。选择"计算表达式"可先计算如「单价×数量」再聚合求和。',
           ),
         );
       case "formula":
@@ -5774,6 +5778,25 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
       const samples = state.samples || {};
       const fieldSamples = activeFieldId ? samples[activeFieldId] || [] : [];
 
+      // 构建数据表，包含样本表和全局表
+      const sampleTables = (state.samples[currentPlatform] || []).map((s, i) => ({
+        id: s.id || `sample_${i}`,
+        name: s.alias || s.fileName,
+        originalName: s.fileName,
+        headers: s.sheets[Object.keys(s.sheets)[0]]?.headers || [],
+        rows: s.sheets[Object.keys(s.sheets)[0]]?.rows || [],
+        source: "sample",
+      }));
+      const externalTables = (state.externals || []).map((e) => ({
+        id: e.id || e.sheetKey,
+        name: e.name || e.sheetKey,
+        headers: e.headers || (e.allData && e.allData.length > 0 ? Object.keys(e.allData[0]) : []),
+        rows: e.allData || e.rows || [],
+        source: "external",
+        externalId: e.id || e.sheetKey,
+      }));
+      const tables = [...sampleTables, ...externalTables];
+
       // 尝试执行前面所有步骤，获取当前步骤的输入数据
       let inputData = null;
       let executeError = null;
@@ -5784,6 +5807,9 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             platform: currentPlatform,
             samples: fieldSamples,
             template,
+            tables,
+            externals: state.externals || [],
+            shopName: platform?.shops?.[0]?.name || "",
           };
           const res = CalcEngine.runSteps(prevSteps, ctx);
           inputData = res?.data ?? res?.result ?? res;
@@ -5802,6 +5828,9 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             platform: currentPlatform,
             samples: fieldSamples,
             template,
+            tables,
+            externals: state.externals || [],
+            shopName: platform?.shops?.[0]?.name || "",
           };
           const res = CalcEngine.runSteps(allSteps.slice(0, stepIdx + 1), ctx);
           outputData = res?.data ?? res?.result ?? res;
@@ -5809,6 +5838,84 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
       } catch (e) {
         currentError = e.message || String(e);
       }
+
+      const renderDataPreview = (data) => {
+        if (!data) return null;
+        if (Array.isArray(data)) {
+          if (data.length === 0) {
+            return /*#__PURE__*/ React.createElement("span", { className: "debug-empty" }, "空数组");
+          }
+          const headers = data.length > 0 ? Object.keys(data[0]).filter((k) => !k.startsWith("_")) : [];
+          const displayRows = data.slice(0, 5);
+          return /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "debug-data-table" },
+            /*#__PURE__*/ React.createElement(
+              "table",
+              { className: "debug-table" },
+              /*#__PURE__*/ React.createElement(
+                "thead",
+                null,
+                /*#__PURE__*/ React.createElement(
+                  "tr",
+                  null,
+                  headers.map((h) => /*#__PURE__*/ React.createElement("th", { key: h }, h)),
+                ),
+              ),
+              /*#__PURE__*/ React.createElement(
+                "tbody",
+                null,
+                displayRows.map((row, ri) => /*#__PURE__*/ React.createElement(
+                  "tr",
+                  { key: ri },
+                  headers.map((h) => /*#__PURE__*/ React.createElement(
+                    "td",
+                    { key: h },
+                    row[h] != null
+                      ? typeof row[h] === "number"
+                        ? row[h].toLocaleString("zh-CN", { maximumFractionDigits: 2 })
+                        : String(row[h]).slice(0, 50)
+                      : "-",
+                  )),
+                )),
+              ),
+            ),
+            data.length > 5 && /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "debug-table-more" },
+              `... 共 ${data.length} 行`,
+            ),
+          );
+        }
+        if (typeof data === "object") {
+          const entries = Object.entries(data).filter(([k]) => !k.startsWith("_"));
+          if (entries.length === 0) {
+            return /*#__PURE__*/ React.createElement("span", { className: "debug-empty" }, "空对象");
+          }
+          return /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "debug-data-object" },
+            entries.map(([key, val]) => /*#__PURE__*/ React.createElement(
+              "div",
+              { key: key, className: "debug-object-row" },
+              /*#__PURE__*/ React.createElement("span", { className: "debug-object-key" }, key),
+              ": ",
+              /*#__PURE__*/ React.createElement("span", { className: "debug-object-value" },
+                typeof val === "number"
+                  ? val.toLocaleString("zh-CN", { maximumFractionDigits: 2 })
+                  : typeof val === "object"
+                    ? JSON.stringify(val).slice(0, 50)
+                    : String(val).slice(0, 50),
+              ),
+            )),
+          );
+        }
+        return /*#__PURE__*/ React.createElement("span", null,
+          typeof data === "number"
+            ? data.toLocaleString("zh-CN", { maximumFractionDigits: 4 })
+            : String(data),
+        );
+      };
 
       return /*#__PURE__*/ React.createElement(
         "div",
@@ -5820,16 +5927,17 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             "div",
             { className: "debug-label" },
             "📥 输入数据",
+            inputData && Array.isArray(inputData) && /*#__PURE__*/ React.createElement(
+              "span",
+              { className: "debug-count" },
+              `(${inputData.length} 行)`,
+            ),
           ),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "debug-value" },
             inputData
-              ? /*#__PURE__*/ React.createElement(
-                  "pre",
-                  null,
-                  JSON.stringify(inputData, null, 2).slice(0, 1000),
-                )
+              ? renderDataPreview(inputData)
               : executeError
                 ? /*#__PURE__*/ React.createElement(
                     "span",
@@ -5856,16 +5964,17 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             "div",
             { className: "debug-label" },
             "📤 输出结果",
+            outputData && Array.isArray(outputData) && /*#__PURE__*/ React.createElement(
+              "span",
+              { className: "debug-count" },
+              `(${outputData.length} 行)`,
+            ),
           ),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "debug-value" },
             outputData
-              ? /*#__PURE__*/ React.createElement(
-                  "pre",
-                  null,
-                  JSON.stringify(outputData, null, 2).slice(0, 1000),
-                )
+              ? renderDataPreview(outputData)
               : currentError
                 ? /*#__PURE__*/ React.createElement(
                     "span",
@@ -6892,6 +7001,74 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                                 sr.columns,
                                                 " \u5217",
                                               ),
+                                              (() => {
+                                                const cfg = sr.stepConfig || {};
+                                                const prevRows = sr.prevRows || 0;
+                                                const currRows = sr.rows?.length || sr.rows || 0;
+                                                switch (sr.type) {
+                                                  case "filter":
+                                                    if (prevRows > 0) {
+                                                      const filtered = prevRows - currRows;
+                                                      return /*#__PURE__*/ React.createElement(
+                                                        "span",
+                                                        { className: "debug-step-meta-tag", style: { background: "#fef3c7", borderColor: "#fde68a", color: "#d97706" } },
+                                                        /*#__PURE__*/ React.createElement(Icons.Filter, null),
+                                                        "\u8FC7\u6EE4 ", filtered, " \u6761",
+                                                      );
+                                                    }
+                                                    return null;
+                                                  case "join":
+                                                    if (prevRows > 0) {
+                                                      const matched = currRows;
+                                                      const unmatched = prevRows - currRows;
+                                                      return /*#__PURE__*/ React.createElement(
+                                                        "span",
+                                                        { className: "debug-step-meta-tag", style: { background: "#dbeafe", borderColor: "#bfdbfe", color: "#2563eb" } },
+                                                        /*#__PURE__*/ React.createElement(Icons.Link, null),
+                                                        "\u5173\u8054 ", matched, " \u6761",
+                                                        unmatched > 0 && /*#__PURE__*/ React.createElement("span", { style: { marginLeft: "4px", opacity: 0.7 } }, `(${unmatched}条未匹配)`),
+                                                      );
+                                                    }
+                                                    return null;
+                                                  case "virtual":
+                                                    return /*#__PURE__*/ React.createElement(
+                                                      "span",
+                                                      { className: "debug-step-meta-tag", style: { background: "#f0fdf4", borderColor: "#bbf7d0", color: "#16a34a" } },
+                                                      /*#__PURE__*/ React.createElement(Icons.Wand2, null),
+                                                      "\u65B0\u589E ", (cfg.target || "").split(",").filter(Boolean).length, " \u5217",
+                                                    );
+                                                  case "aggregate":
+                                                    return /*#__PURE__*/ React.createElement(
+                                                      "span",
+                                                      { className: "debug-step-meta-tag", style: { background: "#f5f3ff", borderColor: "#ddd6fe", color: "#7c3aed" } },
+                                                      /*#__PURE__*/ React.createElement(Icons.BarChart3, null),
+                                                      cfg.method || "聚合",
+                                                    );
+                                                  case "formula":
+                                                    return /*#__PURE__*/ React.createElement(
+                                                      "span",
+                                                      { className: "debug-step-meta-tag", style: { background: "#fff7ed", borderColor: "#fed7aa", color: "#ea580c" } },
+                                                      /*#__PURE__*/ React.createElement(Icons.Calculator, null),
+                                                      "\u8BA1\u7B97\u5B8C\u6210",
+                                                    );
+                                                  case "sort":
+                                                    return /*#__PURE__*/ React.createElement(
+                                                      "span",
+                                                      { className: "debug-step-meta-tag", style: { background: "#f1f5f9", borderColor: "#cbd5e1", color: "#64748b" } },
+                                                      /*#__PURE__*/ React.createElement(Icons.ArrowUpDown, null),
+                                                      cfg.direction === "desc" ? "降序" : "升序",
+                                                    );
+                                                  case "limit":
+                                                    return /*#__PURE__*/ React.createElement(
+                                                      "span",
+                                                      { className: "debug-step-meta-tag", style: { background: "#fef9c3", borderColor: "#fde047", color: "#ca8a04" } },
+                                                      /*#__PURE__*/ React.createElement(Icons.GripVertical, null),
+                                                      "\u9650\u5236 ", cfg.limit || 10, " \u6761",
+                                                    );
+                                                  default:
+                                                    return null;
+                                                }
+                                              })(),
                                             ),
                                             (() => {
                                               const cfg = sr.stepConfig || {};
@@ -6921,6 +7098,11 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                                     /*#__PURE__*/ React.createElement("span", { style: { fontWeight: 600 } }, "聚合："),
                                                     `${cfg.method || "-"}(${cfg.column || "-"})`,
                                                   );
+                                                case "formula":
+                                                  return /*#__PURE__*/ React.createElement("div", { style: { marginBottom: "10px", fontSize: "12px", color: "var(--color-text-secondary)" } },
+                                                    /*#__PURE__*/ React.createElement("span", { style: { fontWeight: 600 } }, "公式："),
+                                                    /*#__PURE__*/ React.createElement("span", { style: { fontFamily: "var(--font-mono)", color: "var(--color-primary)", marginLeft: "4px" } }, cfg.expr || "-"),
+                                                  );
                                                 case "sort":
                                                   return /*#__PURE__*/ React.createElement("div", { style: { marginBottom: "10px", fontSize: "12px", color: "var(--color-text-secondary)" } },
                                                     /*#__PURE__*/ React.createElement("span", { style: { fontWeight: 600 } }, "排序："),
@@ -6937,44 +7119,58 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                             })(),
                                             sr.preview && sr.preview.length > 0 && sr.preview[0]?._formulaDetail && /*#__PURE__*/ React.createElement(
                                               "div",
-                                              { className: "debug-step-formula-box", style: { background: "var(--color-bg-tertiary)", borderRadius: "var(--radius-md)", padding: "12px", marginBottom: "12px", border: "1px solid var(--color-border-light)" } },
+                                              { className: "debug-step-formula-box", style: { background: "#f8fafc", borderRadius: "var(--radius-md)", padding: "14px", marginBottom: "12px", border: "1px solid #e2e8f0" } },
                                               /*#__PURE__*/ React.createElement(
                                                 "div",
-                                                { style: { fontSize: "12px", fontWeight: 600, color: "var(--color-text-secondary)", marginBottom: "8px", display: "flex", alignItems: "center", gap: "6px" } },
+                                                { style: { fontSize: "12px", fontWeight: 600, color: "#64748b", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" } },
                                                 /*#__PURE__*/ React.createElement(Icons.Calculator, { size: 14 }),
-                                                "\u516c\u5f0f\u8ba1\u7b97\u8be6\u60c5",
+                                                "\u8BA1\u7B97\u8FC7\u7A0B",
                                               ),
                                               /*#__PURE__*/ React.createElement(
                                                 "div",
-                                                { style: { fontSize: "12px", color: "var(--color-text-primary)", fontFamily: "var(--font-mono)", marginBottom: "6px" } },
-                                                "\u539f\u59cb\u516c\u5f0f\uff1a",
-                                                /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-primary)", fontWeight: 600 } }, sr.preview[0]._formulaDetail.original),
+                                                { style: { marginBottom: "10px" } },
+                                                /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", color: "#94a3b8", marginBottom: "3px", fontWeight: 500 } }, "1. 公式"),
+                                                /*#__PURE__*/ React.createElement("div", { style: { fontSize: "13px", color: "#1e293b", fontFamily: "var(--font-mono)", background: "#fff", padding: "8px 10px", borderRadius: "6px", border: "1px solid #e2e8f0" } },
+                                                  sr.preview[0]._formulaDetail.original || "-",
+                                                ),
                                               ),
                                               Object.keys(sr.preview[0]._formulaDetail.substitutions).length > 0 && /*#__PURE__*/ React.createElement(
                                                 "div",
-                                                { style: { marginBottom: "6px" } },
-                                                /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", color: "var(--color-text-tertiary)", marginBottom: "4px" } }, "\u5b57\u6bb5\u4ee3\u5165\uff1a"),
-                                                Object.entries(sr.preview[0]._formulaDetail.substitutions).map(([field, info]) => /*#__PURE__*/ React.createElement(
+                                                { style: { marginBottom: "10px" } },
+                                                /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", color: "#94a3b8", marginBottom: "4px", fontWeight: 500 } }, "2. 代入值"),
+                                                /*#__PURE__*/ React.createElement(
                                                   "div",
-                                                  { key: field, style: { fontSize: "12px", fontFamily: "var(--font-mono)", color: "var(--color-text-secondary)", paddingLeft: "8px", borderLeft: "2px solid var(--color-border-light)", marginBottom: "3px" } },
-                                                  "\u2022 ", field, " = ",
-                                                  /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-accent)" } }, typeof info.raw === "number" ? info.raw.toLocaleString("zh-CN", { maximumFractionDigits: 2 }) : String(info.raw)),
-                                                  " \u2192 ",
-                                                  /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-success)" } }, info.value.toLocaleString("zh-CN", { maximumFractionDigits: 2 })),
-                                                )),
+                                                  { style: { display: "flex", flexWrap: "wrap", gap: "8px" } },
+                                                  Object.entries(sr.preview[0]._formulaDetail.substitutions).map(([field, info]) => /*#__PURE__*/ React.createElement(
+                                                    "div",
+                                                    { key: field, style: { background: "#fff", padding: "6px 10px", borderRadius: "6px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "6px" } },
+                                                    /*#__PURE__*/ React.createElement("span", { style: { fontSize: "12px", color: "#64748b", fontWeight: 500 } }, field),
+                                                    /*#__PURE__*/ React.createElement("span", { style: { fontSize: "11px", color: "#cbd5e1" } }, "="),
+                                                    /*#__PURE__*/ React.createElement("span", { style: { fontSize: "12px", fontFamily: "var(--font-mono)", color: "#0ea5e9", fontWeight: 600 } }, typeof info.raw === "number" ? info.raw.toLocaleString("zh-CN", { maximumFractionDigits: 2 }) : String(info.raw)),
+                                                  )),
+                                                ),
                                               ),
                                               /*#__PURE__*/ React.createElement(
                                                 "div",
-                                                { style: { fontSize: "12px", color: "var(--color-text-primary)", fontFamily: "var(--font-mono)", marginBottom: "6px" } },
-                                                "\u4ee3\u5165\u540e\uff1a",
-                                                /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-warning)", fontWeight: 600 } }, sr.preview[0]._formulaDetail.evaluated),
-                                              ),
-                                              sr.preview[0]._formulaDetail.error
-                                                ? /*#__PURE__*/ React.createElement("div", { style: { fontSize: "12px", color: "var(--color-danger)" } }, "\u9519\u8bef\uff1a", sr.preview[0]._formulaDetail.error)
-                                                : /*#__PURE__*/ React.createElement("div", { style: { fontSize: "12px", color: "var(--color-text-primary)" } },
-                                                  "\u7ed3\u679c\uff1a",
-                                                  /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-success)", fontWeight: 700, fontSize: "13px" } }, typeof sr.preview[0]._formulaDetail.result === "number" ? sr.preview[0]._formulaDetail.result.toLocaleString("zh-CN", { maximumFractionDigits: 4 }) : String(sr.preview[0]._formulaDetail.result)),
+                                                { style: { marginBottom: "10px" } },
+                                                /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", color: "#94a3b8", marginBottom: "3px", fontWeight: 500 } }, "3. 计算"),
+                                                /*#__PURE__*/ React.createElement("div", { style: { fontSize: "13px", color: "#1e293b", fontFamily: "var(--font-mono)", background: "#fef3c7", padding: "8px 10px", borderRadius: "6px", border: "1px solid #fde68a" } },
+                                                  sr.preview[0]._formulaDetail.evaluated || "-",
                                                 ),
+                                              ),
+                                              /*#__PURE__*/ React.createElement(
+                                                "div",
+                                                { style: { marginTop: "8px", paddingTop: "10px", borderTop: "1px dashed #cbd5e1" } },
+                                                /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", color: "#94a3b8", marginBottom: "3px", fontWeight: 500 } }, "4. 结果"),
+                                                sr.preview[0]._formulaDetail.error
+                                                  ? /*#__PURE__*/ React.createElement("div", { style: { fontSize: "14px", color: "#dc2626", fontFamily: "var(--font-mono)" } }, "✗ ", sr.preview[0]._formulaDetail.error)
+                                                  : /*#__PURE__*/ React.createElement("div", { style: { fontSize: "18px", color: "#10b981", fontFamily: "var(--font-mono)", fontWeight: 700 } },
+                                                      "✓ ",
+                                                      typeof sr.preview[0]._formulaDetail.result === "number"
+                                                        ? sr.preview[0]._formulaDetail.result.toLocaleString("zh-CN", { maximumFractionDigits: 4 })
+                                                        : String(sr.preview[0]._formulaDetail.result),
+                                                    ),
+                                              ),
                                             ),
                                             sr.preview && sr.preview.length > 0 && /*#__PURE__*/ React.createElement(
                                               "div",
