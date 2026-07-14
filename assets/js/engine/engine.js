@@ -143,6 +143,53 @@ const CalcEngine = {
         day: now.getDate(),
       };
     }
+    // 辅助函数：中文数字转阿拉伯数字（移出switch避免TDZ错误）
+    const _chineseToNumber = (() => {
+      const map = {
+        "零": 0, "〇": 0, "O": 0, "o": 0,
+        "一": 1, "壹": 1, "幺": 1,
+        "二": 2, "贰": 2, "两": 2,
+        "三": 3, "叁": 3,
+        "四": 4, "肆": 4,
+        "五": 5, "伍": 5,
+        "六": 6, "陆": 6,
+        "七": 7, "柒": 7,
+        "八": 8, "捌": 8,
+        "九": 9, "玖": 9,
+        "十": 10, "拾": 10,
+        "百": 100, "佰": 100,
+        "千": 1000, "仟": 1000,
+        "万": 10000, "萬": 10000,
+        "亿": 100000000, "億": 100000000,
+      };
+      return (text) => {
+        if (!text) return NaN;
+        let num = 0, temp = 0, result = 0;
+        let valid = false;
+        for (const char of String(text)) {
+          const n = map[char];
+          if (n !== undefined) {
+            valid = true;
+            if (n >= 100000000) {
+              result = (result + temp) * n;
+              temp = 0;
+            } else if (n >= 10000) {
+              result = (result + temp) * n;
+              temp = 0;
+            } else if (n >= 1000) {
+              temp = (temp || 1) * n;
+            } else if (n >= 100) {
+              temp = (temp || 1) * n;
+            } else if (n >= 10) {
+              temp = (temp || 1) * n;
+            } else {
+              temp = temp + n;
+            }
+          }
+        }
+        return valid ? result + temp : NaN;
+      };
+    })();
     for (let stepIdx = 0; stepIdx < rule.steps.length; stepIdx++) {
       const step = rule.steps[stepIdx];
       try {
@@ -389,53 +436,6 @@ const CalcEngine = {
             }
             break;
           }
-          // 辅助函数：中文数字转阿拉伯数字
-          const _chineseToNumber = (() => {
-            const map = {
-              "零": 0, "〇": 0, "O": 0, "o": 0,
-              "一": 1, "壹": 1, "幺": 1,
-              "二": 2, "贰": 2, "两": 2,
-              "三": 3, "叁": 3,
-              "四": 4, "肆": 4,
-              "五": 5, "伍": 5,
-              "六": 6, "陆": 6,
-              "七": 7, "柒": 7,
-              "八": 8, "捌": 8,
-              "九": 9, "玖": 9,
-              "十": 10, "拾": 10,
-              "百": 100, "佰": 100,
-              "千": 1000, "仟": 1000,
-              "万": 10000, "萬": 10000,
-              "亿": 100000000, "億": 100000000,
-            };
-            return (text) => {
-              if (!text) return NaN;
-              let num = 0, temp = 0, result = 0;
-              let valid = false;
-              for (const char of String(text)) {
-                const n = map[char];
-                if (n !== undefined) {
-                  valid = true;
-                  if (n >= 100000000) {
-                    result = (result + temp) * n;
-                    temp = 0;
-                  } else if (n >= 10000) {
-                    result = (result + temp) * n;
-                    temp = 0;
-                  } else if (n >= 1000) {
-                    temp = (temp || 1) * n;
-                  } else if (n >= 100) {
-                    temp = (temp || 1) * n;
-                  } else if (n >= 10) {
-                    temp = (temp || 1) * n;
-                  } else {
-                    temp = temp + n;
-                  }
-                }
-              }
-              return valid ? result + temp : NaN;
-            };
-          })();
           case "virtual": {
             if (!step.config.source || !step.config.target) break;
             data = data.map((row) => {
@@ -486,6 +486,14 @@ const CalcEngine = {
                     result = num || 1;
                     break;
                   }
+                  // 模式1b: X包装（如 5包装、十包装）
+                  const pattern1b = /(\d+|[一二三四五六七八九十]+)\s*包装/;
+                  const m1b = s.match(pattern1b);
+                  if (m1b) {
+                    const num = Number(m1b[1]) || _chineseToNumber(m1b[1]);
+                    result = num || 1;
+                    break;
+                  }
                   // 模式2: X条（数字+条 或 中文数字+条）
                   const pattern2 = /(\d+)\s*条/;
                   const m2 = s.match(pattern2);
@@ -500,11 +508,20 @@ const CalcEngine = {
                     result = _chineseToNumber(m2b[1]) || 1;
                     break;
                   }
-                  // 模式3: X色各一（如 6色各一、三色各一、5色各一条）
-                  const pattern3 = /(\d+|[一二三四五六七八九十]+)\s*色各一/;
-                  const m3 = s.match(pattern3);
-                  if (m3) {
-                    const num = Number(m3[1]) || _chineseToNumber(m3[1]);
+                  // 模式3: X色各Y条（如 5色各2条 → 10条）
+                  const pattern3a = /(\d+|[一二三四五六七八九十]+)\s*色各\s*(\d+|[一二三四五六七八九十]+)\s*条/;
+                  const m3a = s.match(pattern3a);
+                  if (m3a) {
+                    const colors = Number(m3a[1]) || _chineseToNumber(m3a[1]) || 1;
+                    const pieces = Number(m3a[2]) || _chineseToNumber(m3a[2]) || 1;
+                    result = colors * pieces;
+                    break;
+                  }
+                  // 模式3b: X色各一（如 6色各一、三色各一、5色各一条）
+                  const pattern3b = /(\d+|[一二三四五六七八九十]+)\s*色各一/;
+                  const m3b = s.match(pattern3b);
+                  if (m3b) {
+                    const num = Number(m3b[1]) || _chineseToNumber(m3b[1]);
                     result = num || 1;
                     break;
                   }
@@ -538,12 +555,31 @@ const CalcEngine = {
                   break;
                 }
                 case "toNumber": {
-                  const n = Number(
-                    String(src)
-                      .replace(/[,，]/g, "")
-                      .replace(/[¥￥$€£]/g, ""),
-                  );
-                  result = isNaN(n) ? 0 : n;
+                  const s = String(src || "").trim();
+                  let n = Number(s.replace(/[,，]/g, "").replace(/[¥￥$€£]/g, ""));
+                  if (!isNaN(n)) {
+                    result = n;
+                    break;
+                  }
+                  // 尝试提取百分比
+                  const pctMatch = s.match(/(\d+\.?\d*)\s*%/);
+                  if (pctMatch) {
+                    result = Number(pctMatch[1]) / 100;
+                    break;
+                  }
+                  // 尝试提取第一个数字（支持小数、负数）
+                  const numMatch = s.match(/-?\d+\.?\d*/);
+                  if (numMatch) {
+                    result = Number(numMatch[0]);
+                    break;
+                  }
+                  // 尝试中文数字
+                  const cnNum = _chineseToNumber(s);
+                  if (!isNaN(cnNum)) {
+                    result = cnNum;
+                    break;
+                  }
+                  result = 0;
                   break;
                 }
                 case "toString":
@@ -924,50 +960,52 @@ const CalcEngine = {
               data = [row];
             }
             if (data.length === 0) break;
-            let expr = step.config.expr;
+            const originalExpr = step.config.expr;
+            let expr = originalExpr;
+            const substitutions = {};
+            const collectSub = (k, rawVal) => {
+              const v = Number(String(rawVal).replace(/[,，]/g, "").replace(/[¥￥$€£]/g, "")) || 0;
+              substitutions[k] = { raw: rawVal, value: v };
+              return v;
+            };
             Object.keys(row).forEach((k) => {
-              const v =
-                Number(
-                  String(row[k])
-                    .replace(/[,，]/g, "")
-                    .replace(/[¥￥$€£]/g, ""),
-                ) || 0;
+              const v = collectSub(k, row[k]);
               const safeKey = k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
               expr = expr.replace(new RegExp(`\\$\\{${safeKey}\\}`, "g"), v);
             });
             Object.keys(row).forEach((k) => {
-              const v =
-                Number(
-                  String(row[k])
-                    .replace(/[,，]/g, "")
-                    .replace(/[¥￥$€£]/g, ""),
-                ) || 0;
+              const v = collectSub(k, row[k]);
               const safeKey = k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
               expr = expr.replace(new RegExp(`\\{${safeKey}\\}`, "g"), v);
             });
             if (context.savedFieldValues) {
               Object.keys(context.savedFieldValues).forEach((k) => {
-                const v =
-                  Number(
-                    String(context.savedFieldValues[k])
-                      .replace(/[,，]/g, "")
-                      .replace(/[¥￥$€£]/g, ""),
-                  ) || 0;
+                const v = collectSub(k, context.savedFieldValues[k]);
                 const safeKey = k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
                 expr = expr.replace(new RegExp(`\\{${safeKey}\\}`, "g"), v);
                 expr = expr.replace(new RegExp(`\\$\\{${safeKey}\\}`, "g"), v);
               });
             }
+            // 将未解析的字段引用替换为0，避免ReferenceError
+            const unresolvedRefs = expr.match(/\{[^}]+\}/g);
+            if (unresolvedRefs) {
+              unresolvedRefs.forEach((ref) => {
+                console.warn(`[Formula] 未定义字段引用 ${ref}，已替换为0`);
+              });
+              expr = expr.replace(/\{[^}]+\}/g, "0");
+            }
+            let rawVal, formulaError;
             try {
-              const rawVal = Function(`"use strict";
-                                        const Math = window.Math;
-                                        return (${expr})
-                                    `)();
-              const formattedVal = this._applyOutputFormat(rawVal, step.config.format);
-              data = [{ val: formattedVal, _raw: Number(rawVal) || 0, _format: step.config.format || "none" }];
+              rawVal = Function(`"use strict"; const Math = window.Math; return (${expr})`)();
             } catch (e) {
               console.error("Formula error:", e);
-              data = [{ val: 0, error: e.message }];
+              formulaError = e.message;
+            }
+            if (formulaError) {
+              data = [{ val: 0, error: formulaError, _formulaDetail: { original: originalExpr, substitutions, evaluated: expr, error: formulaError } }];
+            } else {
+              const formattedVal = this._applyOutputFormat(rawVal, step.config.format);
+              data = [{ val: formattedVal, _raw: Number(rawVal) || 0, _format: step.config.format || "none", _formulaDetail: { original: originalExpr, substitutions, evaluated: expr, result: Number(rawVal) || 0 } }];
             }
             break;
           }

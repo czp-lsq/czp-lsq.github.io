@@ -2040,9 +2040,11 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                             let tag = null;
                             if (combined.includes("订单") || combined.includes("order")) tag = { text: "订单", color: "var(--color-primary)" };
                             else if (combined.includes("退款") || combined.includes("refund")) tag = { text: "退款", color: "var(--color-warning)" };
-                            else if (combined.includes("推广") || combined.includes("ad") || combined.includes("推广")) tag = { text: "推广", color: "var(--color-success)" };
+                            else if (combined.includes("推广") || combined.includes("ad")) tag = { text: "推广", color: "var(--color-success)" };
                             else if (combined.includes("账务") || combined.includes("账单") || combined.includes("bill")) tag = { text: "账务", color: "var(--color-info)" };
                             else if (combined.includes("成本") || combined.includes("cost")) tag = { text: "成本", color: "var(--color-danger)" };
+                            // 如果名称已包含标签文字，不重复显示标签
+                            if (tag && nameLower.includes(tag.text)) return null;
                             return tag && /*#__PURE__*/ React.createElement(
                               "span",
                               {
@@ -2905,7 +2907,11 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               /*#__PURE__*/ React.createElement("br", null),
               "2. 目标字段：输出列名（多个用,分隔，可同时生成多个输出）",
               /*#__PURE__*/ React.createElement("br", null),
-              "3. 转换规则：选择处理方式（如「条数识别」自动从商品规格中提取条数）"
+              "3. 转换规则：选择处理方式",
+              /*#__PURE__*/ React.createElement("br", null),
+              /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-primary)" } }, "• 转数字"), "：去除货币符号和逗号后转数字，支持百分比(50%→0.5)、提取字符串中第一个数字、中文数字识别",
+              /*#__PURE__*/ React.createElement("br", null),
+              /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-primary)" } }, "• 条数识别"), "：从商品规格中自动提取条数，支持「X条装」「X条」「X色各一」「X色各Y条」等模式，也可通过颜色词或+号自动计算"
             )
           ),
           /*#__PURE__*/ React.createElement(
@@ -6768,6 +6774,47 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                                 " \u5217",
                                               ),
                                             ),
+                                            sr.preview && sr.preview.length > 0 && sr.preview[0]?._formulaDetail && /*#__PURE__*/ React.createElement(
+                                              "div",
+                                              { className: "debug-step-formula-box", style: { background: "var(--color-bg-tertiary)", borderRadius: "var(--radius-md)", padding: "12px", marginBottom: "12px", border: "1px solid var(--color-border-light)" } },
+                                              /*#__PURE__*/ React.createElement(
+                                                "div",
+                                                { style: { fontSize: "12px", fontWeight: 600, color: "var(--color-text-secondary)", marginBottom: "8px", display: "flex", alignItems: "center", gap: "6px" } },
+                                                /*#__PURE__*/ React.createElement(Icons.Calculator, { size: 14 }),
+                                                "\u516c\u5f0f\u8ba1\u7b97\u8be6\u60c5",
+                                              ),
+                                              /*#__PURE__*/ React.createElement(
+                                                "div",
+                                                { style: { fontSize: "12px", color: "var(--color-text-primary)", fontFamily: "var(--font-mono)", marginBottom: "6px" } },
+                                                "\u539f\u59cb\u516c\u5f0f\uff1a",
+                                                /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-primary)", fontWeight: 600 } }, sr.preview[0]._formulaDetail.original),
+                                              ),
+                                              Object.keys(sr.preview[0]._formulaDetail.substitutions).length > 0 && /*#__PURE__*/ React.createElement(
+                                                "div",
+                                                { style: { marginBottom: "6px" } },
+                                                /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", color: "var(--color-text-tertiary)", marginBottom: "4px" } }, "\u5b57\u6bb5\u4ee3\u5165\uff1a"),
+                                                Object.entries(sr.preview[0]._formulaDetail.substitutions).map(([field, info]) => /*#__PURE__*/ React.createElement(
+                                                  "div",
+                                                  { key: field, style: { fontSize: "12px", fontFamily: "var(--font-mono)", color: "var(--color-text-secondary)", paddingLeft: "8px", borderLeft: "2px solid var(--color-border-light)", marginBottom: "3px" } },
+                                                  "\u2022 ", field, " = ",
+                                                  /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-accent)" } }, typeof info.raw === "number" ? info.raw.toLocaleString("zh-CN", { maximumFractionDigits: 2 }) : String(info.raw)),
+                                                  " \u2192 ",
+                                                  /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-success)" } }, info.value.toLocaleString("zh-CN", { maximumFractionDigits: 2 })),
+                                                )),
+                                              ),
+                                              /*#__PURE__*/ React.createElement(
+                                                "div",
+                                                { style: { fontSize: "12px", color: "var(--color-text-primary)", fontFamily: "var(--font-mono)", marginBottom: "6px" } },
+                                                "\u4ee3\u5165\u540e\uff1a",
+                                                /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-warning)", fontWeight: 600 } }, sr.preview[0]._formulaDetail.evaluated),
+                                              ),
+                                              sr.preview[0]._formulaDetail.error
+                                                ? /*#__PURE__*/ React.createElement("div", { style: { fontSize: "12px", color: "var(--color-danger)" } }, "\u9519\u8bef\uff1a", sr.preview[0]._formulaDetail.error)
+                                                : /*#__PURE__*/ React.createElement("div", { style: { fontSize: "12px", color: "var(--color-text-primary)" } },
+                                                  "\u7ed3\u679c\uff1a",
+                                                  /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-success)", fontWeight: 700, fontSize: "13px" } }, typeof sr.preview[0]._formulaDetail.result === "number" ? sr.preview[0]._formulaDetail.result.toLocaleString("zh-CN", { maximumFractionDigits: 4 }) : String(sr.preview[0]._formulaDetail.result)),
+                                                ),
+                                            ),
                                             sr.preview && sr.preview.length > 0 && /*#__PURE__*/ React.createElement(
                                               "div",
                                               { className: "debug-step-preview-box" },
@@ -6783,7 +6830,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                                 sr.preview.slice(0, 3).map((row, ri) => /*#__PURE__*/ React.createElement(
                                                   "div",
                                                   { key: ri, className: "debug-step-preview-row" },
-                                                  Object.entries(row).map(([k, v]) => /*#__PURE__*/ React.createElement(
+                                                  Object.entries(row).filter(([k]) => !k.startsWith("_")).map(([k, v]) => /*#__PURE__*/ React.createElement(
                                                     "span",
                                                     { key: k, className: "debug-step-preview-cell" },
                                                     /*#__PURE__*/ React.createElement(

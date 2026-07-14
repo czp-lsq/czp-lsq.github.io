@@ -1872,6 +1872,8 @@
   cursor: pointer;
   user-select: none;
   transition: var(--transition-fast);
+  flex-wrap: nowrap;
+  min-width: 0;
 }
 
 .rules-page .step-header:hover {

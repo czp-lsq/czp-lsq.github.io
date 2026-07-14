@@ -1,5 +1,5 @@
-const APP_VERSION = "czp-1.29.0";
-const DATA_VERSION = "8.4.0";
+const APP_VERSION = "czp-1.29.1";
+const DATA_VERSION = "8.4.1";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
 const BUILD_TIME = (() => {
@@ -11,6 +11,23 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-1.29.1", date: "2026-07-15 16:00:00",
+    summary: "表名重复修复、engine核心错误修复、公式调试增强、toNumber/parsePieces增强、特别致谢优化",
+    changes: [
+      { type: "feature", text: "公式计算调试详情：每步计算详情现在展示原始公式、字段代入值、代入后表达式、最终结果，调试更清晰" },
+      { type: "feature", text: "toNumber规则增强：支持百分比转换（50%→0.5）、提取字符串中第一个数字、中文数字识别" },
+      { type: "feature", text: "parsePieces条数识别增强：新增X包装模式、X色各Y条模式（如5色各2条→10条）" },
+      { type: "feature", text: "特别致谢模块优化：字体层次更清晰（致谢词标题/正文/署名），行高2.2更舒适，文字更丰富真挚" },
+      { type: "optimize", text: "步骤卡片标题布局：添加flex-wrap: nowrap和min-width: 0，避免不必要的换行" },
+      { type: "optimize", text: "调试预览数据过滤：隐藏以下划线开头的内部字段（如_formulaDetail）" },
+    ],
+    bugfixes: [
+      { text: "修复数据源步骤表名重复显示：当备注名已包含类型标签文字时，不再重复显示自动标签" },
+      { text: "修复engine.js中_chineseToNumber的TDZ初始化错误：将辅助函数移出switch块级作用域" },
+      { text: "修复公式计算中未定义字段引用报错：未解析的{字段名}自动替换为0并输出警告" },
+      { text: "修复AdvancedRuleConfig组件中不存在图标(Scissors/Replace/Split)的引用" },
+    ],
+  },
   { version: "czp-1.29.0", date: "2026-07-15 08:00:00",
     summary: "计算规则页面修复、表识别优化（手动备注名）、特别致谢页面重构",
     changes: [
