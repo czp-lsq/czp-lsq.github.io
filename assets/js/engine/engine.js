@@ -1101,7 +1101,7 @@ const CalcEngine = {
                   if (step.config.parseSizeCost) {
                     const platformVal = step.config.platformField
                       ? row[step.config.platformField]
-                      : (context.shopName || "");
+                      : (context.shopName || context.platform || "");
                     const sizeFieldVal = step.config.sizeField
                       ? row[step.config.sizeField]
                       : "";
@@ -1110,10 +1110,14 @@ const CalcEngine = {
                     let matchedCost = 0;
                     if (sizeStr && parsed.sizes[sizeStr] !== undefined) {
                       matchedCost = parsed.sizes[sizeStr];
+                    } else if (sizeStr && parsed.sizes["l"] !== undefined) {
+                      matchedCost = parsed.sizes["l"];
                     } else if (!sizeStr && parsed.unified !== null) {
                       matchedCost = parsed.unified;
-                    } else if (Object.keys(parsed.sizes).length === 1) {
-                      matchedCost = Object.values(parsed.sizes)[0];
+                    } else if (Object.keys(parsed.sizes).length > 0) {
+                      matchedCost = parsed.sizes["l"] !== undefined
+                        ? parsed.sizes["l"]
+                        : Object.values(parsed.sizes)[0];
                     } else if (parsed.unified !== null) {
                       matchedCost = parsed.unified;
                     }

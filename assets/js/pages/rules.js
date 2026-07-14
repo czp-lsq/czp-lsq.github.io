@@ -3360,65 +3360,38 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               /*#__PURE__*/ React.createElement(
                 "span",
                 { className: "form-label-hint" },
-                "支持平台+尺码组合成本（如拼多多m3.5l4淘宝5）"
+                "自动识别平台，支持平台+尺码组合成本（如拼多多m3.5l4淘宝5），找不到对应尺码时以L码为准"
               )
             )
           ),
           step.config.parseSizeCost && /*#__PURE__*/ React.createElement(
-            React.Fragment,
-            null,
+            "div",
+            { className: "form-item" },
             /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
+              "label",
+              { className: "form-label" },
+              "规格/尺码字段",
               /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "平台字段",
-                /*#__PURE__*/ React.createElement(
-                  "span",
-                  { className: "form-label-hint" },
-                  "主表中标识所属平台的字段（可选）"
-                )
-              ),
-              /*#__PURE__*/ React.createElement(SearchableSelect, {
-                value: step.config.platformField || "",
-                onChange: (val) => updateStepConfig(step.id, "platformField", val),
-                options: [
-                  { value: "", label: "不指定（使用当前店铺平台）" },
-                  ...sourceTableHeaders.map((h) => ({ value: h, label: h }))
-                ],
-                placeholder: "选择平台字段",
-              })
+                "span",
+                { className: "form-label-hint" },
+                "主表中包含商品规格或尺码的字段"
+              )
             ),
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "规格/尺码字段",
-                /*#__PURE__*/ React.createElement(
-                  "span",
-                  { className: "form-label-hint" },
-                  "主表中包含商品规格或尺码的字段"
-                )
-              ),
-              /*#__PURE__*/ React.createElement(SearchableSelect, {
-                value: step.config.sizeField || "",
-                onChange: (val) => updateStepConfig(step.id, "sizeField", val),
-                options: sourceTableHeaders.map((h) => ({ value: h, label: h })),
-                placeholder: "请选择规格/尺码字段",
-              })
-            )
-          )
-        ),
+            /*#__PURE__*/ React.createElement(SearchableSelect, {
+              value: step.config.sizeField || "",
+              onChange: (val) => updateStepConfig(step.id, "sizeField", val),
+              options: sourceTableHeaders.map((h) => ({ value: h, label: h })),
+              placeholder: "请选择规格/尺码字段",
+            })
+          ),
         /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-desc" },
           /*#__PURE__*/ React.createElement(Icons.Info, null),
           " 💡 根据主表关联键从关联表中匹配数据，将关联表中指定列的值填充到当前字段。",
-        ),
+        )
       );
+        }
       case "distinct":
         return /*#__PURE__*/ React.createElement(
           "div",
@@ -5990,7 +5963,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               relevantHeaders = [cfg.source, cfg.target].filter(Boolean);
               break;
             case "join":
-              relevantHeaders = [cfg.key, cfg.fk, cfg.col, cfg.platformField, cfg.sizeField].filter(Boolean);
+              relevantHeaders = [cfg.key, cfg.fk, cfg.col, cfg.sizeField].filter(Boolean);
               break;
             case "aggregate":
               if (cfg.column === "__expr__" && cfg.expr) {
@@ -7797,8 +7770,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                                         previews.push({ icon: "", text: `关联: ${cfg.key} = ${cfg.fk}，导入「${cfg.col}」` });
                                         if (cfg.parseSizeCost) {
                                           const sizeInfo = cfg.sizeField ? `，尺码字段: ${cfg.sizeField}` : "";
-                                          const platInfo = cfg.platformField ? `，平台字段: ${cfg.platformField}` : "（当前店铺平台）";
-                                          previews.push({ icon: "", text: `智能成本解析: 平台${platInfo}${sizeInfo}` });
+                                          previews.push({ icon: "", text: `智能成本解析: 自动识别平台${sizeInfo}` });
                                         }
                                       } else {
                                         previews.push({ icon: "", text: "请配置关联键和导入列", warn: true });
