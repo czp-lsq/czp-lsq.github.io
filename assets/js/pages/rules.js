@@ -2311,7 +2311,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               const field = fields.find((f) => f.id === fieldId);
               if (
                 field &&
-                field.id !== (activeFieldRef?.id || activeField?.id) &&
+                field.id !== (currentFieldRef?.id || activeField?.id) &&
                 savedRules[fieldId]?.steps?.length > 0
               ) {
                 const chipName = field.name + " (已配置)";
