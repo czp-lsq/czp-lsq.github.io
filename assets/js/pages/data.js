@@ -88,30 +88,74 @@ const DataPage = ({ state, currentPlatform }) => {
   };
 
   const extractDateFromFileName = (fileName) => {
-    const match = fileName.match(/(\d{4})[-_.年](\d{1,2})[-_.月]?(\d{0,2})/);
-    if (match) {
-      const [, year, month, day] = match;
-      return `${year}-${month.padStart(2, '0')}-${(day || '01').padStart(2, '0')}`;
+    const fullMatch = fileName.match(/(\d{4})[-_.年](\d{1,2})[-_.月]?(\d{1,2})/);
+    if (fullMatch) {
+      const [, year, month, day] = fullMatch;
+      return {
+        date: `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`,
+        monthLabel: `${Number(month)}月份`,
+        yearMonthLabel: `${year}-${Number(month)}月份`,
+      };
+    }
+    const yearMonthMatch = fileName.match(/(\d{4})[-_.年](\d{1,2})/);
+    if (yearMonthMatch) {
+      const [, year, month] = yearMonthMatch;
+      return {
+        date: `${year}-${month.padStart(2, "0")}-01`,
+        monthLabel: `${Number(month)}月份`,
+        yearMonthLabel: `${year}-${Number(month)}月份`,
+      };
+    }
+    const cnMonthMatch = fileName.match(/(\d{1,2})月份/);
+    if (cnMonthMatch) {
+      const m = Number(cnMonthMatch[1]);
+      const yearMatch = fileName.match(/(\d{4})/);
+      const year = yearMatch ? Number(yearMatch[1]) : new Date().getFullYear();
+      return {
+        date: `${year}-${String(m).padStart(2, "0")}-01`,
+        monthLabel: `${m}月份`,
+        yearMonthLabel: `${year}-${m}月份`,
+      };
     }
     return null;
   };
 
+  // 提取表主要类型（前两个字）
+  const extractTableKeyword = (fileName) => {
+    const cleanName = fileName.replace(/\.[^.]+$/, "").trim();
+    const detailMatch = cleanName.match(/^([^\s_\-\.]+?)(明细|详情|清单|统计|报表|记录|流水)/);
+    if (detailMatch) {
+      return detailMatch[1] + detailMatch[2];
+    }
+    for (const pattern of TABLE_TYPE_PATTERNS) {
+      for (const keyword of pattern.keywords) {
+        if (cleanName.toLowerCase().includes(keyword.toLowerCase())) {
+          return keyword;
+        }
+      }
+    }
+    const short = cleanName.replace(/[\d_\-\.年月日期\s]/g, "").substring(0, 4);
+    return short || "数据";
+  };
+
   const generateTableName = (fileName, fileData) => {
     const tableType = detectTableType(fileName, fileData);
-    const date = extractDateFromFileName(fileName);
+    const dateInfo = extractDateFromFileName(fileName);
+    const keyword = extractTableKeyword(fileName);
     const baseName = fileName.replace(/\.[^.]+$/, "").replace(/[\s_\-\.]+/g, "");
     let nameParts = [];
-    
-    nameParts.push(tableType.icon + " " + tableType.type);
-    
-    if (date) {
-      nameParts.push(date);
+
+    // 核心格式：XX明细 - X月份
+    let mainPart = keyword;
+    if (dateInfo) {
+      mainPart = `${keyword} - ${dateInfo.monthLabel}`;
     }
-    
+    nameParts.push(tableType.icon + " " + mainPart);
+
     if (nameParts.length === 0) {
       nameParts.push(baseName.substring(0, 20));
     }
-    
+
     return nameParts.join(" - ");
   };
   const [aliasInput, setAliasInput] = useState("");

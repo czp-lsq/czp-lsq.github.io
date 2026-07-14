@@ -719,7 +719,23 @@ const CalcEngine = {
                 default:
                   result = src;
               }
-              return { ...row, [step.config.target]: result };
+              // 支持 target 为多个字段名（逗号分隔）
+              const targetNames = String(step.config.target || "")
+                .split(/[,，]/)
+                .map((s) => s.trim())
+                .filter(Boolean);
+              if (targetNames.length === 0) {
+                return { ...row, _result: result };
+              }
+              if (targetNames.length === 1) {
+                return { ...row, [targetNames[0]]: result };
+              }
+              // 多个目标字段：所有目标字段使用同一个结果
+              const multi = { ...row };
+              targetNames.forEach((name) => {
+                multi[name] = result;
+              });
+              return multi;
             });
             break;
           }

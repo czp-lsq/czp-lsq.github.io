@@ -61,35 +61,94 @@ const BatchPage = ({ state, currentPlatform }) => {
     return { type: "其他", keywords: [], icon: "📄", color: "var(--color-text-tertiary)", desc: "其他数据" };
   };
 
+  // 提取日期/月份：支持多种格式
+  // 返回 { date: "2026-07-08", monthLabel: "7月份" | "2026-7月份" }
   const extractDateFromFileName = (fileName) => {
-    const match = fileName.match(/(\d{4})[-_.年](\d{1,2})[-_.月]?(\d{0,2})/);
-    if (match) {
-      const [, year, month, day] = match;
-      return `${year}-${month.padStart(2, '0')}-${(day || '01').padStart(2, '0')}`;
+    // 完整日期：2026-07-08 或 2026_07_08 或 2026.07.08 或 2026年7月8日
+    const fullMatch = fileName.match(/(\d{4})[-_.年](\d{1,2})[-_.月]?(\d{1,2})/);
+    if (fullMatch) {
+      const [, year, month, day] = fullMatch;
+      return {
+        date: `${year}-${month.padStart(2, "0")}-${day.padStart(2, "0")}`,
+        year: Number(year),
+        month: Number(month),
+        monthLabel: `${Number(month)}月份`,
+        yearMonthLabel: `${year}-${Number(month)}月份`,
+      };
+    }
+    // 年月：2026-07 或 2026年7月
+    const yearMonthMatch = fileName.match(/(\d{4})[-_.年](\d{1,2})/);
+    if (yearMonthMatch) {
+      const [, year, month] = yearMonthMatch;
+      return {
+        date: `${year}-${month.padStart(2, "0")}-01`,
+        year: Number(year),
+        month: Number(month),
+        monthLabel: `${Number(month)}月份`,
+        yearMonthLabel: `${year}-${Number(month)}月份`,
+      };
+    }
+    // 中文月份：6月份、12月份
+    const cnMonthMatch = fileName.match(/(\d{1,2})月份/);
+    if (cnMonthMatch) {
+      const m = Number(cnMonthMatch[1]);
+      const yearMatch = fileName.match(/(\d{4})/);
+      const year = yearMatch ? Number(yearMatch[1]) : new Date().getFullYear();
+      return {
+        date: `${year}-${String(m).padStart(2, "0")}-01`,
+        year,
+        month: m,
+        monthLabel: `${m}月份`,
+        yearMonthLabel: `${year}-${m}月份`,
+      };
     }
     return null;
   };
 
+  // 提取表主要类型（前两个字的关键字）
+  // 期望格式：XX明细-X月份，如"推广明细6月份"
+  const extractTableKeyword = (fileName) => {
+    const cleanName = fileName.replace(/\.[^.]+$/, "").trim();
+    // 优先匹配"X明细"格式
+    const detailMatch = cleanName.match(/^([^\s_\-\.]+?)(明细|详情|清单|统计|报表|记录|流水)/);
+    if (detailMatch) {
+      return detailMatch[1] + detailMatch[2]; // 如"推广明细"
+    }
+    // 取前两个字（如"推广"、"订单"）
+    for (const pattern of TABLE_TYPE_PATTERNS) {
+      for (const keyword of pattern.keywords) {
+        if (cleanName.toLowerCase().includes(keyword.toLowerCase())) {
+          return keyword;
+        }
+      }
+    }
+    // 取文件名开头的2-4个字
+    const short = cleanName.replace(/[\d_\-\.年月日期\s]/g, "").substring(0, 4);
+    return short || "数据";
+  };
+
   const generateTableName = (fileName, fileData, shop) => {
     const tableType = detectTableType(fileName, fileData);
-    const date = extractDateFromFileName(fileName);
+    const dateInfo = extractDateFromFileName(fileName);
+    const keyword = extractTableKeyword(fileName);
     const baseName = fileName.replace(/\.[^.]+$/, "").replace(/[\s_\-\.]+/g, "");
     let nameParts = [];
-    
+
     if (shop) {
       nameParts.push(shop.name);
     }
-    
-    nameParts.push(tableType.icon + " " + tableType.type);
-    
-    if (date) {
-      nameParts.push(date);
+
+    // 核心格式：XX明细 - X月份
+    let mainPart = keyword;
+    if (dateInfo) {
+      mainPart = `${keyword} - ${dateInfo.monthLabel}`;
     }
-    
+    nameParts.push(tableType.icon + " " + mainPart);
+
     if (nameParts.length === 0) {
       nameParts.push(baseName.substring(0, 20));
     }
-    
+
     return nameParts.join(" - ");
   };
 
@@ -165,11 +224,11 @@ const BatchPage = ({ state, currentPlatform }) => {
     
     batchFiles.forEach((file) => {
       if (file.status !== "matched" || !file.detectedShop) return;
-      
+
       const shopId = file.detectedShop.id;
       const tableType = detectTableType(file.fileName, file.data);
-      const date = extractDateFromFileName(file.fileName);
-      
+      const dateInfo = extractDateFromFileName(file.fileName);
+      const date = dateInfo?.date || null;
       Object.values(allRules).forEach((rule) => {
         const sourceStep = (rule.steps || []).find(s => s.type === "source");
         if (!sourceStep?.config?.table) return;
@@ -233,9 +292,9 @@ const BatchPage = ({ state, currentPlatform }) => {
         const parsed = await ExcelUtils.parse(file);
         const shop = detectShop(file.name, parsed);
         const tableType = detectTableType(file.name, parsed);
-        const date = extractDateFromFileName(file.name);
+        const dateInfo = extractDateFromFileName(file.name);
         const displayName = generateUniqueTableName(file.name, parsed, shop, existingNames);
-        
+
         newFiles.push({
           id: `batch_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
           fileName: file.name,
@@ -246,7 +305,9 @@ const BatchPage = ({ state, currentPlatform }) => {
           tableType: tableType.type,
           tableTypeIcon: tableType.icon,
           tableTypeColor: tableType.color,
-          date,
+          date: dateInfo?.date || null,
+          monthLabel: dateInfo?.monthLabel || null,
+          yearMonthLabel: dateInfo?.yearMonthLabel || null,
           status: shop ? "matched" : "unmatched",
           selected: true,
         });

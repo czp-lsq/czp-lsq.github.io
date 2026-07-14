@@ -1,5 +1,5 @@
-const APP_VERSION = "czp-1.28.2";
-const DATA_VERSION = "8.2.0";
+const APP_VERSION = "czp-1.28.3";
+const DATA_VERSION = "8.3.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
 const BUILD_TIME = (() => {
@@ -11,6 +11,23 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-1.28.3", date: "2026-07-14 20:00:00",
+    summary: "表名格式统一【XX明细-X月份】、列值转换优化、复杂步骤提示、智能验证",
+    changes: [
+      { type: "feature", text: "表名识别格式优化：自动识别「XX明细-X月份」格式，如「推广明细-6月份」" },
+      { type: "feature", text: "表类型关键字提取：自动从前2个字识别表的主要数据类型（推广/订单/退款等）" },
+      { type: "feature", text: "支持多种日期格式：2026-07-08、2026年7月、6月份、2026_07等" },
+      { type: "feature", text: "虚拟字段源字段下拉框：改为从数据表列名选择，告别手输" },
+      { type: "feature", text: "虚拟字段支持多目标输出：target字段支持逗号分隔多个字段名，一次性生成多个输出" },
+      { type: "feature", text: "复杂运算步骤提示：virtual和valueNormalize步骤增加配置说明横幅" },
+      { type: "optimize", text: "智能验证：只有数据源无处理步骤时，提示「请添加处理步骤」，避免无效配置" },
+      { type: "optimize", text: "文件识别增强：批量上传时携带monthLabel和yearMonthLabel信息" },
+    ],
+    bugfixes: [
+      { text: "修复虚拟字段源字段下拉框无法正确显示表列的问题" },
+      { text: "修复同一步骤无法同时输出多个目标字段的限制" },
+    ],
+  },
   { version: "czp-1.28.2", date: "2026-07-14 18:00:00",
     summary: "表名统一、公式优化、条数识别、批量计算修复、智能验证",
     changes: [

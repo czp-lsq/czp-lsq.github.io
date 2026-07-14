@@ -172,6 +172,12 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
         return { valid: false, msg: "「数据源」步骤未选择数据表" };
       }
     }
+    // 智能检测：只有数据源步骤没有处理步骤时，提示需要添加处理步骤
+    const processTypes = ["filter", "aggregate", "join", "group", "formula", "virtual", "constant", "text", "valueNormalize", "normalize", "runningTotal", "percentOfTotal", "movingAverage", "binning"];
+    const hasProcessStep = rule.steps.some((s) => processTypes.includes(s.type));
+    if (source && hasTable && !hasProcessStep) {
+      return { valid: false, msg: "已选数据源，请添加处理步骤（筛选/虚拟字段/公式等）" };
+    }
     return { valid: true, msg: "配置完整" };
   };
 
@@ -2578,15 +2584,15 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             " 代表上一步结果。支持所有JavaScript数学函数；计算结果可按所选格式输出。",
           ),
         );
-      case "virtual":
+      case "virtual": {
         const virtualRuleOptions = [
           { value: "copy", label: "复制", group: "基础" },
           { value: "toNumber", label: "转数字", group: "类型转换" },
           { value: "toString", label: "转文本", group: "类型转换" },
           { value: "trim", label: "去除空格", group: "文本处理" },
           { value: "parseQty", label: "提取数量", group: "文本处理" },
-        { value: "parsePieces", label: "条数识别（商品规格）", group: "文本处理" },
-        { value: "splitPlus", label: "按+号拆分计数", group: "文本处理" },
+          { value: "parsePieces", label: "条数识别（商品规格）", group: "文本处理" },
+          { value: "splitPlus", label: "按+号拆分计数", group: "文本处理" },
           { value: "abs", label: "绝对值", group: "数值计算" },
           { value: "round", label: "四舍五入", group: "数值计算" },
           { value: "floor", label: "向下取整", group: "数值计算" },
@@ -2609,10 +2615,31 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
           { value: "sumFields", label: "字段之和", group: "数学运算" },
           { value: "diffFields", label: "字段之差", group: "数学运算" },
         ];
-        const quickVirtualRules = ["copy", "toNumber", "abs", "round", "trim"];
+        const quickVirtualRules = ["copy", "toNumber", "abs", "round", "trim", "parsePieces"];
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "step-info-box" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "step-info-title" },
+              /*#__PURE__*/ React.createElement("span", { className: "step-info-icon" }, "💡"),
+              "复杂运算步骤 - 虚拟字段转换"
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "step-info-content" },
+              "虚拟字段用于创建派生数据列。",
+              /*#__PURE__*/ React.createElement("br", null),
+              "1. 源字段：选择要处理的列（如「商品规格」）",
+              /*#__PURE__*/ React.createElement("br", null),
+              "2. 目标字段：输出列名（多个用,分隔，可同时生成多个输出）",
+              /*#__PURE__*/ React.createElement("br", null),
+              "3. 转换规则：选择处理方式（如「条数识别」自动从商品规格中提取条数）"
+            )
+          ),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "config-section" },
@@ -2639,16 +2666,18 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   /*#__PURE__*/ React.createElement(
                     "span",
                     { className: "form-label-hint" },
-                    "输入字段名"
+                    "选择字段"
                   )
                 ),
-                /*#__PURE__*/ React.createElement("input", {
-                  type: "text",
-                  className: "input",
+                /*#__PURE__*/ React.createElement(SearchableSelect, {
                   value: step.config.source,
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "source", e.target.value),
-                  placeholder: "源字段名",
+                  onChange: (val) =>
+                    updateStepConfig(step.id, "source", val),
+                  options: [
+                    { value: "val", label: "当前值 (val)" },
+                    ...sourceTableHeaders.map((h) => ({ value: h, label: h })),
+                  ],
+                  placeholder: "请选择源字段",
                 })
               ),
               /*#__PURE__*/ React.createElement(
@@ -2657,11 +2686,11 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 /*#__PURE__*/ React.createElement(
                   "label",
                   { className: "form-label" },
-                  "目标字段",
+                  "目标字段（多个用,分隔）",
                   /*#__PURE__*/ React.createElement(
                     "span",
                     { className: "form-label-hint" },
-                    "输出字段名"
+                    "支持同一列多个输出"
                   )
                 ),
                 /*#__PURE__*/ React.createElement("input", {
@@ -2670,7 +2699,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   value: step.config.target,
                   onChange: (e) =>
                     updateStepConfig(step.id, "target", e.target.value),
-                  placeholder: "目标字段名",
+                  placeholder: "目标字段名（多个用,分隔）",
                 })
               )
             ),
@@ -2717,108 +2746,28 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             )
           ),
           step.config.rule === "mapValue" &&
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u6620\u5C04\u8868",
-              ),
-              /*#__PURE__*/ React.createElement("textarea", {
-                className: "textarea",
-                value: JSON.stringify(step.config.valueMap || {}, null, 2),
-                onChange: (e) => {
-                  try {
-                    const map = JSON.parse(e.target.value);
-                    updateStepConfig(step.id, "valueMap", map);
-                  } catch {
-                  }
-                },
-                placeholder: '{"原值1": "新值1", "原值2": "新值2"}',
-                rows: 4,
-              }),
-              /*#__PURE__*/ React.createElement(
-                "div",
-                { className: "form-item" },
-                /*#__PURE__*/ React.createElement(
-                  "label",
-                  { className: "form-label" },
-                  "\u9ED8\u8BA4\u503C",
-                ),
-                /*#__PURE__*/ React.createElement("input", {
-                  type: "text",
-                  className: "input",
-                  value: step.config.defaultValue ?? "",
-                  onChange: (e) =>
-                    updateStepConfig(step.id, "defaultValue", e.target.value),
-                  placeholder: "未匹配到时使用的值",
-                }),
-              ),
-            ),
-          step.config.rule === "multiply" &&
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u4E58\u6570",
-              ),
-              /*#__PURE__*/ React.createElement("input", {
-                type: "number",
-                className: "input",
-                value: step.config.factor ?? 1,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "factor", Number(e.target.value)),
-                placeholder: "请输入乘数",
-                step: "any",
-              }),
-            ),
-          step.config.rule === "divide" &&
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u9664\u6570",
-              ),
-              /*#__PURE__*/ React.createElement("input", {
-                type: "number",
-                className: "input",
-                value: step.config.divisor ?? 1,
-                onChange: (e) =>
-                  updateStepConfig(step.id, "divisor", Number(e.target.value)),
-                placeholder: "请输入除数",
-                step: "any",
-              }),
-            ),
-          (step.config.rule === "sumFields" || step.config.rule === "diffFields") &&
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { className: "form-item" },
-              /*#__PURE__*/ React.createElement(
-                "label",
-                { className: "form-label" },
-                "\u5B57\u6BB5\u540D\u79F0",
-              ),
-              /*#__PURE__*/ React.createElement("input", {
-                type: "text",
-                className: "input",
-                value: (step.config.fields || []).join(", "),
-                onChange: (e) =>
-                  updateStepConfig(step.id, "fields", e.target.value.split(/[,，]/).map(s => s.trim()).filter(Boolean)),
-                placeholder: "字段1, 字段2, 字段3",
-              }),
-            ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "step-desc" },
-            /*#__PURE__*/ React.createElement(Icons.Info, null),
-            " \u521B\u5EFA\u865A\u62DF\u5B57\u6BB5\uFF0C\u5BF9\u6570\u636E\u8FDB\u884C\u8F6C\u6362\u5904\u7406",
-          ),
+          /*#__PURE__*/ React.createElement(MapValueEditor, { step: step, updateStepConfig: updateStepConfig }),
+          [
+            "substring",
+            "replace",
+            "concat",
+            "ifEmpty",
+            "multiply",
+            "divide",
+            "sumFields",
+            "diffFields",
+            "concat",
+            "mapValue",
+            "split",
+            "join",
+            "trim",
+            "upperCase",
+            "lowerCase",
+            "toFixed2",
+          ].includes(step.config.rule) &&
+          /*#__PURE__*/ React.createElement(AdvancedRuleConfig, { step: step, updateStepConfig: updateStepConfig }),
         );
+      }
       case "join": {
         const joinTable = allTables.find((t) => t.id === step.config.table);
         const joinHeaders = joinTable?.headers || [];
@@ -5150,6 +5099,27 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
         return /*#__PURE__*/ React.createElement(
           "div",
           { className: "step-config" },
+          /*#__PURE__*/ React.createElement(
+            "div",
+            { className: "step-info-box" },
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "step-info-title" },
+              /*#__PURE__*/ React.createElement("span", { className: "step-info-icon" }, "💡"),
+              "复杂运算步骤 - 列值转换配置"
+            ),
+            /*#__PURE__*/ React.createElement(
+              "div",
+              { className: "step-info-content" },
+              "此步骤用于将列值转换为可计算的数字。配置方法：",
+              /*#__PURE__*/ React.createElement("br", null),
+              "1. 选择源字段（要转换的列）",
+              /*#__PURE__*/ React.createElement("br", null),
+              "2. 添加多条转换规则，按优先级匹配",
+              /*#__PURE__*/ React.createElement("br", null),
+              "3. 常见模式：「100元」→「100」/「5条」→「5」/「50%」→「0.5」/「三」→「3」"
+            )
+          ),
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "grid-2" },
