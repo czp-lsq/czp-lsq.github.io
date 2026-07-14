@@ -66,8 +66,54 @@ const DataPage = ({ state, currentPlatform }) => {
       icon: /*#__PURE__*/ React.createElement(Icons.Database, null),
     },
   ];
-  const [aliasInput, setAliasInput] = useState("");
-  const [pendingFiles, setPendingFiles] = useState(null);
+  const TABLE_TYPE_PATTERNS = [
+    { type: "订单", keywords: ["订单", "order", "交易", "成交"], icon: "📋", color: "var(--color-primary)", desc: "订单交易数据" },
+    { type: "退款", keywords: ["退款", "退货", "refund", "return"], icon: "🔄", color: "var(--color-warning)", desc: "退款退货数据" },
+    { type: "推广", keywords: ["推广", "广告", "ad", "marketing", "投放"], icon: "📢", color: "var(--color-success)", desc: "广告推广数据" },
+    { type: "账务", keywords: ["账务", "账单", "bill", "finance", "结算"], icon: "💰", color: "var(--color-info)", desc: "账务结算数据" },
+    { type: "成本", keywords: ["成本", "cost", "费用", "expense"], icon: "🧾", color: "var(--color-danger)", desc: "成本费用数据" },
+    { type: "商品", keywords: ["商品", "product", "sku", "库存"], icon: "📦", color: "var(--color-accent)", desc: "商品库存数据" },
+    { type: "利润", keywords: ["利润", "profit", "收益"], icon: "📈", color: "var(--color-success)", desc: "利润收益数据" },
+    { type: "报表", keywords: ["报表", "report", "统计", "summary"], icon: "📊", color: "var(--color-primary)", desc: "统计报表数据" },
+  ];
+
+  const detectTableType = (fileName, fileData) => {
+    const text = (fileName + " " + Object.keys(fileData.sheets || {}).join(" ")).toLowerCase();
+    for (const pattern of TABLE_TYPE_PATTERNS) {
+      if (pattern.keywords.some(k => text.includes(k.toLowerCase()))) {
+        return pattern;
+      }
+    }
+    return { type: "其他", keywords: [], icon: "📄", color: "var(--color-text-tertiary)", desc: "其他数据" };
+  };
+
+  const extractDateFromFileName = (fileName) => {
+    const match = fileName.match(/(\d{4})[-_.年](\d{1,2})[-_.月]?(\d{0,2})/);
+    if (match) {
+      const [, year, month, day] = match;
+      return `${year}-${month.padStart(2, '0')}-${(day || '01').padStart(2, '0')}`;
+    }
+    return null;
+  };
+
+  const generateTableName = (fileName, fileData) => {
+    const tableType = detectTableType(fileName, fileData);
+    const date = extractDateFromFileName(fileName);
+    const baseName = fileName.replace(/\.[^.]+$/, "").replace(/[\s_\-\.]+/g, "");
+    let nameParts = [];
+    
+    nameParts.push(tableType.icon + " " + tableType.type);
+    
+    if (date) {
+      nameParts.push(date);
+    }
+    
+    if (nameParts.length === 0) {
+      nameParts.push(baseName.substring(0, 20));
+    }
+    
+    return nameParts.join(" - ");
+  };
   const [editAliasIdx, setEditAliasIdx] = useState(null);
   const [editAliasValue, setEditAliasValue] = useState("");
   const [previewSample, setPreviewSample] = useState(null);
@@ -89,14 +135,14 @@ const DataPage = ({ state, currentPlatform }) => {
     const fileList = e.target.files;
     if (!fileList || fileList.length === 0) return;
     const files = Array.from(fileList);
-    e.target.value = ""; // 如果只上传一个文件，弹窗让用户输入备注名
+    e.target.value = "";
     if (files.length === 1) {
       const file = files[0];
       const defaultAlias = file.name.replace(/\.(xlsx|xls|csv|zip)$/i, "");
       setAliasInput(defaultAlias);
       setPendingFiles([file]);
       return;
-    } // 多个文件直接上传，用文件名作为备注
+    }
     setIsUploading(true);
     setUploadProgress(0);
     try {
@@ -106,7 +152,8 @@ const DataPage = ({ state, currentPlatform }) => {
         const result = await ExcelUtils.parse(file, (p) => {
           setUploadProgress(Math.round(((i + p / 100) / files.length) * 100));
         });
-        result.alias = file.name.replace(/\.(xlsx|xls|csv|zip)$/i, "");
+        const autoName = generateTableName(file.name, result);
+        result.alias = autoName;
         ExcelUtils.stripForStorage(result);
         newSamples.push(result);
       }
@@ -149,8 +196,9 @@ const DataPage = ({ state, currentPlatform }) => {
         const result = await ExcelUtils.parse(file, (p) => {
           setUploadProgress(p);
         });
+        const autoName = generateTableName(file.name, result);
         result.alias =
-          aliasInput.trim() || file.name.replace(/\.(xlsx|xls|csv|zip)$/i, "");
+          aliasInput.trim() || autoName;
         ExcelUtils.stripForStorage(result);
         newSamples.push(result);
       }

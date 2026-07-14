@@ -40,6 +40,72 @@ const BatchPage = ({ state, currentPlatform }) => {
     if (unmatched.length > 0) groups._unmatched = unmatched;
     return groups;
   };
+  const TABLE_TYPE_PATTERNS = [
+    { type: "订单", keywords: ["订单", "order", "交易", "成交"], icon: "📋", color: "var(--color-primary)", desc: "订单交易数据" },
+    { type: "退款", keywords: ["退款", "退货", "refund", "return"], icon: "🔄", color: "var(--color-warning)", desc: "退款退货数据" },
+    { type: "推广", keywords: ["推广", "广告", "ad", "marketing", "投放"], icon: "📢", color: "var(--color-success)", desc: "广告推广数据" },
+    { type: "账务", keywords: ["账务", "账单", "bill", "finance", "结算"], icon: "💰", color: "var(--color-info)", desc: "账务结算数据" },
+    { type: "成本", keywords: ["成本", "cost", "费用", "expense"], icon: "🧾", color: "var(--color-danger)", desc: "成本费用数据" },
+    { type: "商品", keywords: ["商品", "product", "sku", "库存"], icon: "📦", color: "var(--color-accent)", desc: "商品库存数据" },
+    { type: "利润", keywords: ["利润", "profit", "收益"], icon: "📈", color: "var(--color-success)", desc: "利润收益数据" },
+    { type: "报表", keywords: ["报表", "report", "统计", "summary"], icon: "📊", color: "var(--color-primary)", desc: "统计报表数据" },
+  ];
+
+  const detectTableType = (fileName, fileData) => {
+    const text = (fileName + " " + Object.keys(fileData.sheets || {}).join(" ")).toLowerCase();
+    for (const pattern of TABLE_TYPE_PATTERNS) {
+      if (pattern.keywords.some(k => text.includes(k.toLowerCase()))) {
+        return pattern;
+      }
+    }
+    return { type: "其他", keywords: [], icon: "📄", color: "var(--color-text-tertiary)", desc: "其他数据" };
+  };
+
+  const extractDateFromFileName = (fileName) => {
+    const match = fileName.match(/(\d{4})[-_.年](\d{1,2})[-_.月]?(\d{0,2})/);
+    if (match) {
+      const [, year, month, day] = match;
+      return `${year}-${month.padStart(2, '0')}-${(day || '01').padStart(2, '0')}`;
+    }
+    return null;
+  };
+
+  const generateTableName = (fileName, fileData, shop) => {
+    const tableType = detectTableType(fileName, fileData);
+    const date = extractDateFromFileName(fileName);
+    const baseName = fileName.replace(/\.[^.]+$/, "").replace(/[\s_\-\.]+/g, "");
+    let nameParts = [];
+    
+    if (shop) {
+      nameParts.push(shop.name);
+    }
+    
+    nameParts.push(tableType.icon + " " + tableType.type);
+    
+    if (date) {
+      nameParts.push(date);
+    }
+    
+    if (nameParts.length === 0) {
+      nameParts.push(baseName.substring(0, 20));
+    }
+    
+    return nameParts.join(" - ");
+  };
+
+  const generateUniqueTableName = (fileName, fileData, shop, existingNames = []) => {
+    let baseName = generateTableName(fileName, fileData, shop);
+    let finalName = baseName;
+    let counter = 1;
+    
+    while (existingNames.includes(finalName)) {
+      finalName = `${baseName} (${counter})`;
+      counter++;
+    }
+    
+    return finalName;
+  };
+
   const detectShop = (fileName, fileData) => {
     const baseName = fileName.replace(/\.[^.]+$/, "").toLowerCase();
     const normalizedBaseName = baseName
@@ -92,6 +158,43 @@ const BatchPage = ({ state, currentPlatform }) => {
     }
     return null;
   };
+
+  const autoMatchTablesToRules = (batchFiles) => {
+    const matchedGroups = {};
+    const allRules = rules || {};
+    
+    batchFiles.forEach((file) => {
+      if (file.status !== "matched" || !file.detectedShop) return;
+      
+      const shopId = file.detectedShop.id;
+      const tableType = detectTableType(file.fileName, file.data);
+      const date = extractDateFromFileName(file.fileName);
+      
+      Object.values(allRules).forEach((rule) => {
+        const sourceStep = (rule.steps || []).find(s => s.type === "source");
+        if (!sourceStep?.config?.table) return;
+        
+        const ruleShopId = sourceStep.config.table.split("_")[0];
+        if (ruleShopId === shopId) {
+          if (!matchedGroups[ruleShopId]) matchedGroups[ruleShopId] = {};
+          if (!matchedGroups[ruleShopId][rule.id]) {
+            matchedGroups[ruleShopId][rule.id] = {
+              rule,
+              files: [],
+              tableType: tableType.type,
+            };
+          }
+          matchedGroups[ruleShopId][rule.id].files.push({
+            ...file,
+            date,
+            tableType: tableType.type,
+          });
+        }
+      });
+    });
+    
+    return matchedGroups;
+  };
   const getMissingSampleTables = () => {
     const usedTables = new Set();
     const allRules = rules || {};
@@ -123,23 +226,37 @@ const BatchPage = ({ state, currentPlatform }) => {
     const files = Array.from(e.target.files || []);
     if (!files.length) return;
     const newFiles = [];
+    const existingNames = batchFiles.map(f => f.displayName || f.fileName);
+    
     for (const file of files) {
       try {
         const parsed = await ExcelUtils.parse(file);
         const shop = detectShop(file.name, parsed);
+        const tableType = detectTableType(file.name, parsed);
+        const date = extractDateFromFileName(file.name);
+        const displayName = generateUniqueTableName(file.name, parsed, shop, existingNames);
+        
         newFiles.push({
           id: `batch_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
           fileName: file.name,
+          displayName,
           fileSize: file.size,
           data: parsed,
           detectedShop: shop,
+          tableType: tableType.type,
+          tableTypeIcon: tableType.icon,
+          tableTypeColor: tableType.color,
+          date,
           status: shop ? "matched" : "unmatched",
           selected: true,
         });
+        
+        existingNames.push(displayName);
       } catch (err) {
         newFiles.push({
           id: `batch_${Date.now()}_${Math.random().toString(36).slice(2, 8)}`,
           fileName: file.name,
+          displayName: file.name,
           fileSize: file.size,
           error: err.message,
           status: "error",
