@@ -1,4 +1,4 @@
-const APP_VERSION = "czp-1.27.0";
+const APP_VERSION = "czp-1.28.0";
 const DATA_VERSION = "8.0.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
@@ -11,6 +11,19 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-1.28.0", date: "2026-07-14 12:00:00",
+    summary: "公式编辑器优化与计算模型完善",
+    changes: [
+      { type: "feature", text: "公式编辑器支持下拉选择：分类展示运算符、数学函数、变量、字段，点击即可插入" },
+      { type: "feature", text: "公式计算支持已配置字段引用：无需预览即可在公式中使用其他已配置字段" },
+      { type: "feature", text: "公式输出值支持格式转换：支持四舍五入、千分位、货币、百分比等10种格式" },
+      { type: "optimize", text: "公式编辑器布局优化：下拉面板分组展示，不同类型使用不同颜色标识" },
+    ],
+    bugfixes: [
+      { text: "修复点击公式计算页面报错：stepResults is not defined" },
+      { text: "修复公式编辑器引用activeFieldRef未定义导致页面崩溃" },
+    ],
+  },
   { version: "czp-1.27.0", date: "2026-07-13 18:00:00",
     summary: "存储持久化、电商图标、规则模块与全主题优化",
     changes: [
