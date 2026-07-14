@@ -1,5 +1,5 @@
-const APP_VERSION = "czp-1.28.0";
-const DATA_VERSION = "8.0.0";
+const APP_VERSION = "czp-1.28.1";
+const DATA_VERSION = "8.1.0";
 const VERSION_KEY = "app_version_seen";
 const VERSION_HISTORY_KEY = "app_version_history";
 const BUILD_TIME = (() => {
@@ -11,6 +11,25 @@ const BUILD_TIME = (() => {
   }
 })();
 const UPDATE_LOG = [
+  { version: "czp-1.28.1", date: "2026-07-14 16:00:00",
+    summary: "UI布局优化、填充验证修复、值规范化步骤、交互体验完善",
+    changes: [
+      { type: "feature", text: "新增值规范化步骤：支持正则匹配、中文数字转换、货币/百分比格式识别，配置多条转换规则" },
+      { type: "feature", text: "值规范化支持8种匹配方式：正则/包含/相等/前缀/后缀/中文数字/百分比/货币/自动识别" },
+      { type: "feature", text: "值规范化支持7种转换方式：提取数字/乘以系数/除以系数/映射固定值/中文转数字/百分比转数字/货币转数字" },
+      { type: "optimize", text: "店铺和日期标签样式统一：统一字体大小和间距，视觉一致性提升" },
+      { type: "optimize", text: "字段配置区域空白优化：移除居中布局，内容自然从顶部排列" },
+      { type: "optimize", text: "下拉框回退组件样式优化：与SearchableSelect主组件样式保持一致" },
+      { type: "optimize", text: "规则页面响应式布局：支持1024px和768px断点自适应" },
+      { type: "optimize", text: "步骤验证逻辑优化：店铺/日期填充类型无需数据源即可通过验证" },
+      { type: "optimize", text: "计算规则配置页面整体布局优化：信息清晰完整，避免页面截断" },
+    ],
+    bugfixes: [
+      { text: "修复店铺选择填充步骤显示'缺少数据源步骤'的错误，与日期填充保持一致" },
+      { text: "修复步骤验证只检查完整性，不强制要求数据源" },
+      { text: "修复下拉框样式与表格输入UI设计不和谐的问题" },
+    ],
+  },
   { version: "czp-1.28.0", date: "2026-07-14 14:00:00",
     summary: "公式编辑器优化、表识别增强、系统信息完善与Bug修复",
     changes: [

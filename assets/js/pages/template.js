@@ -551,22 +551,13 @@ const TemplatePage = ({ state, currentPlatform }) => {
                     field.semanticType === "shop" &&
                       /*#__PURE__*/ React.createElement(
                         Tag,
-                        { type: "info", style: { marginLeft: 4 } },
+                        { type: "info", style: { marginLeft: 4, fontSize: 10 } },
                         "\u5E97\u94FA",
                       ),
                     field.semanticType === "date" &&
                       /*#__PURE__*/ React.createElement(
-                        "span",
-                        {
-                          style: {
-                            fontSize: 10,
-                            color: "var(--color-success)",
-                            background: "var(--color-success-bg)",
-                            padding: "1px 6px",
-                            borderRadius: 4,
-                            marginLeft: 4,
-                          },
-                        },
+                        Tag,
+                        { type: "success", style: { marginLeft: 4, fontSize: 10 } },
                         "\u65E5\u671F",
                       ),
                     field.groupCount > 1 &&
@@ -688,13 +679,13 @@ const TemplatePage = ({ state, currentPlatform }) => {
                         selectedField.semanticType === "shop" &&
                           /*#__PURE__*/ React.createElement(
                             Tag,
-                            { type: "info" },
+                            { type: "info", style: { marginLeft: 4, fontSize: 10 } },
                             "\u5E97\u94FA\u540D",
                           ),
                         selectedField.semanticType === "date" &&
                           /*#__PURE__*/ React.createElement(
                             Tag,
-                            { type: "success" },
+                            { type: "success", style: { marginLeft: 4, fontSize: 10 } },
                             "\u65E5\u671F",
                           ),
                         selectedField.groupCount > 1 &&

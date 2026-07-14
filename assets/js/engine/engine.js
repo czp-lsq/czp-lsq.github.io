@@ -1567,6 +1567,101 @@ const CalcEngine = {
             });
             break;
           }
+          case "valueNormalize": {
+            const col = step.config.column || "val";
+            const targetCol = step.config.targetColumn || "normalized_value";
+            const rules = step.config.rules || [];
+            const chineseNumMap = {
+              '零': 0, '一': 1, '二': 2, '三': 3, '四': 4, '五': 5, '六': 6, '七': 7, '八': 8, '九': 9,
+              '十': 10, '百': 100, '千': 1000, '万': 10000, '亿': 100000000,
+              '壹': 1, '贰': 2, '叁': 3, '肆': 4, '伍': 5, '陆': 6, '柒': 7, '捌': 8, '玖': 9,
+              '拾': 10, '佰': 100, '仟': 1000, '萬': 10000, '億': 100000000
+            };
+            const chineseToNumber = (text) => {
+              if (!text) return NaN;
+              let num = 0, unit = 1, lastUnit = 1;
+              const chars = String(text).split('');
+              for (let i = chars.length - 1; i >= 0; i--) {
+                const char = chars[i];
+                if (chineseNumMap[char] !== undefined) {
+                  if (chineseNumMap[char] >= 10) {
+                    unit = chineseNumMap[char];
+                    lastUnit = unit;
+                  } else {
+                    num += chineseNumMap[char] * unit;
+                  }
+                }
+              }
+              return num || NaN;
+            };
+            const matchRule = (value, rule) => {
+              const text = String(value);
+              switch (rule.matchType) {
+                case "regex":
+                  return new RegExp(rule.pattern || "\\d+\\.?\\d*").test(text);
+                case "contains":
+                  return text.includes(rule.pattern || "");
+                case "equals":
+                  return text === rule.pattern;
+                case "prefix":
+                  return text.startsWith(rule.pattern || "");
+                case "suffix":
+                  return text.endsWith(rule.pattern || "");
+                case "chineseNumber":
+                  return /[\u4e00-\u9fa5]/.test(text);
+                case "percent":
+                  return /\%/.test(text);
+                case "currency":
+                  return /[¥￥$€£]/.test(text) || /元|美元|欧元|英镑/.test(text);
+                case "auto":
+                  return /\d+/.test(text) || /[\u4e00-\u9fa5]/.test(text);
+                default:
+                  return true;
+              }
+            };
+            const convertValue = (value, rule) => {
+              let text = String(value);
+              let num = NaN;
+              switch (rule.convertType) {
+                case "extractNumber":
+                  const match = text.match(/(-?\d+\.?\d*)/);
+                  num = match ? Number(match[1]) : NaN;
+                  break;
+                case "multiply":
+                  num = Number(text.replace(/[^\d.-]/g, "")) * Number(rule.convertParam || 1);
+                  break;
+                case "divide":
+                  num = Number(text.replace(/[^\d.-]/g, "")) / Number(rule.convertParam || 1);
+                  break;
+                case "mapTo":
+                  num = Number(rule.convertParam);
+                  break;
+                case "chineseToNumber":
+                  num = chineseToNumber(text);
+                  break;
+                case "percentToNumber":
+                  num = Number(text.replace(/[\%％]/g, "")) / 100;
+                  break;
+                case "currencyToNumber":
+                  num = Number(text.replace(/[¥￥$€£元美元欧元英镑,，]/g, ""));
+                  break;
+                default:
+                  num = Number(text);
+              }
+              return isNaN(num) ? value : num;
+            };
+            data = data.map((row) => {
+              const value = row[col] ?? row.val;
+              for (const rule of rules) {
+                if (matchRule(value, rule)) {
+                  const converted = convertValue(value, rule);
+                  return { ...row, [targetCol]: converted };
+                }
+              }
+              return { ...row, [targetCol]: value };
+            });
+            break;
+          }
           case "cumulativeMax": {
             const cmCol = step.config.column || "val";
             const orderCol = step.config.orderColumn;

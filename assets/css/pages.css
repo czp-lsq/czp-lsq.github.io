@@ -758,8 +758,6 @@
   max-height: calc(100vh - 300px);
   display: flex;
   flex-direction: column;
-  justify-content: center;
-  align-items: center;
 }
 
 .template-page .form-item {
@@ -1130,6 +1128,19 @@
   overflow: hidden;
   align-items: stretch;
   padding: 12px;
+}
+
+@media (max-width: 1024px) {
+  .rules-page .workspace {
+    grid-template-columns: 320px 1fr;
+  }
+}
+
+@media (max-width: 768px) {
+  .rules-page .workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: 200px 1fr;
+  }
 }
 
 .rules-page .workspace-left {

@@ -303,6 +303,15 @@
         description: "将数据缩放到统一范围",
         useCase: "适用：Min-Max归一化、Z-Score标准化",
       },
+      valueNormalize: {
+        name: "值规范化",
+        icon: "🔢",
+        color: "var(--color-success)",
+        bg: "var(--color-success-50)",
+        category: "transform",
+        description: "识别并转换多种格式的值为标准数字，支持正则匹配和映射规则",
+        useCase: "适用：将'100元'/'一百'/'¥99.9'等多种格式转换为纯数字",
+      },
       constant: {
         name: "常量",
         icon: "🔢",
@@ -349,7 +358,7 @@
     },
     transform: {
       label: "转换处理",
-      types: ["filter", "virtual", "aggregate", "formula", "join", "condition", "group", "runningTotal", "percentOfTotal", "movingAverage", "binning", "conditionalTag", "stringExtract", "fillNA", "normalize", "constant", "text", "distinct"],
+      types: ["filter", "virtual", "aggregate", "formula", "join", "condition", "group", "runningTotal", "percentOfTotal", "movingAverage", "binning", "conditionalTag", "stringExtract", "fillNA", "normalize", "valueNormalize", "constant", "text", "distinct"],
     },
     format: {
       label: "格式化",
@@ -374,6 +383,13 @@
         }
         if (cfg.fillType === "auto" && !semanticType) {
           return { valid: false, message: "无法识别字段类型，请手动选择填充方式" };
+        }
+        if (cfg.fillType === "shop") {
+          return { valid: true, message: "配置完整（店铺名自动填充）" };
+        }
+        if (cfg.fillType === "date" || cfg.fillType === "dateNow") {
+          if (!cfg.dateFormat) return { valid: false, message: "请选择日期格式" };
+          return { valid: true, message: "配置完整（日期自动填充）" };
         }
         return { valid: true, message: "配置完整" };
       case "source":
@@ -483,6 +499,10 @@
         return { valid: true, message: "配置完整" };
       case "normalize":
         if (!cfg.column) return { valid: false, message: "请选择标准化列" };
+        return { valid: true, message: "配置完整" };
+      case "valueNormalize":
+        if (!cfg.column) return { valid: false, message: "请选择需要规范化的字段" };
+        if (!cfg.rules || cfg.rules.length === 0) return { valid: false, message: "请添加至少一条转换规则" };
         return { valid: true, message: "配置完整" };
       default:
         return { valid: true, message: "配置完整" };
@@ -666,6 +686,9 @@
       case "normalize": {
         const normNames = { minmax: "最小最大", zscore: "Z-score", decimal: "小数定标" };
         return `标准化: ${c.column || "val"} → ${c.targetColumn || "normalized"} (${normNames[c.normType] || c.normType})`;
+      }
+      case "valueNormalize": {
+        return `值规范化: ${c.column || "val"} → ${c.targetColumn || "normalized"} (${(c.rules || []).length}条规则)`;
       }
       default:
         return "";
