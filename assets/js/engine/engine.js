@@ -1364,27 +1364,33 @@ const CalcEngine = {
             let expr = originalExpr;
             const substitutions = {};
             const collectSub = (k, rawVal) => {
+              if (substitutions[k] !== undefined) return substitutions[k].value;
               const v = Number(String(rawVal).replace(/[,，]/g, "").replace(/[¥￥$€£]/g, "")) || 0;
               substitutions[k] = { raw: rawVal, value: v };
               return v;
             };
-            Object.keys(row).forEach((k) => {
-              const v = collectSub(k, row[k]);
-              const safeKey = k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-              expr = expr.replace(new RegExp(`\\$\\{${safeKey}\\}`, "g"), v);
-            });
-            Object.keys(row).forEach((k) => {
-              const v = collectSub(k, row[k]);
-              const safeKey = k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-              expr = expr.replace(new RegExp(`\\{${safeKey}\\}`, "g"), v);
-            });
-            if (context.savedFieldValues) {
-              Object.keys(context.savedFieldValues).forEach((k) => {
-                const v = collectSub(k, context.savedFieldValues[k]);
+            const replaceVars = (varsObj) => {
+              const keys = Object.keys(varsObj).sort((a, b) => b.length - a.length);
+              keys.forEach((k) => {
+                const v = collectSub(k, varsObj[k]);
                 const safeKey = k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-                expr = expr.replace(new RegExp(`\\{${safeKey}\\}`, "g"), v);
                 expr = expr.replace(new RegExp(`\\$\\{${safeKey}\\}`, "g"), v);
               });
+              keys.forEach((k) => {
+                const v = substitutions[k] !== undefined ? substitutions[k].value : collectSub(k, varsObj[k]);
+                const safeKey = k.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+                expr = expr.replace(new RegExp(`\\{${safeKey}\\}`, "g"), v);
+              });
+            };
+            replaceVars(row);
+            if (context.savedFieldValues) {
+              const remainingVars = {};
+              Object.keys(context.savedFieldValues).forEach((k) => {
+                if (substitutions[k] === undefined) {
+                  remainingVars[k] = context.savedFieldValues[k];
+                }
+              });
+              replaceVars(remainingVars);
             }
             // 将未解析的字段引用替换为0，避免ReferenceError
             const unresolvedRefs = expr.match(/\{[^}]+\}/g);

@@ -1,5 +1,5 @@
-// MapValueEditor - 映射值编辑器组件
-const MapValueEditor = ({ step, updateStepConfig }) => {
+// MapValueEditor - 映射值编辑器组件（从外部模块加载，带fallback）
+const MapValueEditor = window.RuleEditors?.MapValueEditor || (({ step, updateStepConfig }) => {
   const pairs = step.config.pairs || [{ from: "", to: "" }];
   const updatePairs = (newPairs) => {
     updateStepConfig(step.id, "pairs", newPairs);
@@ -73,10 +73,10 @@ const MapValueEditor = ({ step, updateStepConfig }) => {
       )
     )
   );
-};
+});
 
-// AdvancedRuleConfig - 高级规则配置组件
-const AdvancedRuleConfig = ({ step, updateStepConfig }) => {
+// AdvancedRuleConfig - 高级规则配置组件（从外部模块加载，带fallback）
+const AdvancedRuleConfig = window.RuleEditors?.AdvancedRuleConfig || (({ step, updateStepConfig }) => {
   const rule = step.config.rule;
   const cfg = step.config || {};
 
@@ -265,12 +265,12 @@ const AdvancedRuleConfig = ({ step, updateStepConfig }) => {
     default:
       return null;
   }
-};
+});
 
 // RulesPage - 计算规则页面组件
 const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   const { addToast } = useToast();
-  const getSemanticIcon = (semantic, type) => {
+  const getSemanticIcon = window.RulesUtils?.getSemanticIcon || ((semantic, type) => {
     const t = (semantic || type || "").toLowerCase();
     if (t.includes("money") || t.includes("price") || t.includes("amount") || t.includes("金额") || t.includes("价格") || t.includes("收入") || t.includes("成本") || t.includes("费用") || t.includes("利润")) return "\u00A5";
     if (t.includes("rate") || t.includes("percent") || t.includes("ratio") || t.includes("率") || t.includes("占比")) return "%";
@@ -278,7 +278,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
     if (t.includes("date") || t.includes("time") || t.includes("日期") || t.includes("时间") || t.includes("年") || t.includes("月") || t.includes("日")) return "\u{1F4C5}";
     if (t.includes("text") || t.includes("name") || t.includes("名称") || t.includes("标题") || t.includes("备注")) return "Aa";
     return "\u00B7";
-  };
+  });
   const SearchableSelect = window.SearchableSelect || ((props) => {
     const { value, onChange, options, placeholder, disabled, allowCreate, className = "", size = "default" } = props;
     const opts = (options || []).map((o) => typeof o === "object" ? { value: o.value, label: o.label || o.value } : { value: o, label: String(o) });
@@ -417,7 +417,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   const fields = template?.parseResult?.fields || [];
   const currentRule = activeField ? savedRules[activeField.id] : null;
 
-  const validateRule = (rule, field) => {
+  const validateRule = window.RuleValidator?.validateRule || ((rule, field) => {
     if (!rule || !rule.steps || rule.steps.length === 0) {
       return { valid: false, msg: "尚未配置任何步骤" };
     }
@@ -482,9 +482,11 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
       return { valid: false, msg: "已选数据源，请添加处理步骤（筛选/虚拟字段/公式等）" };
     }
     return { valid: true, msg: "配置完整" };
-  };
+  });
 
-  const inferFieldLevel = (field) => {
+  const inferFieldLevel = window.RuleValidator?.inferFieldLevel 
+    ? (field) => window.RuleValidator.inferFieldLevel(field, savedRules)
+    : ((field) => {
     const steps = savedRules[field.id]?.steps || [];
     if (steps.length === 0) return null;
     const hasJoin = steps.some((s) => s.type === "join");
@@ -493,7 +495,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
     if (hasJoin || hasVirtual) return 2;
     if (hasFilter) return 1;
     return 0;
-  };
+  });
 
   const categorizeField = (field) => {
     const name = (field.name || "").toLowerCase();
@@ -6263,7 +6265,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
     }
   };
 
-  const copyToClipboard = (text) => {
+  const copyToClipboard = window.RulesUtils?.copyToClipboard || ((text) => {
     try {
       if (navigator.clipboard && navigator.clipboard.writeText) {
         navigator.clipboard.writeText(text);
@@ -6281,9 +6283,9 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
     } catch (e) {
       return false;
     }
-  };
+  });
 
-  const dataToCSV = (data) => {
+  const dataToCSV = window.RulesUtils?.dataToCSV || ((data) => {
     if (!data || !Array.isArray(data) || data.length === 0) return "";
     const headers = new Set();
     data.forEach((row) => {
@@ -6307,9 +6309,9 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
       lines.push(headerArr.map((h) => escapeCSV(row[h])).join(","));
     });
     return lines.join("\n");
-  };
+  });
 
-  const downloadCSV = (data, filename) => {
+  const downloadCSV = window.RulesUtils?.downloadCSV || ((data, filename) => {
     const csv = dataToCSV(data);
     if (!csv) return;
     const blob = new Blob(["\uFEFF" + csv], { type: "text/csv;charset=utf-8;" });
@@ -6321,7 +6323,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
     a.click();
     document.body.removeChild(a);
     URL.revokeObjectURL(url);
-  };
+  });
 
   const getPreviewData = (step, stepIdx) => {
     try {
@@ -9050,126 +9052,122 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
           (() => {
             // 智能推荐步骤 - 基于已有步骤和数据列特征
             const steps = currentRule?.steps || [];
-            const hasSource = steps.some((s) => s.type === "source");
-            const hasFilter = steps.some((s) => s.type === "filter");
-            const hasVirtual = steps.some((s) => s.type === "virtual");
-            const hasJoin = steps.some((s) => s.type === "join");
-            const hasFormula = steps.some((s) => s.type === "formula");
-            const hasAggregate = steps.some((s) => s.type === "aggregate");
-            const hasSort = steps.some((s) => s.type === "sort");
-            const hasLimit = steps.some((s) => s.type === "limit");
-            // 收集所有可用列名（样本表 + 已选源表 + 虚拟字段生成列）
+            const semanticType = activeField?.semanticType || "";
             const samples = state.samples[currentPlatform] || [];
-            const sampleHeaders = new Set();
-            samples.forEach((s) => {
-              const sheet = s.sheets[Object.keys(s.sheets)[0]];
-              (sheet?.headers || []).forEach((h) => sampleHeaders.add(h));
-            });
+            const externals = state.externals || [];
             const sourceStep = steps.find((s) => s.type === "source");
             const sourceTableIds = sourceStep?.config?.tables || [];
-            const sourceHeaders = new Set(sampleHeaders);
-            if (sourceTableIds.length > 0) {
-              sourceTableIds.forEach((tid) => {
-                const t = samples.find((s) => s.id === tid);
-                const sheet = t?.sheets[Object.keys(t?.sheets || {})[0]];
-                (sheet?.headers || []).forEach((h) => sourceHeaders.add(h));
+
+            let recommendations;
+            if (window.StepRecommender?.generateRecommendations) {
+              recommendations = window.StepRecommender.generateRecommendations({
+                steps,
+                semanticType,
+                samples,
+                sourceTableIds,
+                externals,
               });
-            }
-            // 加入虚拟字段生成的列
-            steps.filter((s) => s.type === "virtual").forEach((s) => {
-              (s.config.target || "").split(",").map((t) => t.trim()).filter(Boolean).forEach((t) => sourceHeaders.add(t));
-            });
-            const headers = Array.from(sourceHeaders).map((h) => h.toLowerCase());
-            const hasCol = (keys) => headers.some((h) => keys.some((k) => h.includes(k)));
-            const externals = state.externals || [];
-            const hasCostTable = externals.length > 0;
-            const recommendations = [];
-            const addRec = (type, reason, priority = 0) => {
-              if (!recommendations.some((r) => r.type === type)) {
-                recommendations.push({ type, reason, priority });
-              }
-            };
-            // 根据字段语义判断是否需要数据源
-            const semanticType = activeField?.semanticType || "";
-            const isFillField = ["shop", "year", "month", "day", "date", "text"].includes(semanticType);
-            const isValueField = semanticType === "value";
-            // 判断当前规则是否依赖外部数据（公式/常量/文本等纯计算不依赖）
-            const dataDependentTypes = ["source", "filter", "aggregate", "join", "group", "union", "limit", "sort", "crossMatch", "keepDuplicate", "keepUnique", "intersect", "lookup", "runningTotal", "percentOfTotal", "movingAverage", "binning", "conditionalTag", "stringExtract", "fillNA", "normalize", "valueNormalize"];
-            const needsDataSource = steps.some((s) => dataDependentTypes.includes(s.type));
-            const hasPureCompute = steps.some((s) => ["formula", "constant", "text", "math", "ratio", "diff", "round", "concat", "substring", "date", "condition", "rank"].includes(s.type));
-            if (isFillField) {
-              // 填充类型字段优先推荐填充步骤，不提示选择数据源
-              const hasFill = steps.some((s) => s.type === "fill");
-              if (!hasFill) {
-                addRec("fill", `该字段为${semanticType === "shop" ? "店铺名" : semanticType.includes("date") || semanticType === "year" || semanticType === "month" || semanticType === "day" ? "日期" : "文本"}占位符，建议添加填充步骤`, 100);
-              }
-            } else if (!needsDataSource && !hasPureCompute) {
-              // 数值字段且尚未配置任何计算步骤时，才提示选择数据源
-              addRec("source", "首先需要选择数据源", 100);
-            }
-            // 数据列特征识别（仅对需要数据操作的字段推荐）
-            if ((hasSource || needsDataSource) && !isFillField) {
-              // 合并已选源表和外部表的列，提升识别准确性
-              const sourceStep = steps.find((s) => s.type === "source");
-              const sourceTableIds = sourceStep?.config?.tables || [];
-              sourceTableIds.forEach((tid) => {
-                const t = samples.find((s) => s.id === tid);
-                const sheet = t?.sheets[Object.keys(t?.sheets || {})[0]];
-                (sheet?.headers || []).forEach((h) => sourceHeaders.add(h));
+            } else {
+              const hasSource = steps.some((s) => s.type === "source");
+              const hasFilter = steps.some((s) => s.type === "filter");
+              const hasVirtual = steps.some((s) => s.type === "virtual");
+              const hasJoin = steps.some((s) => s.type === "join");
+              const hasFormula = steps.some((s) => s.type === "formula");
+              const hasAggregate = steps.some((s) => s.type === "aggregate");
+              const hasSort = steps.some((s) => s.type === "sort");
+              const hasLimit = steps.some((s) => s.type === "limit");
+              const sampleHeaders = new Set();
+              samples.forEach((s) => {
+                const sheet = s.sheets[Object.keys(s.sheets)[0]];
+                (sheet?.headers || []).forEach((h) => sampleHeaders.add(h));
               });
-              (state.externals || []).forEach((e) => {
-                (e.headers || []).forEach((h) => sourceHeaders.add(h));
+              const sourceHeaders = new Set(sampleHeaders);
+              if (sourceTableIds.length > 0) {
+                sourceTableIds.forEach((tid) => {
+                  const t = samples.find((s) => s.id === tid);
+                  const sheet = t?.sheets[Object.keys(t?.sheets || {})[0]];
+                  (sheet?.headers || []).forEach((h) => sourceHeaders.add(h));
+                });
+              }
+              steps.filter((s) => s.type === "virtual").forEach((s) => {
+                (s.config.target || "").split(",").map((t) => t.trim()).filter(Boolean).forEach((t) => sourceHeaders.add(t));
               });
               const headers = Array.from(sourceHeaders).map((h) => h.toLowerCase());
               const hasCol = (keys) => headers.some((h) => keys.some((k) => h.includes(k)));
-              const hasSpec = hasCol(["规格", "型号", "商品规格", "款式"]);
-              const hasSku = hasCol(["款号", "sku", "商品编码", "货号"]);
-              const hasSize = hasCol(["尺码", "size", "码数"]);
-              const hasPieces = hasCol(["条数", "件数", "数量", "购买数量"]);
-              const hasCost = hasCol(["成本", "cost", "单价", "价格"]);
-              const hasAmount = hasCol(["金额", "销售额", "实付", "总价", "收入"]);
-              const hasShop = hasCol(["店铺", "来源", "渠道", "门店"]);
-              const hasDate = hasCol(["日期", "时间", "下单", "创建"]);
-              const hasRefund = hasCol(["退款", "退货", "售后"]);
-              // 虚拟字段：有规格列且未提取条数/尺码
-              if (hasSpec && !hasVirtual) {
-                addRec("virtual", "检测到规格列，建议提取条数和尺码", 90);
-              } else if (!hasSize && hasSpec && hasVirtual) {
-                addRec("virtual", "建议添加尺码识别虚拟字段", 85);
-              } else if (!hasPieces && hasSpec && hasVirtual) {
-                addRec("virtual", "建议添加条数识别虚拟字段", 85);
+              const hasCostTable = externals.length > 0;
+              recommendations = [];
+              const addRec = (type, reason, priority = 0) => {
+                if (!recommendations.some((r) => r.type === type)) {
+                  recommendations.push({ type, reason, priority });
+                }
+              };
+              const isFillField = ["shop", "year", "month", "day", "date", "text"].includes(semanticType);
+              const isValueField = semanticType === "value";
+              const dataDependentTypes = ["source", "filter", "aggregate", "join", "group", "union", "limit", "sort", "crossMatch", "keepDuplicate", "keepUnique", "intersect", "lookup", "runningTotal", "percentOfTotal", "movingAverage", "binning", "conditionalTag", "stringExtract", "fillNA", "normalize", "valueNormalize"];
+              const needsDataSource = steps.some((s) => dataDependentTypes.includes(s.type));
+              const hasPureCompute = steps.some((s) => ["formula", "constant", "text", "math", "ratio", "diff", "round", "concat", "substring", "date", "condition", "rank"].includes(s.type));
+              if (isFillField) {
+                const hasFill = steps.some((s) => s.type === "fill");
+                if (!hasFill) {
+                  addRec("fill", `该字段为${semanticType === "shop" ? "店铺名" : semanticType.includes("date") || semanticType === "year" || semanticType === "month" || semanticType === "day" ? "日期" : "文本"}占位符，建议添加填充步骤`, 100);
+                }
+              } else if (!needsDataSource && !hasPureCompute) {
+                addRec("source", "首先需要选择数据源", 100);
               }
-              // 跨表关联：有款号+尺码/规格+全局成本表
-              if (hasSku && (hasSize || hasSpec) && hasCostTable && !hasJoin) {
-                addRec("join", "检测到款号与全局成本表，建议关联匹配单件成本", 80);
+              if ((hasSource || needsDataSource) && !isFillField) {
+                sourceTableIds.forEach((tid) => {
+                  const t = samples.find((s) => s.id === tid);
+                  const sheet = t?.sheets[Object.keys(t?.sheets || {})[0]];
+                  (sheet?.headers || []).forEach((h) => sourceHeaders.add(h));
+                });
+                (state.externals || []).forEach((e) => {
+                  (e.headers || []).forEach((h) => sourceHeaders.add(h));
+                });
+                const headers = Array.from(sourceHeaders).map((h) => h.toLowerCase());
+                const hasCol = (keys) => headers.some((h) => keys.some((k) => h.includes(k)));
+                const hasSpec = hasCol(["规格", "型号", "商品规格", "款式"]);
+                const hasSku = hasCol(["款号", "sku", "商品编码", "货号"]);
+                const hasSize = hasCol(["尺码", "size", "码数"]);
+                const hasPieces = hasCol(["条数", "件数", "数量", "购买数量"]);
+                const hasCost = hasCol(["成本", "cost", "单价", "价格"]);
+                const hasAmount = hasCol(["金额", "销售额", "实付", "总价", "收入"]);
+                const hasShop = hasCol(["店铺", "来源", "渠道", "门店"]);
+                const hasDate = hasCol(["日期", "时间", "下单", "创建"]);
+                const hasRefund = hasCol(["退款", "退货", "售后"]);
+                if (hasSpec && !hasVirtual) {
+                  addRec("virtual", "检测到规格列，建议提取条数和尺码", 90);
+                } else if (!hasSize && hasSpec && hasVirtual) {
+                  addRec("virtual", "建议添加尺码识别虚拟字段", 85);
+                } else if (!hasPieces && hasSpec && hasVirtual) {
+                  addRec("virtual", "建议添加条数识别虚拟字段", 85);
+                }
+                if (hasSku && (hasSize || hasSpec) && hasCostTable && !hasJoin) {
+                  addRec("join", "检测到款号与全局成本表，建议关联匹配单件成本", 80);
+                }
+                if (isValueField && (hasPieces || hasVirtual) && (hasCost || hasJoin) && !hasFormula) {
+                  addRec("formula", "建议用公式计算金额（数量×单价）", 75);
+                }
+                if (isValueField && (hasAmount || hasCost || hasPieces) && !hasAggregate && !hasFormula) {
+                  addRec("aggregate", `检测到${hasAmount || hasCost ? "金额" : "数量"}列，建议聚合汇总数据`, 70);
+                }
+                if (hasShop && !hasFilter) {
+                  addRec("filter", "检测到店铺/来源列，建议按店铺筛选数据", 60);
+                } else if (hasRefund && !hasFilter) {
+                  addRec("filter", "检测到退款列，建议过滤退款订单", 60);
+                } else if (!hasFilter && steps.length >= 2 && isValueField) {
+                  addRec("filter", "建议添加筛选条件过滤数据", 50);
+                }
+                if (hasDate && !hasSort) {
+                  addRec("sort", "检测到日期列，建议按时间排序", 45);
+                }
+                if (!hasLimit && steps.length >= 3) {
+                  addRec("limit", "步骤较多，建议限制输出条数便于预览", 30);
+                }
               }
-              // 公式计算：有条数和成本，且目标是数值字段
-              if (isValueField && (hasPieces || hasVirtual) && (hasCost || hasJoin) && !hasFormula) {
-                addRec("formula", "建议用公式计算金额（数量×单价）", 75);
-              }
-              // 聚合：数值字段且检测到金额/数量列，且前面没有公式
-              if (isValueField && (hasAmount || hasCost || hasPieces) && !hasAggregate && !hasFormula) {
-                addRec("aggregate", `检测到${hasAmount || hasCost ? "金额" : "数量"}列，建议聚合汇总数据`, 70);
-              }
-              // 筛选
-              if (hasShop && !hasFilter) {
-                addRec("filter", "检测到店铺/来源列，建议按店铺筛选数据", 60);
-              } else if (hasRefund && !hasFilter) {
-                addRec("filter", "检测到退款列，建议过滤退款订单", 60);
-              } else if (!hasFilter && steps.length >= 2 && isValueField) {
-                addRec("filter", "建议添加筛选条件过滤数据", 50);
-              }
-              // 排序
-              if (hasDate && !hasSort) {
-                addRec("sort", "检测到日期列，建议按时间排序", 45);
-              }
-              // 限制
-              if (!hasLimit && steps.length >= 3) {
-                addRec("limit", "步骤较多，建议限制输出条数便于预览", 30);
-              }
+              recommendations.sort((a, b) => b.priority - a.priority);
             }
+
             if (recommendations.length === 0) return null;
-            recommendations.sort((a, b) => b.priority - a.priority);
             return /*#__PURE__*/ React.createElement(
               "div",
               { style: { marginBottom: "16px", padding: "12px 16px", background: "var(--color-primary-50)", borderRadius: "var(--radius-lg)", border: "1px solid var(--color-primary-100)" } },

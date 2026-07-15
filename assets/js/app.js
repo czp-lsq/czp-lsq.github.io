@@ -1319,13 +1319,21 @@ const App = () => {
     };
     setIsLoggedIn(true);
     setCurrentUser(userData);
+    let passwordToSave = userInfo.password;
+    if (userInfo.isRemembered) {
+      try {
+        const savedUser = localStorage.getItem("app_login_user");
+        if (savedUser) {
+          const savedData = JSON.parse(savedUser);
+          if (savedData.username === userInfo.username.trim() && savedData.encryptedPassword) {
+            passwordToSave = decryptPassword(savedData.encryptedPassword);
+          }
+        }
+      } catch (e) {}
+    }
     localStorage.setItem("app_login_user", JSON.stringify({ 
       username: userData.username, 
-      encryptedPassword: encryptPassword(
-        userInfo.isRemembered 
-          ? decryptPassword(JSON.parse(localStorage.getItem("app_login_user")).encryptedPassword)
-          : userInfo.password
-      )
+      encryptedPassword: encryptPassword(passwordToSave)
     }));
     const updatedAccounts = accounts.map((a) =>
       a.id === matchedAccount.id
