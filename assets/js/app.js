@@ -1094,6 +1094,58 @@ const App = () => {
       return newTabs;
     });
   };
+  // 平台品牌Logo组件 - 使用真实品牌色SVG，避免依赖不完整的iconfont字体
+  const PlatformLogo = ({ platformId, size = 24 }) => {
+    const logos = {
+      pdd: {
+        bg: "#E02020",
+        text: "P",
+        fontWeight: 900,
+        fontFamily: "Georgia, serif",
+        textColor: "#FFFFFF",
+      },
+      tb: {
+        bg: "#FF4200",
+        text: "淘",
+        fontWeight: 700,
+        fontFamily: '"PingFang SC", "Microsoft YaHei", sans-serif',
+        textColor: "#FFFFFF",
+      },
+      dy: {
+        bg: "#161823",
+        text: "抖",
+        fontWeight: 700,
+        fontFamily: '"PingFang SC", "Microsoft YaHei", sans-serif',
+        textColor: "#25F4EE",
+      },
+    };
+    const logo = logos[platformId] || logos.pdd;
+    const isSmall = size <= 18;
+    return /*#__PURE__*/ React.createElement(
+      "div",
+      {
+        className: "platform-brand-logo",
+        "data-platform": platformId,
+        style: {
+          width: size,
+          height: size,
+          background: logo.bg,
+          color: logo.textColor,
+          borderRadius: Math.max(4, size * 0.22),
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: isSmall ? size * 0.55 : size * 0.5,
+          fontWeight: logo.fontWeight,
+          fontFamily: logo.fontFamily,
+          flexShrink: 0,
+          boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
+          letterSpacing: isSmall ? 0 : "-0.5px",
+        },
+      },
+      logo.text,
+    );
+  };
   const pageTitles = {
     dashboard: { title: "数据概览", subtitle: "查看系统配置和统计信息" },
     template: { title: "模板中心", subtitle: "上传和配置利润表模板" },
@@ -1575,12 +1627,10 @@ const App = () => {
                   onClick: () => setCurrentPlatform(platform.id),
                   title: `${platform.name}（${platform.shops.length}个店铺）`,
                 },
-                /*#__PURE__*/ React.createElement(
-                  "span",
-                  {
-                    className: `platform-icon iconfont icon-${platform.id}`,
-                  },
-                ),
+                /*#__PURE__*/ React.createElement(PlatformLogo, {
+                  platformId: platform.id,
+                  size: 22,
+                }),
                 /*#__PURE__*/ React.createElement(
                   "span",
                   { className: "platform-name" },

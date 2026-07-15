@@ -11024,3 +11024,416 @@ body.dark.theme-elegant .guide-step:hover {
 body.dark.theme-elegant .guide-step-num {
   border-color: var(--color-primary-300);
 }
+
+/* ========================================
+   Admin Page - 高优先级样式修复 v2.0.1
+   使用 body 前缀确保样式生效
+   ======================================== */
+body .admin-page {
+  display: flex !important;
+  flex-direction: row;
+  width: 100%;
+  height: 100vh;
+  min-height: 600px;
+  background: var(--color-bg-primary);
+  overflow: hidden;
+  position: relative;
+}
+body .admin-sidebar {
+  display: flex !important;
+  flex-direction: column;
+  width: 240px;
+  min-width: 240px;
+  background: var(--color-bg-secondary);
+  border-right: 1px solid var(--color-border);
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sidebar);
+  z-index: 10;
+}
+body .admin-main {
+  display: flex !important;
+  flex-direction: column;
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+}
+body .admin-content {
+  flex: 1 1 auto;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px;
+  background: var(--color-bg-primary);
+}
+body .admin-topbar {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  height: 64px;
+  min-height: 64px;
+  padding: 0 24px;
+  background: var(--color-bg-secondary);
+  border-bottom: 1px solid var(--color-border);
+  box-shadow: var(--shadow-xs);
+  flex-shrink: 0;
+}
+body .admin-sidebar-header {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  padding: 20px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+body .admin-logo {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  width: 44px;
+  height: 44px;
+  border-radius: 10px;
+  background: var(--color-primary-gradient);
+  color: #FFFFFF;
+  flex-shrink: 0;
+  box-shadow: var(--shadow-sm);
+}
+body .admin-brand {
+  flex: 1;
+  min-width: 0;
+}
+body .admin-brand-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body .admin-brand-sub {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
+}
+body .admin-menu {
+  flex: 1;
+  padding: 12px;
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+body .admin-menu-item {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  width: 100%;
+  padding: 10px 14px;
+  margin-bottom: 2px;
+  border: none;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  border-radius: var(--radius-md);
+  transition: all var(--transition-fast);
+  text-align: left;
+  font-family: inherit;
+  position: relative;
+}
+body .admin-menu-item:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+body .admin-menu-item.active {
+  background: var(--color-primary-50);
+  color: var(--color-primary);
+  font-weight: 600;
+}
+body .admin-menu-item.active::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 3px;
+  height: 60%;
+  background: var(--color-primary);
+  border-radius: 0 2px 2px 0;
+}
+body .admin-menu-item svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+body .admin-menu-item .menu-badge {
+  margin-left: auto;
+  min-width: 20px;
+  height: 20px;
+  padding: 0 6px;
+  background: var(--color-danger);
+  color: #FFFFFF;
+  border-radius: 10px;
+  font-size: 11px;
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+body .admin-sidebar-footer {
+  padding: 16px;
+  border-top: 1px solid var(--color-border-light);
+  background: var(--color-bg-tertiary);
+  flex-shrink: 0;
+}
+body .admin-user-info {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+  margin-bottom: 12px;
+}
+body .admin-user-avatar {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-primary-gradient);
+  color: #FFFFFF;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  font-size: 16px;
+  font-weight: 700;
+  flex-shrink: 0;
+}
+body .admin-user-detail {
+  flex: 1;
+  min-width: 0;
+}
+body .admin-user-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+body .admin-user-role {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  margin-top: 2px;
+}
+body .admin-actions {
+  display: flex !important;
+  gap: 8px;
+}
+body .admin-action-btn {
+  flex: 1;
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  height: 32px;
+  padding: 0 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-bg-secondary);
+  color: var(--color-text-secondary);
+  font-size: 12px;
+  cursor: pointer;
+  transition: all var(--transition-fast);
+}
+body .admin-action-btn:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+  border-color: var(--color-border-medium);
+}
+body .admin-breadcrumb {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  font-size: 14px;
+}
+body .admin-breadcrumb .breadcrumb-item {
+  cursor: pointer;
+  color: var(--color-text-tertiary);
+  transition: color var(--transition-fast);
+}
+body .admin-breadcrumb .breadcrumb-item:hover {
+  color: var(--color-text-primary);
+}
+body .admin-breadcrumb .breadcrumb-item.active {
+  color: var(--color-text-primary);
+  font-weight: 600;
+  cursor: default;
+}
+body .admin-breadcrumb .breadcrumb-sep {
+  display: flex !important;
+  align-items: center;
+  color: var(--color-text-muted);
+}
+body .admin-topbar-right {
+  display: flex !important;
+  align-items: center;
+  gap: 12px;
+}
+
+/* 统计卡片网格 */
+body .admin-dashboard .stats-grid {
+  display: grid !important;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 20px;
+  margin-bottom: 28px;
+}
+body .admin-dashboard .stat-card {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  display: flex !important;
+  align-items: center;
+  gap: 16px;
+  box-shadow: var(--shadow-xs);
+  transition: all var(--transition-base);
+  position: relative;
+  overflow: hidden;
+}
+body .admin-dashboard .stat-card::before {
+  content: "";
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: var(--color-primary);
+}
+body .admin-dashboard .stat-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+  border-color: var(--color-primary-200);
+}
+body .admin-dashboard .stat-card.success::before { background: var(--color-success); }
+body .admin-dashboard .stat-card.warning::before { background: var(--color-warning); }
+body .admin-dashboard .stat-card.danger::before { background: var(--color-danger); }
+body .admin-dashboard .stat-card.info::before { background: var(--color-info); }
+body .admin-dashboard .stat-icon {
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md);
+  background: var(--color-primary-50);
+  color: var(--color-primary);
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+body .admin-dashboard .stat-card.success .stat-icon { background: var(--color-success-bg); color: var(--color-success); }
+body .admin-dashboard .stat-card.warning .stat-icon { background: var(--color-warning-bg); color: var(--color-warning); }
+body .admin-dashboard .stat-card.danger .stat-icon { background: var(--color-danger-bg); color: var(--color-danger); }
+body .admin-dashboard .stat-card.info .stat-icon { background: var(--color-info-bg); color: var(--color-info); }
+body .admin-dashboard .stat-content {
+  flex: 1;
+  min-width: 0;
+}
+body .admin-dashboard .stat-label {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 4px;
+}
+body .admin-dashboard .stat-value {
+  font-size: 24px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  line-height: 1.2;
+}
+
+/* 卡片 */
+body .admin-dashboard .card,
+body .admin-users .card,
+body .admin-audit .card,
+body .admin-platforms .card,
+body .admin-templates .card,
+body .admin-data .card,
+body .admin-settings .card,
+body .admin-logs .card {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  box-shadow: var(--shadow-xs);
+  margin-bottom: 20px;
+}
+body .admin-dashboard .card-header,
+body .admin-users .card-header,
+body .admin-audit .card-header,
+body .admin-platforms .card-header,
+body .admin-templates .card-header,
+body .admin-data .card-header,
+body .admin-settings .card-header,
+body .admin-logs .card-header {
+  display: flex !important;
+  align-items: center;
+  justify-content: space-between;
+  padding: 16px 20px;
+  border-bottom: 1px solid var(--color-border-light);
+  background: var(--color-bg-secondary);
+  font-size: 15px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+body .admin-dashboard .card-body,
+body .admin-users .card-body,
+body .admin-audit .card-body,
+body .admin-platforms .card-body,
+body .admin-templates .card-body,
+body .admin-data .card-body,
+body .admin-settings .card-body,
+body .admin-logs .card-body {
+  padding: 20px;
+}
+
+/* 响应式 - 小屏幕 */
+@media (max-width: 1024px) {
+  body .admin-sidebar {
+    width: 200px;
+    min-width: 200px;
+  }
+  body .admin-content { padding: 16px; }
+  body .admin-dashboard .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+@media (max-width: 768px) {
+  body .admin-page {
+    flex-direction: column;
+  }
+  body .admin-sidebar {
+    width: 100%;
+    min-width: 0;
+    height: auto;
+    max-height: 50vh;
+  }
+  body .admin-dashboard .stats-grid {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* 平台品牌Logo样式 - 防止被主题色覆盖 */
+.platform-brand-logo {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  user-select: none;
+  -webkit-user-select: none;
+  /* 品牌色在内联 style 中，!important 防止任何主题色覆盖 */
+}
+.platform-brand-logo[data-platform="pdd"] {
+  background: #E02020 !important;
+  color: #FFFFFF !important;
+}
+.platform-brand-logo[data-platform="tb"] {
+  background: #FF4200 !important;
+  color: #FFFFFF !important;
+}
+.platform-brand-logo[data-platform="dy"] {
+  background: #161823 !important;
+  color: #25F4EE !important;
+}
