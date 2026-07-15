@@ -387,11 +387,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   const [previewStepId, setPreviewStepId] = useState(null);
   const [previewTab, setPreviewTab] = useState("both");
   const [isPreviewPinned, setIsPreviewPinned] = useState(false);
-  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(() => {
-    try {
-      return localStorage.getItem(`rules_page_left_collapsed_${currentPlatform}`) === "true";
-    } catch (e) { return false; }
-  });
+  const [hoveredStepType, setHoveredStepType] = useState(null);
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
   const [infoPanelOpen, setInfoPanelOpen] = useState(() => {
     try {
       const saved = localStorage.getItem(`rules_page_info_open_${currentPlatform}`);
@@ -403,7 +400,11 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   const [fieldCategoryFilter, setFieldCategoryFilter] = useState("all");
 
   useEffect(() => {
-    localStorage.setItem(`rules_page_left_collapsed_${currentPlatform}`, leftPanelCollapsed);
+    if (leftPanelCollapsed) {
+      try {
+        localStorage.setItem(`rules_page_left_collapsed_${currentPlatform}`, "true");
+      } catch (e) {}
+    }
   }, [leftPanelCollapsed, currentPlatform]);
 
   useEffect(() => {
@@ -1324,6 +1325,223 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
         bg: "var(--color-bg-tertiary)",
       }
     );
+  };
+
+  // 步骤预览信息：示例 + 典型配置
+  const getStepTypePreview = (type) => {
+    const previews = {
+      source: {
+        scenario: "选择数据来源",
+        example: "从已上传的「账务明细」中读取本月数据",
+        config: "数据表：账务2月明细 → 全部列",
+      },
+      fill: {
+        scenario: "自动填充占位符",
+        example: "店铺列、日期列无需手动填写",
+        config: "填充方式：店铺名 / 日期 / 文本",
+      },
+      constant: {
+        scenario: "使用固定数值",
+        example: "税率固定 0.06",
+        config: "常量值：6",
+      },
+      filter: {
+        scenario: "按条件筛选",
+        example: "仅保留「已付款」订单",
+        config: "列：状态  运算：等于  值：已付款",
+      },
+      filterEqual: {
+        scenario: "精确匹配",
+        example: "仅保留店铺A的记录",
+        config: "列：店铺 = 「店铺A」",
+      },
+      filterContain: {
+        scenario: "模糊匹配",
+        example: "保留所有「推广」相关记录",
+        config: "列：渠道  包含：「推广」",
+      },
+      filterRange: {
+        scenario: "区间筛选",
+        example: "金额在 100~1000 之间",
+        config: "列：金额  范围：100 ~ 1000",
+      },
+      topN: {
+        scenario: "保留前N行",
+        example: "取销售额前10的店铺",
+        config: "按销售额降序 → 取10条",
+      },
+      distinct: {
+        scenario: "去重",
+        example: "每个店铺仅保留第一条",
+        config: "按店铺去重",
+      },
+      condition: {
+        scenario: "条件判断返回不同值",
+        example: "金额>0 显示「收入」否则「退款」",
+        config: "IF(金额>0, 收入, 退款)",
+      },
+      limit: {
+        scenario: "限制行数",
+        example: "只显示前100条用于预览",
+        config: "限制：100 行",
+      },
+      virtual: {
+        scenario: "提取/转换字段值",
+        example: "从「尺码:XL/XXL」中提取「XL」",
+        config: "目标列：尺码  规则：正则",
+      },
+      lookup: {
+        scenario: "按映射表替换",
+        example: "把店铺A→门店1，店铺B→门店2",
+        config: "原值 → 目标值 映射表",
+      },
+      sort: {
+        scenario: "排序",
+        example: "按日期升序排列",
+        config: "列：日期  顺序：升序",
+      },
+      text: {
+        scenario: "文本处理",
+        example: "拼接店铺+月份生成标识",
+        config: "文本函数 / 拼接表达式",
+      },
+      round: {
+        scenario: "四舍五入",
+        example: "金额保留2位小数",
+        config: "列：金额 → 保留2位",
+      },
+      concat: {
+        scenario: "字符串拼接",
+        example: "店铺 + \"_\" + 月份",
+        config: "字段1 + 字符 + 字段2",
+      },
+      substring: {
+        scenario: "字符串截取",
+        example: "取订单号前6位",
+        config: "列：订单号  起始：0  长度：6",
+      },
+      date: {
+        scenario: "日期格式化",
+        example: "提取日期的「月」",
+        config: "列：日期 → 提取月份",
+      },
+      math: {
+        scenario: "数学运算",
+        example: "金额 = 数量 × 单价",
+        config: "表达式：{数量} * {单价}",
+      },
+      aggregate: {
+        scenario: "聚合统计",
+        example: "求所有金额的总和",
+        config: "列：金额 → 求和",
+      },
+      group: {
+        scenario: "分组聚合",
+        example: "按店铺汇总金额",
+        config: "分组：店铺  聚合：金额求和",
+      },
+      formula: {
+        scenario: "自定义公式",
+        example: "利润 = 收入 - 成本 - 费用",
+        config: "{收入} - {成本} - {费用}",
+      },
+      rank: {
+        scenario: "排名",
+        example: "店铺按销售额排名",
+        config: "列：销售额 → 降序",
+      },
+      diff: {
+        scenario: "差值计算",
+        example: "本月 - 上月 = 增长",
+        config: "基准列：上月销售额",
+      },
+      ratio: {
+        scenario: "比率",
+        example: "利润 / 收入 = 利润率",
+        config: "分子：{利润}  分母：{收入}",
+      },
+      join: {
+        scenario: "关联全局表",
+        example: "通过款号关联成本表",
+        config: "本表：款号  外部表：成本表 → 匹配",
+      },
+      union: {
+        scenario: "合并多表",
+        example: "把1月和2月订单合并",
+        config: "源表1 + 源表2",
+      },
+      keepDuplicate: {
+        scenario: "保留重复行",
+        example: "找出出现多次的款号",
+        config: "列：款号 → 保留重复",
+      },
+      keepUnique: {
+        scenario: "保留唯一行",
+        example: "移除重复的款号",
+        config: "列：款号 → 保留唯一",
+      },
+      intersect: {
+        scenario: "两表对比",
+        example: "保留两表都有的订单",
+        config: "匹配列：订单号",
+      },
+      crossMatch: {
+        scenario: "跨表匹配",
+        example: "找出同时出现的商品",
+        config: "本表：款号  外部表：款号",
+      },
+      runningTotal: {
+        scenario: "累计求和",
+        example: "每日销售额累加",
+        config: "列：金额 → 累计",
+      },
+      percentOfTotal: {
+        scenario: "占比",
+        example: "每个店铺占总销售的比例",
+        config: "列：金额 → 占总 %",
+      },
+      movingAverage: {
+        scenario: "移动平均",
+        example: "最近7天销售额均值",
+        config: "窗口：7天",
+      },
+      binning: {
+        scenario: "数据分箱",
+        example: "金额分箱：0-100/100-500/500+",
+        config: "区间列表 + 标签",
+      },
+      conditionalTag: {
+        scenario: "条件标记",
+        example: "金额>1000 标记「高客单」",
+        config: "条件 + 标签",
+      },
+      stringExtract: {
+        scenario: "字符串提取",
+        example: "从规格中提取尺码",
+        config: "正则：/尺码:(\\w+)/",
+      },
+      fillNA: {
+        scenario: "空值填充",
+        example: "空金额填0",
+        config: "列：金额 → 填0",
+      },
+      normalize: {
+        scenario: "数据标准化",
+        example: "金额缩放到 0~1",
+        config: "方式：min-max / z-score",
+      },
+      regexReplace: {
+        scenario: "正则替换",
+        example: "去掉手机号中的横线",
+        config: "正则：/-/g  替换：''",
+      },
+      trim: {
+        scenario: "去除空格",
+        example: "清理用户输入的首尾空格",
+        config: "列：备注 → trim",
+      },
+    };
+    return previews[type] || { scenario: type, example: "配置此步骤", config: "暂无预览" };
   };
   // 步骤相关辅助函数已抽离到 assets/js/rules/stepMeta.js（window.RulesStepMeta）
   // 此处使用全局引用，保持组件逻辑清晰
@@ -7182,20 +7400,17 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                             const v = validateRule(savedRules[field.id], field);
                             const stepCount = (savedRules[field.id]?.steps || []).length;
                             const status = stepCount === 0 ? "empty" : (v.valid ? "done" : "partial");
-                            const semIcon = getSemanticIcon(field.semanticType, field.type);
                             return /*#__PURE__*/ React.createElement(
                               "li",
                               {
                                 key: field.id,
                                 className: `field-item ${activeField?.id === field.id ? "active" : ""} field-status-${status}`,
                                 onClick: () => setActiveField(field),
-                                title: field.name,
+                                title: `${field.name} · ${field.cell}${stepCount > 0 ? " · " + stepCount + "步" : ""}`,
                               },
                               /*#__PURE__*/ React.createElement("span", { className: `field-item-dot ${status === "done" ? "done" : status === "partial" ? "partial" : ""}` }),
-                              /*#__PURE__*/ React.createElement("span", { className: "field-item-icon", title: field.semanticType || field.type || "" }, semIcon),
                               /*#__PURE__*/ React.createElement("div", { className: "field-item-name" }, field.name),
-                              /*#__PURE__*/ React.createElement("span", { className: "field-item-cell" }, field.cell),
-                              stepCount > 0 && /*#__PURE__*/ React.createElement("span", { className: "field-item-badge" }, stepCount, "\u6B65"),
+                              stepCount > 0 && /*#__PURE__*/ React.createElement("span", { className: "field-item-badge" }, stepCount),
                             );
                           }),
                         ),
@@ -8807,7 +9022,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
         {
           title: "\u6DFB\u52A0\u8BA1\u7B97\u6B65\u9AA4",
           width: "900px",
-          onClose: () => setShowAddStepModal(false),
+          onClose: () => { setShowAddStepModal(false); setHoveredStepType(null); },
           footer: /*#__PURE__*/ React.createElement(
             Button,
             { onClick: () => setShowAddStepModal(false) },
@@ -8975,7 +9190,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                       key: rec.type,
                       className: "quick-tag",
                       style: { cursor: "pointer", display: "flex", alignItems: "center", gap: "4px", padding: "6px 12px", flexShrink: 0 },
-                      onClick: () => { addStep(rec.type); setShowAddStepModal(false); },
+                      onClick: () => { addStep(rec.type); setShowAddStepModal(false); setHoveredStepType(null); },
                     },
                     /*#__PURE__*/ React.createElement("span", { style: { fontSize: "14px", display: "inline-flex", flexShrink: 0 } }, info.icon),
                     /*#__PURE__*/ React.createElement("span", { style: { whiteSpace: "nowrap" } }, info.name),
@@ -9098,8 +9313,12 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                     "button",
                     {
                       key: type,
-                      className: "step-type-card",
-                      onClick: () => addStep(type),
+                      className: `step-type-card ${hoveredStepType === type ? "previewing" : ""}`,
+                      onClick: () => { addStep(type); setHoveredStepType(null); },
+                      onMouseEnter: () => setHoveredStepType(type),
+                      onMouseLeave: () => setHoveredStepType((cur) => (cur === type ? null : cur)),
+                      onFocus: () => setHoveredStepType(type),
+                      onBlur: () => setHoveredStepType((cur) => (cur === type ? null : cur)),
                       title: info.desc,
                     },
                     /*#__PURE__*/ React.createElement(
@@ -9123,6 +9342,52 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   );
                 }),
               ),
+              hoveredStepType && (() => {
+                const pInfo = getStepTypeInfo(hoveredStepType);
+                const pPrev = getStepTypePreview(hoveredStepType);
+                return /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "step-type-preview-panel" },
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "step-type-preview-header" },
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { className: "step-type-preview-icon", style: { color: pInfo.color, background: pInfo.bg } },
+                      pInfo.icon,
+                    ),
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { className: "step-type-preview-titles" },
+                      /*#__PURE__*/ React.createElement("div", { className: "step-type-preview-name" }, pInfo.name),
+                      /*#__PURE__*/ React.createElement("div", { className: "step-type-preview-desc" }, pInfo.desc),
+                    ),
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "step-type-preview-section" },
+                    /*#__PURE__*/ React.createElement("div", { className: "step-type-preview-label" }, "💡 适用场景"),
+                    /*#__PURE__*/ React.createElement("div", { className: "step-type-preview-value" }, pPrev.scenario),
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "step-type-preview-section" },
+                    /*#__PURE__*/ React.createElement("div", { className: "step-type-preview-label" }, "📌 典型示例"),
+                    /*#__PURE__*/ React.createElement("div", { className: "step-type-preview-example" }, pPrev.example),
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "step-type-preview-section" },
+                    /*#__PURE__*/ React.createElement("div", { className: "step-type-preview-label" }, "⚙️ 配置要点"),
+                    /*#__PURE__*/ React.createElement("div", { className: "step-type-preview-value" }, pPrev.config),
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "step-type-preview-footer" },
+                    "点击卡片即可添加此步骤",
+                  ),
+                );
+              })(),
             );
           }),
         ),

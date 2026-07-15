@@ -67,14 +67,14 @@ const DataPage = ({ state, currentPlatform }) => {
     },
   ];
   const TABLE_TYPE_PATTERNS = [
-    { type: "订单", keywords: ["订单", "order", "交易", "成交"], icon: "📋", color: "var(--color-primary)", desc: "订单交易数据" },
-    { type: "退款", keywords: ["退款", "退货", "refund", "return"], icon: "🔄", color: "var(--color-warning)", desc: "退款退货数据" },
-    { type: "推广", keywords: ["推广", "广告", "ad", "marketing", "投放"], icon: "📢", color: "var(--color-success)", desc: "广告推广数据" },
-    { type: "账务", keywords: ["账务", "账单", "bill", "finance", "结算"], icon: "💰", color: "var(--color-info)", desc: "账务结算数据" },
-    { type: "成本", keywords: ["成本", "cost", "费用", "expense"], icon: "🧾", color: "var(--color-danger)", desc: "成本费用数据" },
-    { type: "商品", keywords: ["商品", "product", "sku", "库存"], icon: "📦", color: "var(--color-accent)", desc: "商品库存数据" },
-    { type: "利润", keywords: ["利润", "profit", "收益"], icon: "📈", color: "var(--color-success)", desc: "利润收益数据" },
-    { type: "报表", keywords: ["报表", "report", "统计", "summary"], icon: "📊", color: "var(--color-primary)", desc: "统计报表数据" },
+    { type: "订单", keywords: ["订单", "交易", "成交"], icon: "📋", color: "var(--color-primary)", desc: "订单交易数据" },
+    { type: "退款", keywords: ["退款", "退货"], icon: "🔄", color: "var(--color-warning)", desc: "退款退货数据" },
+    { type: "推广", keywords: ["推广", "广告", "投放"], icon: "📢", color: "var(--color-success)", desc: "广告推广数据" },
+    { type: "账务", keywords: ["账务", "账单", "结算"], icon: "💰", color: "var(--color-info)", desc: "账务结算数据" },
+    { type: "成本", keywords: ["成本", "费用", "支出"], icon: "🧾", color: "var(--color-danger)", desc: "成本费用数据" },
+    { type: "商品", keywords: ["商品", "库存"], icon: "📦", color: "var(--color-accent)", desc: "商品库存数据" },
+    { type: "利润", keywords: ["利润", "收益"], icon: "📈", color: "var(--color-success)", desc: "利润收益数据" },
+    { type: "报表", keywords: ["报表", "统计"], icon: "📊", color: "var(--color-primary)", desc: "统计报表数据" },
   ];
 
   const detectTableType = (fileName, fileData) => {
