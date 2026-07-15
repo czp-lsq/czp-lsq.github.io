@@ -270,6 +270,15 @@ const AdvancedRuleConfig = ({ step, updateStepConfig }) => {
 // RulesPage - 计算规则页面组件
 const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   const { addToast } = useToast();
+  const getSemanticIcon = (semantic, type) => {
+    const t = (semantic || type || "").toLowerCase();
+    if (t.includes("money") || t.includes("price") || t.includes("amount") || t.includes("金额") || t.includes("价格") || t.includes("收入") || t.includes("成本") || t.includes("费用") || t.includes("利润")) return "\u00A5";
+    if (t.includes("rate") || t.includes("percent") || t.includes("ratio") || t.includes("率") || t.includes("占比")) return "%";
+    if (t.includes("count") || t.includes("qty") || t.includes("数量") || t.includes("件数") || t.includes("订单")) return "#";
+    if (t.includes("date") || t.includes("time") || t.includes("日期") || t.includes("时间") || t.includes("年") || t.includes("月") || t.includes("日")) return "\u{1F4C5}";
+    if (t.includes("text") || t.includes("name") || t.includes("名称") || t.includes("标题") || t.includes("备注")) return "Aa";
+    return "\u00B7";
+  };
   const SearchableSelect = window.SearchableSelect || ((props) => {
     const { value, onChange, options, placeholder, disabled, allowCreate, className = "", size = "default" } = props;
     const opts = (options || []).map((o) => typeof o === "object" ? { value: o.value, label: o.label || o.value } : { value: o, label: String(o) });
@@ -6847,7 +6856,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             },
             /*#__PURE__*/ React.createElement(
               "div",
-              { style: { display: "flex", alignItems: "center", gap: "12px" } },
+              { style: { display: "flex", alignItems: "center", gap: "12px", minWidth: 0, flex: "1 1 auto", overflow: "hidden" } },
               /*#__PURE__*/ React.createElement(
                 "div",
                 {
@@ -6855,15 +6864,17 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   style: {
                     display: "flex",
                     alignItems: "center",
-                    gap: "8px",
+                    gap: "6px",
                     fontSize: "13px",
                     color: "var(--color-text-secondary)",
+                    whiteSpace: "nowrap",
+                    flexShrink: 0,
                   },
                 },
                 /*#__PURE__*/ React.createElement(
                   "span",
                   {
-                    style: { cursor: "pointer", display: "flex", alignItems: "center", gap: "4px" },
+                    style: { cursor: "pointer", display: "inline-flex", alignItems: "center", gap: "4px" },
                     onClick: () => onNavigate && onNavigate("template"),
                   },
                   /*#__PURE__*/ React.createElement(Icons.LayoutGrid, { size: 14 }),
@@ -6872,9 +6883,9 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-text-tertiary)" } }, "/"),
                 /*#__PURE__*/ React.createElement(
                   "span",
-                  { style: { fontWeight: 600, color: "var(--color-text-primary)" } },
+                  { style: { fontWeight: 600, color: "var(--color-text-primary)", display: "inline-flex", alignItems: "center", gap: "4px" } },
                   /*#__PURE__*/ React.createElement(Icons.Calculator, { size: 14 }),
-                  " 计算规则",
+                  "计算规则",
                 ),
                 activeField && /*#__PURE__*/ React.createElement(
                   React.Fragment,
@@ -6882,7 +6893,17 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   /*#__PURE__*/ React.createElement("span", { style: { color: "var(--color-text-tertiary)" } }, "/"),
                   /*#__PURE__*/ React.createElement(
                     "span",
-                    { style: { color: "var(--color-primary)", fontWeight: 500 } },
+                    {
+                      style: {
+                        color: "var(--color-primary)",
+                        fontWeight: 500,
+                        maxWidth: "240px",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        whiteSpace: "nowrap",
+                      },
+                      title: activeField.name,
+                    },
                     activeField.name,
                   ),
                 ),
@@ -7160,14 +7181,18 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                           catFields.map((field) => {
                             const v = validateRule(savedRules[field.id], field);
                             const stepCount = (savedRules[field.id]?.steps || []).length;
+                            const status = stepCount === 0 ? "empty" : (v.valid ? "done" : "partial");
+                            const semIcon = getSemanticIcon(field.semanticType, field.type);
                             return /*#__PURE__*/ React.createElement(
                               "li",
                               {
                                 key: field.id,
-                                className: `field-item ${activeField?.id === field.id ? "active" : ""}`,
+                                className: `field-item ${activeField?.id === field.id ? "active" : ""} field-status-${status}`,
                                 onClick: () => setActiveField(field),
+                                title: field.name,
                               },
-                              /*#__PURE__*/ React.createElement("span", { className: `field-item-dot ${stepCount > 0 ? (v.valid ? "done" : "partial") : ""}` }),
+                              /*#__PURE__*/ React.createElement("span", { className: `field-item-dot ${status === "done" ? "done" : status === "partial" ? "partial" : ""}` }),
+                              /*#__PURE__*/ React.createElement("span", { className: "field-item-icon", title: field.semanticType || field.type || "" }, semIcon),
                               /*#__PURE__*/ React.createElement("div", { className: "field-item-name" }, field.name),
                               /*#__PURE__*/ React.createElement("span", { className: "field-item-cell" }, field.cell),
                               stepCount > 0 && /*#__PURE__*/ React.createElement("span", { className: "field-item-badge" }, stepCount, "\u6B65"),

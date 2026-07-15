@@ -241,12 +241,20 @@
   font-size: 12px;
   font-weight: 600;
   border-radius: var(--radius-sm);
+  background: var(--color-bg-tertiary);
+  margin-bottom: 2px;
 }
 
 .rules-page .field-group-count {
   margin-left: auto;
   font-size: 11px;
   opacity: 0.8;
+  font-weight: 500;
+  background: rgba(0, 0, 0, 0.06);
+  padding: 1px 6px;
+  border-radius: 8px;
+  min-width: 18px;
+  text-align: center;
 }
 
 .rules-page .field-items {
@@ -293,16 +301,51 @@
   background: var(--color-warning);
 }
 
+.rules-page .field-item-icon {
+  width: 18px;
+  height: 18px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--color-text-tertiary);
+  background: var(--color-bg-tertiary);
+  border-radius: 4px;
+  flex-shrink: 0;
+  line-height: 1;
+}
+
+.rules-page .field-item.status-done .field-item-icon {
+  color: var(--color-success);
+  background: rgba(16, 185, 129, 0.1);
+}
+
+.rules-page .field-item.status-partial .field-item-icon {
+  color: var(--color-warning);
+  background: rgba(245, 158, 11, 0.1);
+}
+
+.rules-page .field-item.active .field-item-icon {
+  color: var(--color-primary);
+  background: var(--color-primary-50);
+}
+
 .rules-page .field-item-name {
   flex: 1;
   font-size: 13px;
   color: var(--color-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  min-width: 0;
 }
 
 .rules-page .field-item-cell {
   font-size: 12px;
   color: var(--color-text-tertiary);
   font-family: monospace;
+  flex-shrink: 0;
 }
 
 .rules-page .field-item-badge {
