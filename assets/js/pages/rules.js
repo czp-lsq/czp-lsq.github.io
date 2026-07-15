@@ -383,10 +383,11 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
       return localStorage.getItem(`rules_page_left_collapsed_${currentPlatform}`) === "true";
     } catch (e) { return false; }
   });
-  const [rightPanelCollapsed, setRightPanelCollapsed] = useState(() => {
+  const [infoPanelOpen, setInfoPanelOpen] = useState(() => {
     try {
-      return localStorage.getItem(`rules_page_right_collapsed_${currentPlatform}`) === "true";
-    } catch (e) { return false; }
+      const saved = localStorage.getItem(`rules_page_info_open_${currentPlatform}`);
+      return saved === null ? true : saved === "true";
+    } catch (e) { return true; }
   });
   const [isSaved, setIsSaved] = useState(true);
   const [showShortcuts, setShowShortcuts] = useState(false);
@@ -397,8 +398,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   }, [leftPanelCollapsed, currentPlatform]);
 
   useEffect(() => {
-    localStorage.setItem(`rules_page_right_collapsed_${currentPlatform}`, rightPanelCollapsed);
-  }, [rightPanelCollapsed, currentPlatform]);
+    localStorage.setItem(`rules_page_info_open_${currentPlatform}`, infoPanelOpen);
+  }, [infoPanelOpen, currentPlatform]);
 
   const platform = state.platforms.find((p) => p.id === currentPlatform);
   const template = state.templates[currentPlatform];
@@ -7416,7 +7417,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             /*#__PURE__*/ React.createElement(
               "div",
               {
-                className: "workspace-middle",
+                className: "workspace-main",
                 style: {
                   flex: 1,
                   overflow: "hidden",
@@ -7426,153 +7427,170 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
               },
               /*#__PURE__*/ React.createElement(
                 "div",
-                { className: "workspace-right" },
-        /*#__PURE__*/ React.createElement(
-          "div",
-          { className: "card" },
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "card-header" },
-            /*#__PURE__*/ React.createElement(
-              "div",
-              { style: { flex: 1 } },
-              /*#__PURE__*/ React.createElement(
-                "div",
-                { className: "card-title", style: { fontSize: 14 } },
-                /*#__PURE__*/ React.createElement(Icons.Calculator, null),
-                activeField ? `「${activeField.name}」计算规则` : "请选择字段",
-              ),
-              activeField &&
+                { className: "workspace-main-toolbar" },
                 /*#__PURE__*/ React.createElement(
                   "div",
-                  { className: "card-desc" },
-                  "\u5355\u5143\u683C ",
-                  activeField.cell,
-                  " \xB7 ",
-                  activeField.type === "text" ? "文本填充" : "数值填充",
-                  (() => {
-                    const v = validateRule(currentRule, activeField);
-                    return /*#__PURE__*/ React.createElement(
-                      "span",
-                      {
-                        className: `field-status ${v.valid ? "valid" : "invalid"}`,
-                      },
-                      v.valid ? "✓ " + v.msg : "⚠ " + v.msg,
-                    );
-                  })(),
-                ),
-            ),
-            activeField &&
-              /*#__PURE__*/ React.createElement(
-                "div",
-                { className: "card-header-actions" },
-                /*#__PURE__*/ React.createElement(
-                  "div",
-                  { className: "field-nav" },
+                  { className: "workspace-main-title-block" },
                   /*#__PURE__*/ React.createElement(
-                    "button",
-                    {
-                      className: "field-nav-btn",
-                      onClick: () => {
-                        const idx = filteredFields.findIndex(
-                          (f) => f.id === activeField.id,
-                        );
-                        if (idx > 0) setActiveField(filteredFields[idx - 1]);
-                      },
-                      disabled:
-                        filteredFields.findIndex(
-                          (f) => f.id === activeField.id,
-                        ) <= 0,
-                      title: "\u4E0A\u4E00\u4E2A\u5B57\u6BB5",
-                    },
-                    "\u2039",
+                    "div",
+                    { className: "workspace-main-title" },
+                    /*#__PURE__*/ React.createElement(Icons.Calculator, { size: 16 }),
+                    activeField
+                      ? `「${activeField.name}」计算规则`
+                      : "请选择左侧字段以开始配置"
                   ),
-                  /*#__PURE__*/ React.createElement(
-                    "span",
-                    { className: "field-nav-count" },
-                    filteredFields.findIndex((f) => f.id === activeField.id) + 1,
-                    "/",
-                    filteredFields.length,
-                  ),
-                  /*#__PURE__*/ React.createElement(
-                    "button",
-                    {
-                      className: "field-nav-btn",
-                      onClick: () => {
-                        const idx = filteredFields.findIndex(
-                          (f) => f.id === activeField.id,
-                        );
-                        if (idx < filteredFields.length - 1)
-                          setActiveField(filteredFields[idx + 1]);
-                      },
-                      disabled:
-                        filteredFields.findIndex(
-                          (f) => f.id === activeField.id,
-                        ) >=
-                        filteredFields.length - 1,
-                      title: "\u4E0B\u4E00\u4E2A\u5B57\u6BB5",
-                    },
-                    "\u203A",
-                  ),
-                ),
-                /*#__PURE__*/ React.createElement("div", {
-                  className: "header-divider",
-                }),
-                currentRule?.steps?.length > 0 &&
-                  /*#__PURE__*/ React.createElement(
-                    React.Fragment,
-                    null,
+                  activeField &&
                     /*#__PURE__*/ React.createElement(
-                      Button,
-                      {
-                        size: "sm",
-                        onClick: () => clearFieldRule(activeField.id),
-                      },
-                      /*#__PURE__*/ React.createElement(Icons.Refresh, null),
-                      "\u6E05\u7A7A",
+                      "div",
+                      { className: "workspace-main-subtitle" },
+                      "单元格 ",
+                      activeField.cell,
+                      " · ",
+                      activeField.type === "text" ? "文本填充" : "数值填充",
+                      (() => {
+                        const v = validateRule(currentRule, activeField);
+                        return /*#__PURE__*/ React.createElement(
+                          "span",
+                          {
+                            className: `workspace-main-status ${v.valid ? "ok" : "warn"}`,
+                          },
+                          v.valid ? "✓ " + v.msg : "⚠ " + v.msg,
+                        );
+                      })(),
                     ),
-
-                  ),
-                /*#__PURE__*/ React.createElement(
-                  "label",
-                  {
-                    className: "btn btn-default btn-sm",
-                    style: { cursor: "pointer" },
-                  },
-                  /*#__PURE__*/ React.createElement("input", {
-                    type: "checkbox",
-                    checked: debugMode,
-                    onChange: (e) => setDebugMode(e.target.checked),
-                    style: { marginRight: 6 },
-                  }),
-                  /*#__PURE__*/ React.createElement(Icons.Bug, null),
-                  " \u8C03\u8BD5\u6A21\u5F0F",
                 ),
                 /*#__PURE__*/ React.createElement(
-                  Button,
-                  {
-                    type: "primary",
-                    size: "sm",
-                    onClick: () => setShowAddStepModal(true),
-                  },
-                  /*#__PURE__*/ React.createElement(Icons.Plus, null),
-                  "\u6DFB\u52A0\u6B65\u9AA4",
-                ),
-                /*#__PURE__*/ React.createElement(
-                  Button,
-                  {
-                    type: "primary",
-                    size: "sm",
-                    onClick: () => saveFieldRule(activeField.id),
-                  },
-                  /*#__PURE__*/ React.createElement(Icons.Save, null),
-                  "\u4FDD\u5B58\u89C4\u5219",
+                  "div",
+                  { className: "workspace-main-toolbar-actions" },
+                  activeField &&
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { className: "field-nav" },
+                      /*#__PURE__*/ React.createElement(
+                        "button",
+                        {
+                          className: "field-nav-btn",
+                          onClick: () => {
+                            const idx = filteredFields.findIndex(
+                              (f) => f.id === activeField.id,
+                            );
+                            if (idx > 0) setActiveField(filteredFields[idx - 1]);
+                          },
+                          disabled:
+                            filteredFields.findIndex(
+                              (f) => f.id === activeField.id,
+                            ) <= 0,
+                          title: "上一个字段",
+                        },
+                        "‹",
+                      ),
+                      /*#__PURE__*/ React.createElement(
+                        "span",
+                        { className: "field-nav-count" },
+                        filteredFields.findIndex((f) => f.id === activeField.id) + 1,
+                        "/",
+                        filteredFields.length,
+                      ),
+                      /*#__PURE__*/ React.createElement(
+                        "button",
+                        {
+                          className: "field-nav-btn",
+                          onClick: () => {
+                            const idx = filteredFields.findIndex(
+                              (f) => f.id === activeField.id,
+                            );
+                            if (idx < filteredFields.length - 1)
+                              setActiveField(filteredFields[idx + 1]);
+                          },
+                          disabled:
+                            filteredFields.findIndex(
+                              (f) => f.id === activeField.id,
+                            ) >=
+                            filteredFields.length - 1,
+                          title: "下一个字段",
+                        },
+                        "›",
+                      ),
+                    ),
+                  activeField &&
+                    /*#__PURE__*/ React.createElement(
+                      "button",
+                      {
+                        className: "icon-action-btn",
+                        onClick: () => setInfoPanelOpen(!infoPanelOpen),
+                        title: infoPanelOpen ? "隐藏字段详情" : "显示字段详情",
+                      },
+                      React.createElement(Icons.Info, { size: 16 }),
+                    ),
                 ),
               ),
-          ),
-          /*#__PURE__*/ React.createElement(
-            "div",
-            { className: "card-scroll" },
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "workspace-main-body" },
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "card" },
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "card-header card-header-actions-only" },
+                    activeField &&
+                      /*#__PURE__*/ React.createElement(
+                        "div",
+                        { className: "card-header-actions" },
+                        currentRule?.steps?.length > 0 &&
+                          /*#__PURE__*/ React.createElement(
+                            Button,
+                            {
+                              size: "sm",
+                              onClick: () => clearFieldRule(activeField.id),
+                            },
+                            /*#__PURE__*/ React.createElement(Icons.Refresh, null),
+                            "清空",
+                          ),
+                        /*#__PURE__*/ React.createElement(
+                          "div",
+                          { className: "header-divider" },
+                        ),
+                        /*#__PURE__*/ React.createElement(
+                          "label",
+                          {
+                            className: "btn btn-default btn-sm",
+                            style: { cursor: "pointer" },
+                          },
+                          /*#__PURE__*/ React.createElement("input", {
+                            type: "checkbox",
+                            checked: debugMode,
+                            onChange: (e) => setDebugMode(e.target.checked),
+                            style: { marginRight: 6 },
+                          }),
+                          /*#__PURE__*/ React.createElement(Icons.Bug, null),
+                          " 调试模式",
+                        ),
+                        /*#__PURE__*/ React.createElement(
+                          Button,
+                          {
+                            type: "primary",
+                            size: "sm",
+                            onClick: () => setShowAddStepModal(true),
+                          },
+                          /*#__PURE__*/ React.createElement(Icons.Plus, null),
+                          "添加步骤",
+                        ),
+                        /*#__PURE__*/ React.createElement(
+                          Button,
+                          {
+                            type: "primary",
+                            size: "sm",
+                            onClick: () => saveFieldRule(activeField.id),
+                          },
+                          /*#__PURE__*/ React.createElement(Icons.Save, null),
+                          "保存规则",
+                        ),
+                      ),
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "card-scroll" },
             fields.length === 0
               ? /*#__PURE__*/ React.createElement(
                   "div",
@@ -8718,318 +8736,223 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   ),
                 ),
               ),
-          ),
-        ),
-              ),
-            ),
-            /*#__PURE__*/ React.createElement(
-              "div",
-              {
-                className: "workspace-right-panel",
-                style: {
-                  width: rightPanelCollapsed ? "0px" : "300px",
-                  flexShrink: 0,
-                  overflow: "hidden",
-                  transition: "width 0.2s ease",
-                  position: "relative",
-                  borderLeft: rightPanelCollapsed ? "none" : "1px solid var(--color-border-light)",
-                },
-              },
-              !rightPanelCollapsed && activeField && /*#__PURE__*/ React.createElement(
+                    ),
+                  ),
+            infoPanelOpen && activeField && /*#__PURE__*/ React.createElement(
+              "aside",
+              { className: "workspace-aside" },
+              /*#__PURE__*/ React.createElement(
                 "div",
-                { className: "card", style: { height: "100%", display: "flex", flexDirection: "column" } },
+                { className: "aside-header" },
                 /*#__PURE__*/ React.createElement(
                   "div",
-                  { className: "card-header" },
-                  /*#__PURE__*/ React.createElement(
-                    "div",
-                    { className: "card-title", style: { fontSize: 14 } },
-                    /*#__PURE__*/ React.createElement(Icons.Info, null),
-                    "字段信息",
-                  ),
-                  /*#__PURE__*/ React.createElement(
-                    "button",
-                    {
-                      className: "panel-collapse-btn",
-                      onClick: () => setRightPanelCollapsed(true),
-                      title: "收起面板",
-                      style: {
-                        background: "none",
-                        border: "none",
-                        cursor: "pointer",
-                        color: "var(--color-text-tertiary)",
-                        padding: "2px",
-                        display: "flex",
-                        alignItems: "center",
-                      },
-                    },
-                    /*#__PURE__*/ React.createElement(Icons.ChevronRight, { size: 16 }),
-                  ),
+                  { className: "aside-header-title" },
+                  /*#__PURE__*/ React.createElement(Icons.Info, { size: 16 }),
+                  "\u5B57\u6BB5\u8BE6\u60C5"
                 ),
                 /*#__PURE__*/ React.createElement(
+                  "button",
+                  {
+                    className: "aside-close-btn",
+                    onClick: () => setInfoPanelOpen(false),
+                    title: "隐藏字段详情",
+                  },
+                  /*#__PURE__*/ React.createElement(Icons.X, { size: 16 }),
+                ),
+              ),
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "aside-body" },
+                /*#__PURE__*/ React.createElement(
                   "div",
-                  { style: { flex: 1, overflow: "auto", padding: "16px" } },
+                  { className: "aside-field-card" },
                   /*#__PURE__*/ React.createElement(
                     "div",
-                    { style: { marginBottom: "20px" } },
-                    /*#__PURE__*/ React.createElement(
-                      "div",
-                      { style: { fontSize: "12px", color: "var(--color-text-tertiary)", marginBottom: "6px" } },
-                      "字段名称",
-                    ),
-                    /*#__PURE__*/ React.createElement(
-                      "div",
-                      { style: { fontSize: "15px", fontWeight: 600, color: "var(--color-text-primary)" } },
-                      activeField.name,
-                    ),
-                  ),
-                  /*#__PURE__*/ React.createElement(
-                    "div",
-                    { style: { marginBottom: "20px" } },
-                    /*#__PURE__*/ React.createElement(
-                      "div",
-                      { style: { fontSize: "12px", color: "var(--color-text-tertiary)", marginBottom: "6px" } },
-                      "单元格位置",
-                    ),
-                    /*#__PURE__*/ React.createElement(
-                      "div",
-                      { style: { fontSize: "14px", fontFamily: "var(--font-mono)", color: "var(--color-text-secondary)" } },
-                      activeField.cell,
-                    ),
-                  ),
-                  /*#__PURE__*/ React.createElement(
-                    "div",
-                    { style: { marginBottom: "20px" } },
-                    /*#__PURE__*/ React.createElement(
-                      "div",
-                      { style: { fontSize: "12px", color: "var(--color-text-tertiary)", marginBottom: "6px" } },
-                      "字段类型",
-                    ),
-                    /*#__PURE__*/ React.createElement(
-                      "span",
-                      {
-                        style: {
-                          display: "inline-flex",
-                          alignItems: "center",
-                          gap: "4px",
-                          padding: "4px 10px",
-                          borderRadius: "999px",
-                          fontSize: "12px",
-                          background: activeField.type === "text" ? "#f0f9ff" : "#f0fdf4",
-                          color: activeField.type === "text" ? "#0284c7" : "#16a34a",
-                          border: `1px solid ${activeField.type === "text" ? "#bae6fd" : "#bbf7d0"}`,
-                        },
-                      },
-                      activeField.type === "text" ? "📝 文本填充" : "💰 数值填充",
-                    ),
-                  ),
-                  activeField.semanticType && /*#__PURE__*/ React.createElement(
-                    "div",
-                    { style: { marginBottom: "20px" } },
-                    /*#__PURE__*/ React.createElement(
-                      "div",
-                      { style: { fontSize: "12px", color: "var(--color-text-tertiary)", marginBottom: "6px" } },
-                      "语义类型识别",
-                    ),
+                    { className: "aside-field-head" },
                     /*#__PURE__*/ React.createElement(
                       "div",
                       {
-                        style: {
-                          padding: "10px 12px",
-                          background: "#f8fafc",
-                          borderRadius: "8px",
-                          border: "1px solid #e2e8f0",
-                        },
+                        className: `aside-field-icon ${activeField.type === "text" ? "type-text" : "type-value"}`,
                       },
+                      activeField.type === "text" ? "📝" : "💰",
+                    ),
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { className: "aside-field-info" },
                       /*#__PURE__*/ React.createElement(
                         "div",
-                        { style: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "4px" } },
-                        /*#__PURE__*/ React.createElement(Icons.Sparkles, { size: 14, style: { color: "#8b5cf6" } }),
-                        /*#__PURE__*/ React.createElement(
-                          "span",
-                          { style: { fontWeight: 600, fontSize: "13px", color: "#4c1d95" } },
-                          "AI 识别结果",
-                        ),
+                        { className: "aside-field-name" },
+                        activeField.name,
                       ),
                       /*#__PURE__*/ React.createElement(
                         "div",
-                        { style: { fontSize: "13px", color: "var(--color-text-primary)" } },
-                        activeField.semanticType === "shop" && "🏪 店铺名占位符",
-                        activeField.semanticType === "year" && "📅 年份占位符",
-                        activeField.semanticType === "month" && "📅 月份占位符",
-                        activeField.semanticType === "day" && "📅 日期占位符",
-                        activeField.semanticType === "date" && "📅 日期占位符",
-                        activeField.semanticType === "value" && "💰 数值占位符",
-                        activeField.semanticType === "text" && "📝 文本占位符",
-                        !["shop", "year", "month", "day", "date", "value", "text"].includes(activeField.semanticType) && "📦 其他占位符",
+                        { className: "aside-field-cell" },
+                        "单元格 ",
+                        activeField.cell,
                       ),
                     ),
                   ),
                   /*#__PURE__*/ React.createElement(
                     "div",
-                    { style: { marginBottom: "20px" } },
-                    /*#__PURE__*/ React.createElement(
-                      "div",
-                      { style: { fontSize: "12px", color: "var(--color-text-tertiary)", marginBottom: "8px" } },
-                      "配置验证状态",
-                    ),
+                    { className: "aside-field-status" },
                     (() => {
                       const v = validateRule(currentRule, activeField);
-                      const stepCount = currentRule?.steps?.length || 0;
                       const StatusIcon = v.valid ? Icons.CheckCircle : Icons.AlertCircle;
                       return /*#__PURE__*/ React.createElement(
                         "div",
                         {
-                          style: {
-                            padding: "12px",
-                            borderRadius: "8px",
-                            background: v.valid ? "#f0fdf4" : "#fef2f2",
-                            border: `1px solid ${v.valid ? "#bbf7d0" : "#fecaca"}`,
-                          },
+                          className: `aside-status-badge ${v.valid ? "ok" : "warn"}`,
                         },
+                        /*#__PURE__*/ React.createElement(StatusIcon, { size: 14 }),
                         /*#__PURE__*/ React.createElement(
-                          "div",
-                          { style: { display: "flex", alignItems: "center", gap: "8px", marginBottom: "6px" } },
-                          /*#__PURE__*/ React.createElement(StatusIcon, { size: 16, style: { color: v.valid ? "#16a34a" : "#dc2626" } }),
-                          /*#__PURE__*/ React.createElement(
-                            "span",
-                            { style: { fontWeight: 600, fontSize: "13px", color: v.valid ? "#166534" : "#991b1b" } },
-                            v.valid ? "配置完整" : "配置不完整",
-                          ),
+                          "span",
+                          null,
+                          v.valid ? "配置完整" : "配置不完整",
                         ),
                         /*#__PURE__*/ React.createElement(
-                          "div",
-                          { style: { fontSize: "12px", color: v.valid ? "#15803d" : "#b91c1c", marginBottom: "8px" } },
+                          "span",
+                          { className: "aside-status-msg" },
                           v.msg,
-                        ),
-                        /*#__PURE__*/ React.createElement(
-                          "div",
-                          { style: { display: "flex", gap: "12px", fontSize: "11px", color: "var(--color-text-secondary)" } },
-                          /*#__PURE__*/ React.createElement("span", null, `步骤数: ${stepCount}`),
-                          /*#__PURE__*/ React.createElement("span", null, `完成度: ${v.valid ? "100%" : stepCount > 0 ? "50%" : "0%"}`),
                         ),
                       );
                     })(),
                   ),
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "aside-section" },
                   /*#__PURE__*/ React.createElement(
                     "div",
-                    { style: { marginBottom: "20px" } },
-                    /*#__PURE__*/ React.createElement(
-                      "div",
-                      { style: { fontSize: "12px", color: "var(--color-text-tertiary)", marginBottom: "8px", display: "flex", alignItems: "center", gap: "4px" } },
-                      /*#__PURE__*/ React.createElement(Icons.Lightbulb, { size: 12 }),
-                      "相关字段推荐",
-                    ),
-                    /*#__PURE__*/ React.createElement(
-                      "div",
-                      { style: { display: "flex", flexDirection: "column", gap: "6px" } },
-                      (() => {
-                        const currentCat = categorizeField(activeField);
-                        const related = fields
-                          .filter((f) => f.id !== activeField.id && categorizeField(f) === currentCat)
-                          .slice(0, 3);
-                        if (related.length === 0) {
-                          return /*#__PURE__*/ React.createElement(
-                            "div",
-                            { style: { fontSize: "12px", color: "var(--color-text-tertiary)", fontStyle: "italic" } },
-                            "暂无相关字段",
-                          );
-                        }
-                        return related.map((f) => /*#__PURE__*/ React.createElement(
-                          "button",
-                          {
-                            key: f.id,
-                            onClick: () => setActiveField(f),
-                            style: {
-                              textAlign: "left",
-                              padding: "8px 10px",
-                              background: "var(--color-bg-tertiary)",
-                              border: "1px solid var(--color-border-light)",
-                              borderRadius: "6px",
-                              cursor: "pointer",
-                              fontSize: "12px",
-                              color: "var(--color-text-secondary)",
-                              transition: "all 0.2s",
-                            },
-                            onMouseEnter: (e) => {
-                              e.target.style.background = "var(--color-primary-50)";
-                              e.target.style.borderColor = "var(--color-primary-200)";
-                            },
-                            onMouseLeave: (e) => {
-                              e.target.style.background = "var(--color-bg-tertiary)";
-                              e.target.style.borderColor = "var(--color-border-light)";
-                            },
-                          },
-                          /*#__PURE__*/ React.createElement(
-                            "div",
-                            { style: { fontWeight: 500, color: "var(--color-text-primary)", marginBottom: "2px" } },
-                            f.name,
-                          ),
-                          /*#__PURE__*/ React.createElement(
-                            "div",
-                            { style: { fontSize: "11px", color: "var(--color-text-tertiary)" } },
-                            f.cell,
-                          ),
-                        ));
-                      })(),
-                    ),
+                    { className: "aside-section-title" },
+                    /*#__PURE__*/ React.createElement(Icons.Tag, { size: 14 }),
+                    "\u5B57\u6BB5\u5C5E\u6027"
                   ),
                   /*#__PURE__*/ React.createElement(
                     "div",
-                    { style: { marginBottom: "20px" } },
+                    { className: "aside-property-list" },
                     /*#__PURE__*/ React.createElement(
                       "div",
-                      { style: { fontSize: "12px", color: "var(--color-text-tertiary)", marginBottom: "8px", display: "flex", alignItems: "center", gap: "4px" } },
-                      /*#__PURE__*/ React.createElement(Icons.HelpCircle, { size: 12 }),
-                      "帮助信息",
+                      { className: "aside-property-item" },
+                      /*#__PURE__*/ React.createElement(
+                        "span",
+                        { className: "aside-property-label" },
+                        "填充类型",
+                      ),
+                      /*#__PURE__*/ React.createElement(
+                        "span",
+                        { className: "aside-property-value" },
+                        activeField.type === "text" ? "文本填充" : "数值填充",
+                      ),
                     ),
-                    /*#__PURE__*/ React.createElement(
+                    activeField.semanticType && /*#__PURE__*/ React.createElement(
                       "div",
-                      {
-                        style: {
-                          padding: "12px",
-                          background: "#eff6ff",
-                          borderRadius: "8px",
-                          border: "1px solid #bfdbfe",
-                          fontSize: "12px",
-                          color: "#1e40af",
-                          lineHeight: "1.6",
-                        },
-                      },
-                      activeField.semanticType === "shop" && "该字段为店铺名占位符，系统会自动从上传的文件名中识别店铺名并填充，无需手动配置计算步骤。",
-                      (activeField.semanticType === "year" || activeField.semanticType === "month" || activeField.semanticType === "day" || activeField.semanticType === "date") && "该字段为日期占位符，系统会自动填充当前处理数据的对应日期部分，可根据需要调整日期格式。",
-                      activeField.semanticType === "value" && "该字段为数值占位符，需要通过计算步骤从数据源获取值。建议先添加「数据源」步骤选择数据表，再添加筛选、公式等处理步骤。",
-                      activeField.semanticType === "text" && "该字段为文本占位符，可从数据源字段中提取文本，或设置固定文本值。",
-                      !["shop", "year", "month", "day", "date", "value", "text"].includes(activeField.semanticType) && "该字段为通用占位符，可根据实际需要配置填充方式或计算规则。",
+                      { className: "aside-property-item" },
+                      /*#__PURE__*/ React.createElement(
+                        "span",
+                        { className: "aside-property-label" },
+                        "语义类型",
+                      ),
+                      /*#__PURE__*/ React.createElement(
+                        "span",
+                        { className: "aside-property-value" },
+                        activeField.semanticType === "shop" && "🏪 店铺名",
+                        activeField.semanticType === "year" && "📅 年份",
+                        activeField.semanticType === "month" && "📅 月份",
+                        activeField.semanticType === "day" && "📅 日期",
+                        activeField.semanticType === "date" && "📅 日期",
+                        activeField.semanticType === "value" && "💰 数值",
+                        activeField.semanticType === "text" && "📝 文本",
+                        !["shop", "year", "month", "day", "date", "value", "text"].includes(activeField.semanticType) && "📦 占位符",
+                      ),
+                    ),
+                    (currentRule?.steps || []).length > 0 && /*#__PURE__*/ React.createElement(
+                      "div",
+                      { className: "aside-property-item" },
+                      /*#__PURE__*/ React.createElement(
+                        "span",
+                        { className: "aside-property-label" },
+                        "步骤数",
+                      ),
+                      /*#__PURE__*/ React.createElement(
+                        "span",
+                        { className: "aside-property-value" },
+                        currentRule.steps.length,
+                        " 步",
+                      ),
                     ),
                   ),
                 ),
-              ),
-              rightPanelCollapsed && /*#__PURE__*/ React.createElement(
-                "button",
-                {
-                  className: "panel-expand-btn",
-                  onClick: () => setRightPanelCollapsed(false),
-                  title: "展开信息面板",
-                  style: {
-                    position: "absolute",
-                    right: 0,
-                    top: "50%",
-                    transform: "translateY(-50%)",
-                    background: "var(--color-bg-card)",
-                    border: "1px solid var(--color-border)",
-                    borderRight: "none",
-                    borderRadius: "8px 0 0 8px",
-                    padding: "12px 4px",
-                    cursor: "pointer",
-                    zIndex: 10,
-                    color: "var(--color-text-secondary)",
-                  },
-                },
-                /*#__PURE__*/ React.createElement(Icons.ChevronLeft, { size: 16 }),
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "aside-section" },
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "aside-section-title" },
+                    /*#__PURE__*/ React.createElement(Icons.HelpCircle, { size: 14 }),
+                    "\u4F7F\u7528\u63D0\u793A"
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "aside-tip" },
+                    activeField.semanticType === "shop" && "该字段为店铺名占位符，系统会自动从上传的文件名中识别店铺名并填充，无需手动配置计算步骤。",
+                    (activeField.semanticType === "year" || activeField.semanticType === "month" || activeField.semanticType === "day" || activeField.semanticType === "date") && "该字段为日期占位符，系统会自动填充当前处理数据的对应日期部分，可根据需要调整日期格式。",
+                    activeField.semanticType === "value" && "该字段为数值占位符，需要通过计算步骤从数据源获取值。建议先添加「数据源」步骤选择数据表，再添加筛选、公式等处理步骤。",
+                    activeField.semanticType === "text" && "该字段为文本占位符，可从数据源字段中提取文本，或设置固定文本值。",
+                    !["shop", "year", "month", "day", "date", "value", "text"].includes(activeField.semanticType) && "该字段为通用占位符，可根据实际需要配置填充方式或计算规则。",
+                  ),
+                ),
+                (() => {
+                  const currentCat = categorizeField(activeField);
+                  const related = fields
+                    .filter((f) => f.id !== activeField.id && categorizeField(f) === currentCat)
+                    .slice(0, 5);
+                  if (related.length === 0) return null;
+                  return /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "aside-section" },
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { className: "aside-section-title" },
+                      /*#__PURE__*/ React.createElement(Icons.Link, { size: 14 }),
+                      "\u76F8\u5173\u5B57\u6BB5"
+                    ),
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { className: "aside-related-list" },
+                      related.map((f) => /*#__PURE__*/ React.createElement(
+                        "button",
+                        {
+                          key: f.id,
+                          className: "aside-related-item",
+                          onClick: () => setActiveField(f),
+                        },
+                        /*#__PURE__*/ React.createElement(
+                          "div",
+                          { className: "aside-related-name" },
+                          f.name,
+                        ),
+                        /*#__PURE__*/ React.createElement(
+                          "div",
+                          { className: "aside-related-cell" },
+                          f.cell,
+                        ),
+                      )),
+                    ),
+                  );
+                })(),
               ),
             ),
+            !infoPanelOpen && activeField && /*#__PURE__*/ React.createElement(
+              "button",
+              {
+                className: "aside-expand-btn",
+                onClick: () => setInfoPanelOpen(true),
+                title: "显示字段详情",
+              },
+              /*#__PURE__*/ React.createElement(Icons.Info, { size: 16 }),
+            ),
           ),
+        ),
       showCopyModal &&
         /*#__PURE__*/ React.createElement(
           Modal,
