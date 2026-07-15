@@ -796,11 +796,6 @@ const DataPage = ({ state, currentPlatform }) => {
                   ),
                   /*#__PURE__*/ React.createElement(
                     "th",
-                    { style: { width: 180 } },
-                    "\u8BC6\u522B\u540D\u79F0",
-                  ),
-                  /*#__PURE__*/ React.createElement(
-                    "th",
                     null,
                     "\u539F\u59CB\u6587\u4EF6\u540D",
                   ),
