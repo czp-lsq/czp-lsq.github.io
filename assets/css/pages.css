@@ -11414,3 +11414,896 @@ body .admin-logs .card-body {
     grid-template-columns: 1fr;
   }
 }
+
+/* ========================================
+   v2.1.0 优化样式 - 计算规则页面与系统设置页面
+   ======================================== */
+
+/* ========== 计算规则页面优化 ========== */
+
+/* 工作区整体优化 */
+.rules-page .workspace {
+  grid-template-columns: 280px 1fr;
+  gap: 16px;
+  padding: 16px;
+}
+
+.rules-page .workspace-left {
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+.rules-page .workspace-right {
+  border-radius: var(--radius-lg);
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  overflow: hidden;
+}
+
+/* 卡片头部优化 */
+.rules-page .card-header {
+  padding: 16px 20px;
+  background: var(--color-bg-tertiary);
+  border-bottom: 1px solid var(--color-border-light);
+  position: relative;
+}
+
+.rules-page .card-header::after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 20px;
+  right: 20px;
+  height: 1px;
+  background: var(--color-border-light);
+}
+
+/* 字段搜索优化 */
+.rules-page .field-search-box {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 8px 12px;
+  transition: var(--transition-base);
+}
+
+.rules-page .field-search-box:focus-within {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-50);
+}
+
+/* 字段列表优化 */
+.rules-page .field-list {
+  padding: 8px;
+}
+
+.rules-page .field-item {
+  padding: 10px 12px;
+  margin-bottom: 4px;
+  border-radius: var(--radius-md);
+  transition: var(--transition-base);
+  cursor: pointer;
+}
+
+.rules-page .field-item:hover {
+  background: var(--color-bg-hover);
+  transform: translateX(4px);
+}
+
+.rules-page .field-item.active {
+  background: var(--color-primary-50);
+  border-left: 3px solid var(--color-primary);
+}
+
+/* 字段状态点优化 */
+.rules-page .field-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.rules-page .field-dot.done {
+  background: var(--color-success);
+  box-shadow: 0 0 0 3px var(--color-success-bg);
+}
+
+.rules-page .field-dot.partial {
+  background: var(--color-warning);
+  box-shadow: 0 0 0 3px var(--color-warning-bg);
+}
+
+/* 步骤卡片优化 */
+.rules-page .step-card {
+  background: var(--color-bg-primary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 12px;
+  transition: var(--transition-base);
+}
+
+.rules-page .step-card:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
+
+.rules-page .step-card.active {
+  border-color: var(--color-primary);
+  background: var(--color-primary-50);
+}
+
+/* 步骤头部优化 */
+.rules-page .step-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.rules-page .step-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+/* 配置区域优化 */
+.rules-page .step-config {
+  background: var(--color-bg-secondary);
+  border-radius: var(--radius-sm);
+  padding: 16px;
+}
+
+.rules-page .config-section {
+  margin-bottom: 16px;
+}
+
+.rules-page .config-section:last-child {
+  margin-bottom: 0;
+}
+
+.rules-page .config-section-header {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 12px;
+  padding-bottom: 8px;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.rules-page .config-section-title {
+  font-weight: 600;
+  color: var(--color-text-primary);
+  font-size: 13px;
+}
+
+/* 表单项目优化 */
+.rules-page .form-item {
+  margin-bottom: 14px;
+}
+
+.rules-page .form-item:last-child {
+  margin-bottom: 0;
+}
+
+.rules-page .form-label {
+  display: block;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.rules-page .form-label-hint {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  font-weight: 400;
+  margin-left: 6px;
+}
+
+/* 网格布局优化 */
+.rules-page .grid-2 {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 14px;
+}
+
+/* 步骤描述优化 */
+.rules-page .step-desc {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  margin-top: 12px;
+  padding: 12px;
+  background: var(--color-info-bg);
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  color: var(--color-info);
+}
+
+/* 步骤信息框优化 */
+.rules-page .step-info-box {
+  background: linear-gradient(135deg, var(--color-primary-50) 0%, var(--color-info-bg) 100%);
+  border: 1px solid var(--color-primary-200);
+  border-radius: var(--radius-md);
+  padding: 16px;
+  margin-bottom: 16px;
+}
+
+.rules-page .step-info-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-weight: 600;
+  color: var(--color-primary);
+  margin-bottom: 8px;
+}
+
+.rules-page .step-info-content {
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  line-height: 1.6;
+}
+
+/* 快捷标签优化 */
+.rules-page .quick-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  margin-top: 12px;
+}
+
+.rules-page .quick-tags-label {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+  padding-right: 4px;
+}
+
+.rules-page .quick-tag {
+  padding: 4px 10px;
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  font-size: 12px;
+  color: var(--color-text-secondary);
+  cursor: pointer;
+  transition: var(--transition-fast);
+}
+
+.rules-page .quick-tag:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.rules-page .quick-tag.active {
+  background: var(--color-primary);
+  border-color: var(--color-primary);
+  color: white;
+}
+
+/* 公式预览优化 */
+.rules-page .expr-preview {
+  background: var(--color-bg-tertiary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-sm);
+  padding: 12px;
+  margin-top: 12px;
+}
+
+/* 添加步骤按钮优化 */
+.rules-page .add-step-btn {
+  width: 100%;
+  padding: 12px;
+  background: var(--color-bg-secondary);
+  border: 2px dashed var(--color-border);
+  border-radius: var(--radius-md);
+  color: var(--color-text-tertiary);
+  font-size: 13px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: var(--transition-base);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+
+.rules-page .add-step-btn:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+  background: var(--color-primary-50);
+}
+
+/* 响应式优化 */
+@media (max-width: 1200px) {
+  .rules-page .workspace {
+    grid-template-columns: 260px 1fr;
+  }
+}
+
+@media (max-width: 900px) {
+  .rules-page .workspace {
+    grid-template-columns: 1fr;
+    grid-template-rows: 240px 1fr;
+  }
+  .rules-page .grid-2 {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ========== 系统设置页面优化 ========== */
+
+/* 设置布局优化 */
+.settings-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+}
+
+.settings-page .settings-layout {
+  display: grid;
+  grid-template-columns: 220px 1fr;
+  grid-template-rows: 1fr;
+  gap: 0;
+  flex: 1;
+  min-height: 0;
+  overflow: hidden;
+}
+
+.settings-page .settings-sidebar {
+  background: var(--color-bg-secondary);
+  border-right: 1px solid var(--color-border);
+  padding: 16px 0;
+  overflow-y: auto;
+}
+
+.settings-page .settings-content {
+  background: var(--color-bg-primary);
+  padding: 24px;
+  overflow-y: auto;
+}
+
+/* 设置导航项优化 */
+.settings-page .settings-nav-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px 16px;
+  cursor: pointer;
+  transition: var(--transition-base);
+  color: var(--color-text-secondary);
+  font-size: 14px;
+  border-left: 3px solid transparent;
+}
+
+.settings-page .settings-nav-item:hover {
+  background: var(--color-bg-hover);
+  color: var(--color-text-primary);
+}
+
+.settings-page .settings-nav-item.active {
+  background: var(--color-primary-50);
+  color: var(--color-primary);
+  border-left-color: var(--color-primary);
+  font-weight: 600;
+}
+
+.settings-page .settings-nav-item svg {
+  width: 18px;
+  height: 18px;
+  flex-shrink: 0;
+}
+
+/* 设置区域优化 */
+.settings-page .settings-section {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 20px;
+  margin-bottom: 20px;
+  transition: var(--transition-base);
+}
+
+.settings-page .settings-section:last-child {
+  margin-bottom: 0;
+}
+
+.settings-page .settings-section:hover {
+  border-color: var(--color-border-medium);
+}
+
+/* 设置标题优化 */
+.settings-page .settings-section-title {
+  font-size: 16px;
+  font-weight: 700;
+  color: var(--color-text-primary);
+  margin-bottom: 6px;
+}
+
+.settings-page .settings-section-desc {
+  font-size: 13px;
+  color: var(--color-text-tertiary);
+  margin-bottom: 20px;
+}
+
+/* 设置开关优化 */
+.settings-page .settings-toggle-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--color-border-light);
+}
+
+.settings-page .settings-toggle-row:last-child {
+  border-bottom: none;
+}
+
+.settings-page .settings-toggle-label {
+  flex: 1;
+}
+
+.settings-page .form-row-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.settings-page .settings-toggle-desc {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+/* 设置开关组件优化 */
+.settings-page .settings-switch {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  width: 44px;
+  height: 24px;
+  background: var(--color-bg-tertiary);
+  border-radius: 12px;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.settings-page .settings-switch input {
+  opacity: 0;
+  width: 0;
+  height: 0;
+}
+
+.settings-page .settings-slider {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 18px;
+  height: 18px;
+  background: white;
+  border-radius: 50%;
+  transition: var(--transition-base);
+  box-shadow: var(--shadow-xs);
+}
+
+.settings-page .settings-switch input:checked + .settings-slider {
+  transform: translateX(20px);
+}
+
+.settings-page .settings-switch input:checked {
+  background: var(--color-primary);
+}
+
+/* 设置表单优化 */
+.settings-page .form-item {
+  margin-bottom: 16px;
+}
+
+.settings-page .form-item:last-child {
+  margin-bottom: 0;
+}
+
+.settings-page .form-label {
+  display: block;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.settings-page .form-label.required::after {
+  content: "*";
+  color: var(--color-danger);
+  margin-left: 4px;
+}
+
+.settings-page .input,
+.settings-page .select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-size: 14px;
+  color: var(--color-text-primary);
+  background: var(--color-bg-primary);
+  transition: var(--transition-base);
+}
+
+.settings-page .input:focus,
+.settings-page .select:focus {
+  outline: none;
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-50);
+}
+
+/* 主题选择器优化 */
+.settings-page .theme-selector {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.settings-page .theme-card {
+  position: relative;
+  background: var(--color-bg-primary);
+  border: 2px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  overflow: hidden;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.settings-page .theme-card:hover {
+  transform: translateY(-2px);
+  box-shadow: var(--shadow-md);
+}
+
+.settings-page .theme-card.active {
+  border-color: var(--color-primary);
+  box-shadow: 0 0 0 3px var(--color-primary-50);
+}
+
+.settings-page .theme-card-header {
+  height: 60px;
+}
+
+.settings-page .theme-card-body {
+  padding: 12px;
+}
+
+.settings-page .theme-card-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+  margin-bottom: 4px;
+}
+
+.settings-page .theme-card-desc {
+  font-size: 11px;
+  color: var(--color-text-tertiary);
+}
+
+.settings-page .theme-card-check {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  width: 24px;
+  height: 24px;
+  background: var(--color-primary);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+}
+
+.settings-page .theme-card-check svg {
+  width: 14px;
+  height: 14px;
+}
+
+/* 主题模式切换优化 */
+.settings-page .theme-mode-toggle {
+  background: var(--color-bg-secondary);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-lg);
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.settings-page .theme-mode-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.settings-page .theme-mode-icon {
+  width: 40px;
+  height: 40px;
+  border-radius: 50%;
+  background: var(--color-primary-50);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.settings-page .theme-mode-icon svg {
+  width: 20px;
+  height: 20px;
+  color: var(--color-primary);
+}
+
+.settings-page .theme-mode-name {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text-primary);
+}
+
+.settings-page .theme-mode-desc {
+  font-size: 12px;
+  color: var(--color-text-tertiary);
+}
+
+/* 开关组件优化 */
+.settings-page .switch {
+  width: 50px;
+  height: 28px;
+  background: var(--color-bg-tertiary);
+  border-radius: 14px;
+  position: relative;
+  cursor: pointer;
+  transition: var(--transition-base);
+}
+
+.settings-page .switch-handle {
+  position: absolute;
+  left: 3px;
+  top: 3px;
+  width: 22px;
+  height: 22px;
+  background: white;
+  border-radius: 50%;
+  transition: var(--transition-base);
+  box-shadow: var(--shadow-xs);
+}
+
+.settings-page .switch.active {
+  background: var(--color-primary);
+}
+
+.settings-page .switch.active .switch-handle {
+  transform: translateX(22px);
+}
+
+/* 设置禁用状态 */
+.settings-page .settings-disabled {
+  opacity: 0.5;
+  pointer-events: none;
+}
+
+.settings-page .settings-toggle-disabled {
+  opacity: 0.5;
+}
+
+/* 响应式优化 */
+@media (max-width: 900px) {
+  .settings-page .settings-layout {
+    grid-template-columns: 1fr;
+    grid-template-rows: auto 1fr;
+  }
+  .settings-page .settings-sidebar {
+    border-right: none;
+    border-bottom: 1px solid var(--color-border);
+    padding: 8px 0;
+  }
+  .settings-page .settings-nav-item {
+    padding: 8px 16px;
+    font-size: 13px;
+  }
+  .settings-page .theme-selector {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+/* ========== 全局小细节优化 ========== */
+
+/* 按钮悬浮效果 */
+.btn {
+  transition: all var(--transition-base);
+}
+
+.btn:hover:not(:disabled) {
+  transform: translateY(-1px);
+}
+
+.btn:active:not(:disabled) {
+  transform: translateY(0);
+}
+
+/* 输入框聚焦优化 */
+.input:focus,
+.select:focus,
+textarea:focus {
+  transition: all var(--transition-fast);
+}
+
+/* 卡片悬浮效果 */
+.card {
+  transition: all var(--transition-base);
+}
+
+.card:hover {
+  box-shadow: var(--shadow-md);
+}
+
+/* 滚动条全局优化 */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: var(--color-border);
+  border-radius: 3px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: var(--color-border-medium);
+}
+
+/* 文本选择优化 */
+::selection {
+  background: var(--color-primary-200);
+  color: var(--color-primary);
+}
+
+/* 链接样式优化 */
+a {
+  color: var(--color-primary);
+  text-decoration: none;
+  transition: var(--transition-fast);
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+/* 标签优化 */
+.tag {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 2px 8px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.tag-success {
+  background: var(--color-success-bg);
+  color: var(--color-success);
+}
+
+.tag-warning {
+  background: var(--color-warning-bg);
+  color: var(--color-warning);
+}
+
+.tag-danger {
+  background: var(--color-danger-bg);
+  color: var(--color-danger);
+}
+
+.tag-info {
+  background: var(--color-info-bg);
+  color: var(--color-info);
+}
+
+/* 空状态优化 */
+.empty {
+  text-align: center;
+  padding: 40px;
+}
+
+.empty-text {
+  font-size: 14px;
+  color: var(--color-text-tertiary);
+  margin-top: 8px;
+}
+
+/* 骨架屏优化 */
+.skeleton {
+  background: linear-gradient(90deg, var(--color-bg-secondary) 25%, var(--color-bg-tertiary) 50%, var(--color-bg-secondary) 75%);
+  background-size: 200% 100%;
+  animation: skeleton-shimmer 1.5s infinite;
+}
+
+@keyframes skeleton-shimmer {
+  0% { background-position: 200% 0; }
+  100% { background-position: -200% 0; }
+}
+
+/* 加载状态优化 */
+.loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 1000;
+}
+
+.loading-spinner {
+  width: 40px;
+  height: 40px;
+  border: 3px solid var(--color-border);
+  border-top-color: var(--color-primary);
+  border-radius: 50%;
+  animation: spinner-rotate 0.8s linear infinite;
+}
+
+@keyframes spinner-rotate {
+  to { transform: rotate(360deg); }
+}
+
+/* 工具提示优化 */
+.tooltip {
+  position: relative;
+}
+
+.tooltip::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--color-text-primary);
+  color: white;
+  padding: 6px 10px;
+  border-radius: var(--radius-sm);
+  font-size: 12px;
+  white-space: nowrap;
+  opacity: 0;
+  pointer-events: none;
+  transition: var(--transition-fast);
+  margin-bottom: 8px;
+}
+
+.tooltip:hover::after {
+  opacity: 1;
+}
+
+/* 渐变背景优化 */
+.gradient-bg {
+  background: linear-gradient(135deg, var(--color-primary-50) 0%, transparent 100%);
+}
+
+/* 分割线优化 */
+.divider {
+  height: 1px;
+  background: var(--color-border-light);
+  margin: 16px 0;
+}
+
+/* 头部渐变 */
+.header-gradient {
+  background: linear-gradient(180deg, var(--color-bg-tertiary) 0%, var(--color-bg-secondary) 100%);
+}

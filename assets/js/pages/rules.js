@@ -6,7 +6,7 @@ const MapValueEditor = ({ step, updateStepConfig }) => {
   };
   return React.createElement(
     "div",
-    { className: "config-section", style: { marginTop: "12px" } },
+    { className: "config-section" },
     React.createElement(
       "div",
       { className: "config-section-header" },
@@ -19,15 +19,14 @@ const MapValueEditor = ({ step, updateStepConfig }) => {
     ),
     React.createElement(
       "div",
-      { style: { display: "flex", flexDirection: "column", gap: "8px" } },
+      { className: "form-item" },
       pairs.map((pair, idx) =>
         React.createElement(
           "div",
-          { key: idx, style: { display: "flex", gap: "8px", alignItems: "center" } },
+          { key: idx, className: "grid-2", style: { marginBottom: "8px", alignItems: "center" } },
           React.createElement("input", {
             type: "text",
             className: "input",
-            style: { flex: 1 },
             placeholder: "原始值",
             value: pair.from,
             onChange: (e) => {
@@ -36,11 +35,10 @@ const MapValueEditor = ({ step, updateStepConfig }) => {
               updatePairs(newPairs);
             },
           }),
-          React.createElement("span", { style: { color: "var(--color-text-tertiary)", fontSize: 12 } }, "→"),
+          React.createElement("span", { style: { color: "var(--color-text-tertiary)", fontSize: 12, textAlign: "center" } }, "→"),
           React.createElement("input", {
             type: "text",
             className: "input",
-            style: { flex: 1 },
             placeholder: "替换为",
             value: pair.to,
             onChange: (e) => {
@@ -85,7 +83,7 @@ const AdvancedRuleConfig = ({ step, updateStepConfig }) => {
   const renderField = (label, hint, inputEl) =>
     React.createElement(
       "div",
-      { className: "form-item", style: { marginTop: "12px" } },
+      { className: "form-item" },
       React.createElement(
         "label",
         { className: "form-label" },
@@ -108,7 +106,7 @@ const AdvancedRuleConfig = ({ step, updateStepConfig }) => {
     case "substring":
       return React.createElement(
         "div",
-        { className: "config-section", style: { marginTop: "12px" } },
+        { className: "config-section" },
         React.createElement(
           "div",
           { className: "config-section-header" },
@@ -121,7 +119,7 @@ const AdvancedRuleConfig = ({ step, updateStepConfig }) => {
         ),
         React.createElement(
           "div",
-          { style: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" } },
+          { className: "grid-2" },
           renderField("起始位置", "从0开始", renderInput("start", "起始位置", "number")),
           renderField("截取长度", "要截取的字符数", renderInput("length", "长度", "number"))
         )
@@ -129,7 +127,7 @@ const AdvancedRuleConfig = ({ step, updateStepConfig }) => {
     case "replace":
       return React.createElement(
         "div",
-        { className: "config-section", style: { marginTop: "12px" } },
+        { className: "config-section" },
         React.createElement(
           "div",
           { className: "config-section-header" },
@@ -142,7 +140,7 @@ const AdvancedRuleConfig = ({ step, updateStepConfig }) => {
         ),
         React.createElement(
           "div",
-          { style: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" } },
+          { className: "grid-2" },
           renderField("查找内容", "要替换的文本", renderInput("from", "查找内容")),
           renderField("替换为", "替换后的文本", renderInput("to", "替换为"))
         )
@@ -150,7 +148,7 @@ const AdvancedRuleConfig = ({ step, updateStepConfig }) => {
     case "concat":
       return React.createElement(
         "div",
-        { className: "config-section", style: { marginTop: "12px" } },
+        { className: "config-section" },
         React.createElement(
           "div",
           { className: "config-section-header" },
@@ -163,7 +161,7 @@ const AdvancedRuleConfig = ({ step, updateStepConfig }) => {
         ),
         React.createElement(
           "div",
-          { style: { display: "grid", gridTemplateColumns: "repeat(2, 1fr)", gap: "12px" } },
+          { className: "grid-2" },
           renderField("连接符", "如 - 或 /", renderInput("separator", "连接符")),
           renderField("要拼接的字段", "逗号分隔的字段名", renderInput("columns", "字段1,字段2"))
         )
@@ -171,7 +169,7 @@ const AdvancedRuleConfig = ({ step, updateStepConfig }) => {
     case "ifEmpty":
       return React.createElement(
         "div",
-        { className: "config-section", style: { marginTop: "12px" } },
+        { className: "config-section" },
         React.createElement(
           "div",
           { className: "config-section-header" },
@@ -188,7 +186,7 @@ const AdvancedRuleConfig = ({ step, updateStepConfig }) => {
     case "divide":
       return React.createElement(
         "div",
-        { className: "config-section", style: { marginTop: "12px" } },
+        { className: "config-section" },
         React.createElement(
           "div",
           { className: "config-section-header" },
@@ -206,7 +204,7 @@ const AdvancedRuleConfig = ({ step, updateStepConfig }) => {
     case "diffFields":
       return React.createElement(
         "div",
-        { className: "config-section", style: { marginTop: "12px" } },
+        { className: "config-section" },
         React.createElement(
           "div",
           { className: "config-section-header" },
@@ -224,7 +222,7 @@ const AdvancedRuleConfig = ({ step, updateStepConfig }) => {
     case "join":
       return React.createElement(
         "div",
-        { className: "config-section", style: { marginTop: "12px" } },
+        { className: "config-section" },
         React.createElement(
           "div",
           { className: "config-section-header" },
@@ -244,7 +242,7 @@ const AdvancedRuleConfig = ({ step, updateStepConfig }) => {
     case "toFixed2":
       return React.createElement(
         "div",
-        { className: "config-section", style: { marginTop: "12px" } },
+        { className: "config-section" },
         React.createElement(
           "div",
           { className: "step-info-box" },
