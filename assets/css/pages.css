@@ -1118,31 +1118,6 @@
   padding: 0 !important;
 }
 
-.rules-page .workspace {
-  display: grid;
-  grid-template-columns: 360px 1fr;
-  grid-template-rows: 1fr;
-  gap: 12px;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
-  align-items: stretch;
-  padding: 12px;
-}
-
-@media (max-width: 1024px) {
-  .rules-page .workspace {
-    grid-template-columns: 320px 1fr;
-  }
-}
-
-@media (max-width: 768px) {
-  .rules-page .workspace {
-    grid-template-columns: 1fr;
-    grid-template-rows: 200px 1fr;
-  }
-}
-
 .rules-page .workspace-left {
   display: flex;
   flex-direction: column;
@@ -6051,11 +6026,6 @@
     grid-template-columns: repeat(2, 1fr);
   }
 
-  .rules-page .workspace {
-    grid-template-columns: 280px 1fr;
-    gap: 16px;
-  }
-
   .rules-page .preset-grid {
     grid-template-columns: repeat(2, 1fr);
   }
@@ -6204,12 +6174,6 @@
 
   .settings-page .theme-selector {
     grid-template-columns: 1fr;
-  }
-
-  .rules-page .workspace {
-    grid-template-columns: 1fr;
-    height: auto;
-    min-height: auto;
   }
 
   .rules-page .workspace-left .card,
@@ -8212,26 +8176,6 @@
    计算规则页面专业样式优化
    ======================================== */
 
-/* 三栏布局分隔线和阴影增强 */
-.rules-page .workspace {
-  gap: 16px;
-  padding: 16px;
-  background: var(--color-bg-tertiary);
-}
-
-.rules-page .workspace-left .card,
-.rules-page .workspace-right .card {
-  border-radius: var(--radius-xl);
-  box-shadow: var(--shadow-md);
-  border: 1px solid var(--color-border-light);
-  transition: all var(--transition-base);
-}
-
-.rules-page .workspace-left .card:hover,
-.rules-page .workspace-right .card:hover {
-  box-shadow: var(--shadow-lg);
-}
-
 /* 卡片头部渐变和分隔线优化 */
 .rules-page .card-header {
   padding: 16px 20px;
@@ -9127,13 +9071,6 @@
 }
 
 @media (max-width: 768px) {
-  .rules-page .workspace {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
-    gap: 12px;
-    padding: 12px;
-  }
-  
   .step-visual-flow {
     padding: 14px 16px;
   }
@@ -11422,26 +11359,6 @@ body .admin-logs .card-body {
 /* ========== 计算规则页面优化 ========== */
 
 /* 工作区整体优化 */
-.rules-page .workspace {
-  grid-template-columns: 280px 1fr;
-  gap: 16px;
-  padding: 16px;
-}
-
-.rules-page .workspace-left {
-  border-radius: var(--radius-lg);
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  overflow: hidden;
-}
-
-.rules-page .workspace-right {
-  border-radius: var(--radius-lg);
-  background: var(--color-bg-secondary);
-  border: 1px solid var(--color-border);
-  overflow: hidden;
-}
-
 /* 卡片头部优化 */
 .rules-page .card-header {
   padding: 16px 20px;
@@ -11745,16 +11662,6 @@ body .admin-logs .card-body {
   flex-direction: column;
   height: 100%;
   min-height: 0;
-}
-
-.settings-page .settings-layout {
-  display: grid;
-  grid-template-columns: 220px 1fr;
-  grid-template-rows: 1fr;
-  gap: 0;
-  flex: 1;
-  min-height: 0;
-  overflow: hidden;
 }
 
 .settings-page .settings-sidebar {
