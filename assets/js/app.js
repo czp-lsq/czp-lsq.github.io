@@ -1094,56 +1094,24 @@ const App = () => {
       return newTabs;
     });
   };
-  // 平台品牌Logo组件 - 使用真实品牌色SVG，避免依赖不完整的iconfont字体
+  // 平台品牌Logo组件 - 使用iconfont真实图标
   const PlatformLogo = ({ platformId, size = 24 }) => {
-    const logos = {
-      pdd: {
-        bg: "#E02020",
-        text: "P",
-        fontWeight: 900,
-        fontFamily: "Georgia, serif",
-        textColor: "#FFFFFF",
-      },
-      tb: {
-        bg: "#FF4200",
-        text: "淘",
-        fontWeight: 700,
-        fontFamily: '"PingFang SC", "Microsoft YaHei", sans-serif',
-        textColor: "#FFFFFF",
-      },
-      dy: {
-        bg: "#161823",
-        text: "抖",
-        fontWeight: 700,
-        fontFamily: '"PingFang SC", "Microsoft YaHei", sans-serif',
-        textColor: "#25F4EE",
-      },
+    const iconClasses = {
+      pdd: "icon-pdd",
+      tb: "icon-tb",
+      dy: "icon-dy",
     };
-    const logo = logos[platformId] || logos.pdd;
-    const isSmall = size <= 18;
+    const iconClass = iconClasses[platformId] || iconClasses.pdd;
     return /*#__PURE__*/ React.createElement(
-      "div",
+      "span",
       {
-        className: "platform-brand-logo",
-        "data-platform": platformId,
+        className: `platform-icon iconfont ${iconClass}`,
         style: {
           width: size,
           height: size,
-          background: logo.bg,
-          color: logo.textColor,
-          borderRadius: Math.max(4, size * 0.22),
-          display: "flex",
-          alignItems: "center",
-          justifyContent: "center",
-          fontSize: isSmall ? size * 0.55 : size * 0.5,
-          fontWeight: logo.fontWeight,
-          fontFamily: logo.fontFamily,
-          flexShrink: 0,
-          boxShadow: "0 1px 2px rgba(0,0,0,0.1)",
-          letterSpacing: isSmall ? 0 : "-0.5px",
+          fontSize: size * 0.7,
         },
       },
-      logo.text,
     );
   };
   const pageTitles = {

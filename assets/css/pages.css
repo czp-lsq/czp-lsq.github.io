@@ -11414,26 +11414,3 @@ body .admin-logs .card-body {
     grid-template-columns: 1fr;
   }
 }
-
-/* 平台品牌Logo样式 - 防止被主题色覆盖 */
-.platform-brand-logo {
-  display: flex !important;
-  align-items: center;
-  justify-content: center;
-  flex-shrink: 0;
-  user-select: none;
-  -webkit-user-select: none;
-  /* 品牌色在内联 style 中，!important 防止任何主题色覆盖 */
-}
-.platform-brand-logo[data-platform="pdd"] {
-  background: #E02020 !important;
-  color: #FFFFFF !important;
-}
-.platform-brand-logo[data-platform="tb"] {
-  background: #FF4200 !important;
-  color: #FFFFFF !important;
-}
-.platform-brand-logo[data-platform="dy"] {
-  background: #161823 !important;
-  color: #25F4EE !important;
-}

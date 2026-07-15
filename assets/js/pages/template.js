@@ -263,7 +263,7 @@ const TemplatePage = ({ state, currentPlatform }) => {
               "div",
               { className: "card-title" },
               /*#__PURE__*/ React.createElement(Icons.FileSpreadsheet, null),
-              platform?.emoji,
+              /*#__PURE__*/ React.createElement("span", { className: "platform-icon iconfont icon-" + platform?.id, style: { fontSize: 16, margin: "0 4px" } }),
               " ",
               platform?.name,
               "\u5229\u6DA6\u8868\u6A21\u677F",
