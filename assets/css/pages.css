@@ -37,8 +37,10 @@
 .settings-page > .settings-layout,
 .help-page > .help-layout,
 .rules-page > .workspace {
+  display: flex;
   flex: 1;
   min-height: 0;
+  overflow: hidden;
 }
 
 /* 带标签页的页面 - 内容区填满剩余高度 */
@@ -9063,11 +9065,6 @@
 
 /* 响应式优化 */
 @media (max-width: 1024px) {
-  .rules-page .workspace {
-    grid-template-columns: 320px 1fr;
-    gap: 12px;
-    padding: 12px;
-  }
 }
 
 @media (max-width: 768px) {
@@ -11639,16 +11636,9 @@ body .admin-logs .card-body {
 
 /* 响应式优化 */
 @media (max-width: 1200px) {
-  .rules-page .workspace {
-    grid-template-columns: 260px 1fr;
-  }
 }
 
 @media (max-width: 900px) {
-  .rules-page .workspace {
-    grid-template-columns: 1fr;
-    grid-template-rows: 240px 1fr;
-  }
   .rules-page .grid-2 {
     grid-template-columns: 1fr;
   }
@@ -12005,8 +11995,7 @@ body .admin-logs .card-body {
 /* 响应式优化 */
 @media (max-width: 900px) {
   .settings-page .settings-layout {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto 1fr;
+    flex-direction: column;
   }
   .settings-page .settings-sidebar {
     border-right: none;
