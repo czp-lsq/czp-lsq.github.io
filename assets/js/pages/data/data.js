@@ -981,7 +981,3 @@ const DataPage = ({ state, currentPlatform }) => {
   );
 };
 
-const { useState, useEffect, useRef } = React;
-const { Button, Modal, Icons } = Window;
-const { Store, ExcelUtils, ActivityLogger, ConfirmModal, ExternalsPage } = Window;
-const { useToast } = Window.Hooks;
