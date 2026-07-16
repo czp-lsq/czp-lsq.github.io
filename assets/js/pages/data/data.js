@@ -97,9 +97,7 @@ const DataPage = ({ state, currentPlatform }) => {
     e.target.value = "";
     if (files.length === 1) {
       const file = files[0];
-      const tempResult = await ExcelUtils.parse(file);
-      const autoName = DataUtils.generateTableName(file.name, tempResult);
-      setAliasInput(autoName);
+      setAliasInput("");
       setPendingFiles([file]);
       return;
     }
@@ -112,9 +110,8 @@ const DataPage = ({ state, currentPlatform }) => {
         const result = await ExcelUtils.parse(file, (p) => {
           setUploadProgress(Math.round(((i + p / 100) / files.length) * 100));
         });
-        const autoName = DataUtils.generateTableName(file.name, result);
-        result.displayName = autoName;
-        result.alias = autoName;
+        result.displayName = file.name;
+        result.alias = "";
         ExcelUtils.stripForStorage(result);
         newSamples.push(result);
       }
@@ -148,6 +145,10 @@ const DataPage = ({ state, currentPlatform }) => {
 
   const confirmAliasUpload = async () => {
     if (!pendingFiles || pendingFiles.length === 0) return;
+    if (!aliasInput.trim()) {
+      addToast("warning", "请填写备注名", "上传样表前必须设置备注名");
+      return;
+    }
     const filesToUpload = [...pendingFiles];
     setIsUploading(true);
     setUploadProgress(0);
@@ -158,9 +159,8 @@ const DataPage = ({ state, currentPlatform }) => {
         const result = await ExcelUtils.parse(file, (p) => {
           setUploadProgress(p);
         });
-        const autoName = DataUtils.generateTableName(file.name, result);
-        result.displayName = autoName;
-        result.alias = aliasInput.trim() || autoName;
+        result.displayName = file.name;
+        result.alias = aliasInput.trim();
         ExcelUtils.stripForStorage(result);
         newSamples.push(result);
       }
@@ -516,7 +516,7 @@ const DataPage = ({ state, currentPlatform }) => {
               /*#__PURE__*/ React.createElement("input", {
                 type: "text",
                 className: "input",
-                placeholder: "\u8F93\u5165\u5907\u6CE8\u540D...",
+                placeholder: "\u8BF7\u8F93\u5165\u5907\u6CE8\u540D\uFF08\u5FC5\u586B\uFF09...",
                 value: aliasInput,
                 onChange: (e) => setAliasInput(e.target.value),
                 onKeyDown: (e) => {
@@ -726,31 +726,29 @@ const DataPage = ({ state, currentPlatform }) => {
                               gap: 6,
                             },
                           },
-                        ),
-                        /*#__PURE__*/ React.createElement(
-                          "span",
-                          {
-                            style: {
-                              fontWeight: 600,
-                              color: "var(--color-text-primary)",
-                            },
-                          },
-                          sample.alias || sample.fileName,
-                        ),
-                        !sample.alias &&
-                          /*#__PURE__*/ React.createElement(
-                            "span",
-                            {
-                              style: {
-                                fontSize: 10,
-                                color: "var(--color-warning)",
-                                background: "var(--color-warning-bg)",
-                                padding: "1px 6px",
-                                borderRadius: 4,
+                          sample.alias
+                            ? /*#__PURE__*/ React.createElement(
+                              "span",
+                              {
+                                style: {
+                                  fontWeight: 600,
+                                  color: "var(--color-text-primary)",
+                                },
                               },
-                            },
-                            "\u672A\u5907\u6CE8",
-                          ),
+                              sample.alias,
+                            )
+                            : /*#__PURE__*/ React.createElement(
+                              "span",
+                              {
+                                style: {
+                                  fontSize: 12,
+                                  color: "var(--color-text-tertiary)",
+                                  fontStyle: "italic",
+                                },
+                              },
+                              "\u672A\u8BBE\u7F6E",
+                            ),
+                        ),
                       ),
                       /*#__PURE__*/ React.createElement(
                         "td",
@@ -762,35 +760,15 @@ const DataPage = ({ state, currentPlatform }) => {
                               fontSize: 12,
                               color: "var(--color-text-secondary)",
                               fontStyle: "italic",
-                              maxWidth: 180,
+                              maxWidth: 220,
                               display: "inline-block",
                               overflow: "hidden",
                               textOverflow: "ellipsis",
                               whiteSpace: "nowrap",
                             },
-                            title: sample.displayName || "未识别",
+                            title: sample.fileName || "未识别",
                           },
-                          sample.displayName || "未识别",
-                        ),
-                      ),
-                      /*#__PURE__*/ React.createElement(
-                        "td",
-                        null,
-                        /*#__PURE__*/ React.createElement(
-                          "span",
-                          {
-                            style: {
-                              fontSize: 12,
-                              color: "var(--color-text-tertiary)",
-                              maxWidth: 200,
-                              display: "inline-block",
-                              overflow: "hidden",
-                              textOverflow: "ellipsis",
-                              whiteSpace: "nowrap",
-                            },
-                            title: sample.fileName,
-                          },
-                          sample.fileName,
+                          sample.fileName || "未识别",
                         ),
                       ),
                       /*#__PURE__*/ React.createElement(
@@ -815,9 +793,7 @@ const DataPage = ({ state, currentPlatform }) => {
                               className: "action-btn action-note",
                               onClick: () => {
                                 setEditAliasIdx(idx);
-                                setEditAliasValue(
-                                  sample.alias || sample.fileName,
-                                );
+                                setEditAliasValue(sample.alias || "");
                               },
                               title: "\u4FEE\u6539\u5907\u6CE8",
                             },
@@ -896,13 +872,11 @@ const DataPage = ({ state, currentPlatform }) => {
                     {
                       type: "primary",
                       onClick: () => {
-                        if (editAliasValue.trim()) {
-                          updateSampleAlias(
-                            editAliasIdx,
-                            editAliasValue.trim(),
-                          );
-                          setEditAliasIdx(null);
-                        }
+                        updateSampleAlias(
+                          editAliasIdx,
+                          editAliasValue.trim(),
+                        );
+                        setEditAliasIdx(null);
                       },
                     },
                     "\u786E\u8BA4\u4FEE\u6539",
@@ -923,7 +897,7 @@ const DataPage = ({ state, currentPlatform }) => {
                   value: editAliasValue,
                   onChange: (e) => setEditAliasValue(e.target.value),
                   onKeyDown: (e) => {
-                    if (e.key === "Enter" && editAliasValue.trim()) {
+                    if (e.key === "Enter") {
                       updateSampleAlias(
                         editAliasIdx,
                         editAliasValue.trim(),
