@@ -388,7 +388,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
   const [previewTab, setPreviewTab] = useState("both");
   const [isPreviewPinned, setIsPreviewPinned] = useState(false);
   const [hoveredStepType, setHoveredStepType] = useState(null);
-  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(true);
   const [infoPanelOpen, setInfoPanelOpen] = useState(() => {
     try {
       const saved = localStorage.getItem(`rules_page_info_open_${currentPlatform}`);
@@ -7710,632 +7710,7 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                     },
                     renderPresetGrid(),
                   ),
-                debugMode &&
-                  previewResult &&
-                  /*#__PURE__*/ React.createElement(
-                    "div",
-                    { className: "debug-preview" + (debugExpanded ? "" : " collapsed") },
-                    /*#__PURE__*/ React.createElement(
-                        "div",
-                        { className: "debug-preview-header", onClick: () => setDebugExpanded(!debugExpanded), style: { cursor: "pointer" } },
-                      /*#__PURE__*/ React.createElement(
-                        "div",
-                        { className: "debug-preview-header-left" },
-                        /*#__PURE__*/ React.createElement(
-                          "div",
-                          { className: "debug-preview-icon-wrap" },
-                          /*#__PURE__*/ React.createElement(Icons.Play, null),
-                        ),
-                        /*#__PURE__*/ React.createElement(
-                          "div",
-                          { className: "debug-preview-title-group" },
-                          /*#__PURE__*/ React.createElement(
-                            "div",
-                            { className: "debug-preview-title" },
-                            "\u5B9E\u65F6\u9884\u89C8\u7ED3\u679C",
-                          ),
-                          /*#__PURE__*/ React.createElement(
-                            "div",
-                            { className: "debug-preview-subtitle" },
-                            activeField?.name || "\u5F53\u524D\u5B57\u6BB5",
-                          ),
-                        ),
-                      ),
-                      /*#__PURE__*/ React.createElement(
-                        "div",
-                        { style: { display: "flex", alignItems: "center", gap: "12px" } },
-                        /*#__PURE__*/ React.createElement(
-                          "span",
-                          {
-                            className: `debug-status ${previewResult.error ? "error" : "success"}`,
-                          },
-                          previewResult.error
-                            ? /*#__PURE__*/ React.createElement(Icons.AlertCircle, null)
-                            : /*#__PURE__*/ React.createElement(Icons.CheckCircle, null),
-                          previewResult.error ? "\u8BA1\u7B97\u9519\u8BEF" : "\u8BA1\u7B97\u6210\u529F",
-                        ),
-                        /*#__PURE__*/ React.createElement(
-                          "span",
-                          { style: { fontSize: "12px", color: "var(--color-text-tertiary)", transition: "transform 0.2s", transform: debugExpanded ? "rotate(180deg)" : "rotate(0deg)" } },
-                          /*#__PURE__*/ React.createElement(Icons.ChevronDown, null),
-                        ),
-                      ),
-                    ),
-                    previewResult.error
-                      ? /*#__PURE__*/ React.createElement(
-                          "div",
-                          { className: "debug-error" },
-                          /*#__PURE__*/ React.createElement(
-                            "div",
-                            { className: "debug-error-icon-wrap" },
-                            /*#__PURE__*/ React.createElement(Icons.AlertCircle, null),
-                          ),
-                          /*#__PURE__*/ React.createElement(
-                            "div",
-                            { className: "debug-error-content" },
-                            /*#__PURE__*/ React.createElement(
-                              "div",
-                              { className: "debug-error-title" },
-                              "\u8BA1\u7B97\u51FA\u9519",
-                            ),
-                            /*#__PURE__*/ React.createElement(
-                              "div",
-                              { className: "debug-error-message" },
-                              previewResult.error,
-                            ),
-                          ),
-                        )
-                      : /*#__PURE__*/ React.createElement(
-                          React.Fragment,
-                          null,
-                          /*#__PURE__*/ React.createElement(
-                            "div",
-                            { className: "debug-final-result" },
-                            /*#__PURE__*/ React.createElement(
-                              "div",
-                              { className: "debug-final-label" },
-                              /*#__PURE__*/ React.createElement(Icons.Zap, null),
-                              "\u6700\u7EC8\u7ED3\u679C",
-                            ),
-                            /*#__PURE__*/ React.createElement(
-                            "div",
-                            { className: "debug-final-value" },
-                            typeof previewResult.value === "number"
-                              ? previewResult.value.toLocaleString("zh-CN", {
-                                  maximumFractionDigits: 2,
-                                })
-                              : String(previewResult.value ?? "-"),
-                          ),
-                          previewResult.data &&
-                            previewResult.data[0] &&
-                            previewResult.data[0]._format &&
-                            previewResult.data[0]._format !== "none" &&
-                            typeof previewResult.data[0]._raw === "number" &&
-                            /*#__PURE__*/ React.createElement(
-                              "div",
-                              {
-                                className: "debug-final-meta",
-                                style: { marginTop: 4, color: "var(--color-text-tertiary)" },
-                              },
-                              "\u539F\u59CB\u503C\uFF1A",
-                              previewResult.data[0]._raw.toLocaleString("zh-CN", {
-                                maximumFractionDigits: 4,
-                              }),
-                              " \u00B7 \u8F93\u51FA\u683C\u5F0F\uFF1A",
-                              previewResult.data[0]._format,
-                            ),
-                            /*#__PURE__*/ React.createElement(
-                              "div",
-                              { className: "debug-final-meta" },
-                              /*#__PURE__*/ React.createElement(
-                                "span",
-                                { className: "debug-final-meta-item" },
-                                /*#__PURE__*/ React.createElement(Icons.Database, null),
-                                "\u5171 ",
-                                previewResult.data?.length || 0,
-                                " \u6761\u6570\u636E",
-                              ),
-                              previewResult.stepResults?.length > 0 && /*#__PURE__*/ React.createElement(
-                                "span",
-                                { className: "debug-final-meta-item" },
-                                /*#__PURE__*/ React.createElement(Icons.List, null),
-                                previewResult.stepResults.length,
-                                " \u4E2A\u6B65\u9AA4",
-                              ),
-                            ),
-                          ),
-                          previewResult.data &&
-                            previewResult.data.length > 0 &&
-                            /*#__PURE__*/ React.createElement(
-                              "div",
-                              { className: "debug-data-preview" },
-                              /*#__PURE__*/ React.createElement(
-                                "div",
-                                { className: "debug-section-title" },
-                                /*#__PURE__*/ React.createElement(
-                                  "div",
-                                  { className: "debug-section-title-icon" },
-                                  /*#__PURE__*/ React.createElement(Icons.Table, null),
-                                ),
-                                /*#__PURE__*/ React.createElement(
-                                  "span",
-                                  { className: "debug-section-title-text" },
-                                  "\u6570\u636E\u9884\u89C8",
-                                ),
-                                /*#__PURE__*/ React.createElement(
-                                  "span",
-                                  { className: "debug-section-badge" },
-                                  "\u524D5\u6761",
-                                ),
-                              ),
-                              /*#__PURE__*/ React.createElement(
-                                "div",
-                                { className: "debug-table-wrap" },
-                                /*#__PURE__*/ React.createElement(
-                                  "table",
-                                  { className: "debug-table" },
-                                  /*#__PURE__*/ React.createElement(
-                                    "thead",
-                                    null,
-                                    /*#__PURE__*/ React.createElement(
-                                      "tr",
-                                      null,
-                                      /*#__PURE__*/ React.createElement(
-                                        "th",
-                                        null,
-                                        "#",
-                                      ),
-                                      Object.keys(previewResult.data[0] || {})
-                                        .slice(0, 6)
-                                        .map((k) =>
-                                          /*#__PURE__*/ React.createElement(
-                                            "th",
-                                            { key: k, className: k === "val" ? "debug-col-val" : "" },
-                                            k === "val" ? "\u8BA1\u7B97\u503C" : k,
-                                          ),
-                                        ),
-                                    ),
-                                  ),
-                                  /*#__PURE__*/ React.createElement(
-                                    "tbody",
-                                    null,
-                                    previewResult.data
-                                      .slice(0, 5)
-                                      .map((row, i) =>
-                                        /*#__PURE__*/ React.createElement(
-                                          "tr",
-                                          { key: i },
-                                          /*#__PURE__*/ React.createElement(
-                                            "td",
-                                            null,
-                                            i + 1,
-                                          ),
-                                          Object.entries(row)
-                                            .slice(0, 6)
-                                            .map(([k, v], j) =>
-                                              /*#__PURE__*/ React.createElement(
-                                                "td",
-                                                { key: j, className: k === "val" ? "debug-col-val" : "" },
-                                                typeof v === "number"
-                                                  ? v.toLocaleString("zh-CN", {
-                                                      maximumFractionDigits: 2,
-                                                    })
-                                                  : v != null
-                                                    ? String(v)
-                                                    : /*#__PURE__*/ React.createElement(
-                                                        "span",
-                                                        null,
-                                                        "-",
-                                                      ),
-                                              ),
-                                            ),
-                                        ),
-                                      ),
-                                  ),
-                                ),
-                              ),
-                              previewResult.data.length > 5 &&
-                                /*#__PURE__*/ React.createElement(
-                                  "div",
-                                  { className: "debug-table-footer" },
-                                  "\u4EC5\u663E\u793A\u524D 5 \u6761\uFF0C\u5171 ",
-                                  previewResult.data.length,
-                                  " \u6761\u6570\u636E",
-                                ),
-                            ),
-                          previewResult.stepResults &&
-                            previewResult.stepResults.length > 0 &&
-                            /*#__PURE__*/ React.createElement(
-                              "div",
-                              { className: "debug-step-results" },
-                              /*#__PURE__*/ React.createElement(
-                                "div",
-                                { className: "debug-section-title" },
-                                /*#__PURE__*/ React.createElement(
-                                  "div",
-                                  { className: "debug-section-title-icon" },
-                                  /*#__PURE__*/ React.createElement(Icons.Activity, null),
-                                ),
-                                /*#__PURE__*/ React.createElement(
-                                  "span",
-                                  { className: "debug-section-title-text" },
-                                  "\u6BCF\u6B65\u8BA1\u7B97\u8BE6\u60C5",
-                                ),
-                                /*#__PURE__*/ React.createElement(
-                                  "span",
-                                  { className: "debug-section-badge" },
-                                  previewResult.stepResults.length,
-                                  " \u6B65",
-                                ),
-                              ),
-                              /*#__PURE__*/ React.createElement(
-                                "div",
-                                { className: "debug-steps" },
-                                previewResult.stepResults.map((sr, idx) => {
-                                  const stepInfo = getStepTypeInfo(sr.type);
-                                  return /*#__PURE__*/ React.createElement(
-                                    "div",
-                                    {
-                                      key: idx,
-                                      className: `debug-step-item ${sr.error ? "error" : ""}`,
-                                    },
-                                    /*#__PURE__*/ React.createElement(
-                                      "div",
-                                      { className: "debug-step-left" },
-                                      /*#__PURE__*/ React.createElement(
-                                        "div",
-                                        { className: "debug-step-index" },
-                                        idx + 1,
-                                      ),
-                                      /*#__PURE__*/ React.createElement(
-                                        "div",
-                                        {
-                                          className: "debug-step-icon",
-                                          style: { color: stepInfo.color, background: stepInfo.bg },
-                                        },
-                                        stepInfo.icon,
-                                      ),
-                                    ),
-                                    /*#__PURE__*/ React.createElement(
-                                      "div",
-                                      { className: "debug-step-info" },
-                                      /*#__PURE__*/ React.createElement(
-                                        "div",
-                                        { className: "debug-step-header" },
-                                        /*#__PURE__*/ React.createElement(
-                                          "div",
-                                          { className: "debug-step-name" },
-                                          stepInfo.name,
-                                        ),
-                                      ),
-                                      sr.error
-                                        ? /*#__PURE__*/ React.createElement(
-                                            React.Fragment,
-                                            null,
-                                            /*#__PURE__*/ React.createElement(
-                                              "div",
-                                              { className: "debug-step-error-header" },
-                                              /*#__PURE__*/ React.createElement(Icons.AlertCircle, null),
-                                              "\u6267\u884C\u5931\u8D25",
-                                            ),
-                                            /*#__PURE__*/ React.createElement(
-                                              "div",
-                                              { className: "debug-step-error" },
-                                              sr.error,
-                                            ),
-                                          )
-                                        : /*#__PURE__*/ React.createElement(
-                                            "div",
-                                            { className: "debug-step-details" },
-                                            /*#__PURE__*/ React.createElement(
-                                              "div",
-                                              { className: "debug-step-meta-row" },
-                                              /*#__PURE__*/ React.createElement(
-                                                "span",
-                                                { className: "debug-step-meta-tag highlight" },
-                                                /*#__PURE__*/ React.createElement(Icons.Database, null),
-                                                sr.rows?.length || sr.rows || 0,
-                                                " \u884C",
-                                              ),
-                                              sr.columns && /*#__PURE__*/ React.createElement(
-                                                "span",
-                                                { className: "debug-step-meta-tag" },
-                                                /*#__PURE__*/ React.createElement(Icons.Columns, null),
-                                                sr.columns,
-                                                " \u5217",
-                                              ),
-                                              (() => {
-                                                const cfg = sr.stepConfig || {};
-                                                const prevRows = sr.prevRows || 0;
-                                                const currRows = sr.rows?.length || sr.rows || 0;
-                                                switch (sr.type) {
-                                                  case "filter":
-                                                    if (prevRows > 0) {
-                                                      const filtered = prevRows - currRows;
-                                                      return /*#__PURE__*/ React.createElement(
-                                                        "span",
-                                                        { className: "debug-step-meta-tag", style: { background: "#fef3c7", borderColor: "#fde68a", color: "#d97706" } },
-                                                        /*#__PURE__*/ React.createElement(Icons.Filter, null),
-                                                        "\u8FC7\u6EE4 ", filtered, " \u6761",
-                                                      );
-                                                    }
-                                                    return null;
-                                                  case "join":
-                                                    if (prevRows > 0) {
-                                                      const matched = currRows;
-                                                      const unmatched = prevRows - currRows;
-                                                      return /*#__PURE__*/ React.createElement(
-                                                        "span",
-                                                        { className: "debug-step-meta-tag", style: { background: "#dbeafe", borderColor: "#bfdbfe", color: "#2563eb" } },
-                                                        /*#__PURE__*/ React.createElement(Icons.Link, null),
-                                                        "\u5173\u8054 ", matched, " \u6761",
-                                                        unmatched > 0 && /*#__PURE__*/ React.createElement("span", { style: { marginLeft: "4px", opacity: 0.7 } }, `(${unmatched}条未匹配)`),
-                                                      );
-                                                    }
-                                                    return null;
-                                                  case "virtual":
-                                                    return /*#__PURE__*/ React.createElement(
-                                                      "span",
-                                                      { className: "debug-step-meta-tag", style: { background: "#f0fdf4", borderColor: "#bbf7d0", color: "#16a34a" } },
-                                                      /*#__PURE__*/ React.createElement(Icons.Wand2, null),
-                                                      "\u65B0\u589E ", (cfg.target || "").split(",").filter(Boolean).length, " \u5217",
-                                                    );
-                                                  case "aggregate":
-                                                    return /*#__PURE__*/ React.createElement(
-                                                      "span",
-                                                      { className: "debug-step-meta-tag", style: { background: "#f5f3ff", borderColor: "#ddd6fe", color: "#7c3aed" } },
-                                                      /*#__PURE__*/ React.createElement(Icons.BarChart3, null),
-                                                      cfg.method || "聚合",
-                                                    );
-                                                  case "formula":
-                                                    return /*#__PURE__*/ React.createElement(
-                                                      "span",
-                                                      { className: "debug-step-meta-tag", style: { background: "#fff7ed", borderColor: "#fed7aa", color: "#ea580c" } },
-                                                      /*#__PURE__*/ React.createElement(Icons.Calculator, null),
-                                                      "\u8BA1\u7B97\u5B8C\u6210",
-                                                    );
-                                                  case "sort":
-                                                    return /*#__PURE__*/ React.createElement(
-                                                      "span",
-                                                      { className: "debug-step-meta-tag", style: { background: "#f1f5f9", borderColor: "#cbd5e1", color: "#64748b" } },
-                                                      /*#__PURE__*/ React.createElement(Icons.ArrowUpDown, null),
-                                                      cfg.direction === "desc" ? "降序" : "升序",
-                                                    );
-                                                  case "limit":
-                                                    return /*#__PURE__*/ React.createElement(
-                                                      "span",
-                                                      { className: "debug-step-meta-tag", style: { background: "#fef9c3", borderColor: "#fde047", color: "#ca8a04" } },
-                                                      /*#__PURE__*/ React.createElement(Icons.GripVertical, null),
-                                                      "\u9650\u5236 ", cfg.limit || 10, " \u6761",
-                                                    );
-                                                  default:
-                                                    return null;
-                                                }
-                                              })(),
-                                            ),
-                                            (() => {
-                                              const cfg = sr.stepConfig || {};
-                                              switch (sr.type) {
-                                                case "source":
-                                                  return cfg.tables && cfg.tables.length > 0 && /*#__PURE__*/ React.createElement("div", { style: { marginBottom: "10px", fontSize: "12px", color: "var(--color-text-secondary)" } },
-                                                    /*#__PURE__*/ React.createElement("span", { style: { fontWeight: 600 } }, "数据源："),
-                                                    cfg.tables.map((t) => t.name || t).join("、"),
-                                                  );
-                                                case "filter":
-                                                  return cfg.column && /*#__PURE__*/ React.createElement("div", { style: { marginBottom: "10px", fontSize: "12px", color: "var(--color-text-secondary)" } },
-                                                    /*#__PURE__*/ React.createElement("span", { style: { fontWeight: 600 } }, "筛选："),
-                                                    `${cfg.column} ${cfg.op || ""} ${cfg.value != null ? String(cfg.value) : ""}`,
-                                                  );
-                                                case "virtual":
-                                                  return /*#__PURE__*/ React.createElement("div", { style: { marginBottom: "10px", fontSize: "12px", color: "var(--color-text-secondary)" } },
-                                                    /*#__PURE__*/ React.createElement("span", { style: { fontWeight: 600 } }, "虚拟字段："),
-                                                    `源字段「${cfg.source || "-"}」→ 规则「${cfg.rule || "-"}」→ 目标「${cfg.target || "-"}」`,
-                                                  );
-                                                case "join":
-                                                  return /*#__PURE__*/ React.createElement("div", { style: { marginBottom: "10px", fontSize: "12px", color: "var(--color-text-secondary)" } },
-                                                    /*#__PURE__*/ React.createElement("span", { style: { fontWeight: 600 } }, "关联："),
-                                                    `${cfg.key || "-"} = ${cfg.fk || "-"}，导入列「${cfg.col || "-"}」`,
-                                                  );
-                                                case "aggregate":
-                                                  return /*#__PURE__*/ React.createElement("div", { style: { marginBottom: "10px", fontSize: "12px", color: "var(--color-text-secondary)" } },
-                                                    /*#__PURE__*/ React.createElement("span", { style: { fontWeight: 600 } }, "聚合："),
-                                                    `${cfg.method || "-"}(${cfg.column || "-"})`,
-                                                  );
-                                                case "formula":
-                                                  return /*#__PURE__*/ React.createElement("div", { style: { marginBottom: "10px", fontSize: "12px", color: "var(--color-text-secondary)" } },
-                                                    /*#__PURE__*/ React.createElement("span", { style: { fontWeight: 600 } }, "公式："),
-                                                    /*#__PURE__*/ React.createElement("span", { style: { fontFamily: "var(--font-mono)", color: "var(--color-primary)", marginLeft: "4px" } }, cfg.expr || "-"),
-                                                  );
-                                                case "sort":
-                                                  return /*#__PURE__*/ React.createElement("div", { style: { marginBottom: "10px", fontSize: "12px", color: "var(--color-text-secondary)" } },
-                                                    /*#__PURE__*/ React.createElement("span", { style: { fontWeight: 600 } }, "排序："),
-                                                    `${cfg.column || "-"} ${cfg.direction || "asc"}`,
-                                                  );
-                                                case "limit":
-                                                  return /*#__PURE__*/ React.createElement("div", { style: { marginBottom: "10px", fontSize: "12px", color: "var(--color-text-secondary)" } },
-                                                    /*#__PURE__*/ React.createElement("span", { style: { fontWeight: 600 } }, "限制："),
-                                                    `取前 ${cfg.limit || 10} 条`,
-                                                  );
-                                                default:
-                                                  return null;
-                                              }
-                                            })(),
-                                            sr.preview && sr.preview.length > 0 && sr.preview[0]?._formulaDetail && /*#__PURE__*/ React.createElement(
-                                              "div",
-                                              { className: "debug-step-formula-box", style: { background: "#f8fafc", borderRadius: "var(--radius-md)", padding: "14px", marginBottom: "12px", border: "1px solid #e2e8f0" } },
-                                              /*#__PURE__*/ React.createElement(
-                                                "div",
-                                                { style: { fontSize: "12px", fontWeight: 600, color: "#64748b", marginBottom: "10px", display: "flex", alignItems: "center", gap: "6px" } },
-                                                /*#__PURE__*/ React.createElement(Icons.Calculator, { size: 14 }),
-                                                "\u8BA1\u7B97\u8FC7\u7A0B",
-                                              ),
-                                              /*#__PURE__*/ React.createElement(
-                                                "div",
-                                                { style: { marginBottom: "10px" } },
-                                                /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", color: "#94a3b8", marginBottom: "3px", fontWeight: 500 } }, "1. 公式"),
-                                                /*#__PURE__*/ React.createElement("div", { style: { fontSize: "13px", color: "#1e293b", fontFamily: "var(--font-mono)", background: "#fff", padding: "8px 10px", borderRadius: "6px", border: "1px solid #e2e8f0" } },
-                                                  sr.preview[0]._formulaDetail.original || "-",
-                                                ),
-                                              ),
-                                              Object.keys(sr.preview[0]._formulaDetail.substitutions).length > 0 && /*#__PURE__*/ React.createElement(
-                                                "div",
-                                                { style: { marginBottom: "10px" } },
-                                                /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", color: "#94a3b8", marginBottom: "4px", fontWeight: 500 } }, "2. 代入值"),
-                                                /*#__PURE__*/ React.createElement(
-                                                  "div",
-                                                  { style: { display: "flex", flexWrap: "wrap", gap: "8px" } },
-                                                  Object.entries(sr.preview[0]._formulaDetail.substitutions).map(([field, info]) => /*#__PURE__*/ React.createElement(
-                                                    "div",
-                                                    { key: field, style: { background: "#fff", padding: "6px 10px", borderRadius: "6px", border: "1px solid #e2e8f0", display: "flex", alignItems: "center", gap: "6px" } },
-                                                    /*#__PURE__*/ React.createElement("span", { style: { fontSize: "12px", color: "#64748b", fontWeight: 500 } }, field),
-                                                    /*#__PURE__*/ React.createElement("span", { style: { fontSize: "11px", color: "#cbd5e1" } }, "="),
-                                                    /*#__PURE__*/ React.createElement("span", { style: { fontSize: "12px", fontFamily: "var(--font-mono)", color: "#0ea5e9", fontWeight: 600 } }, typeof info.raw === "number" ? info.raw.toLocaleString("zh-CN", { maximumFractionDigits: 2 }) : String(info.raw)),
-                                                  )),
-                                                ),
-                                              ),
-                                              /*#__PURE__*/ React.createElement(
-                                                "div",
-                                                { style: { marginBottom: "10px" } },
-                                                /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", color: "#94a3b8", marginBottom: "3px", fontWeight: 500 } }, "3. 计算"),
-                                                /*#__PURE__*/ React.createElement("div", { style: { fontSize: "13px", color: "#1e293b", fontFamily: "var(--font-mono)", background: "#fef3c7", padding: "8px 10px", borderRadius: "6px", border: "1px solid #fde68a" } },
-                                                  sr.preview[0]._formulaDetail.evaluated || "-",
-                                                ),
-                                              ),
-                                              /*#__PURE__*/ React.createElement(
-                                                "div",
-                                                { style: { marginTop: "8px", paddingTop: "10px", borderTop: "1px dashed #cbd5e1" } },
-                                                /*#__PURE__*/ React.createElement("div", { style: { fontSize: "11px", color: "#94a3b8", marginBottom: "3px", fontWeight: 500 } }, "4. 结果"),
-                                                sr.preview[0]._formulaDetail.error
-                                                  ? /*#__PURE__*/ React.createElement("div", { style: { fontSize: "14px", color: "#dc2626", fontFamily: "var(--font-mono)" } }, "✗ ", sr.preview[0]._formulaDetail.error)
-                                                  : /*#__PURE__*/ React.createElement("div", { style: { fontSize: "18px", color: "#10b981", fontFamily: "var(--font-mono)", fontWeight: 700 } },
-                                                      "✓ ",
-                                                      typeof sr.preview[0]._formulaDetail.result === "number"
-                                                        ? sr.preview[0]._formulaDetail.result.toLocaleString("zh-CN", { maximumFractionDigits: 4 })
-                                                        : String(sr.preview[0]._formulaDetail.result),
-                                                    ),
-                                              ),
-                                            ),
-                                            sr.preview && sr.preview.length > 0 && /*#__PURE__*/ React.createElement(
-                                              "div",
-                                              { className: "debug-step-preview-box" },
-                                              /*#__PURE__*/ React.createElement(
-                                                "div",
-                                                { className: "debug-step-preview-label" },
-                                                /*#__PURE__*/ React.createElement(Icons.Eye, null),
-                                                "\u9884\u89C8\u6570\u636E",
-                                              ),
-                                              /*#__PURE__*/ React.createElement(
-                                                "div",
-                                                { className: "debug-step-preview-content" },
-                                                (() => {
-                                                  const cfg = sr.stepConfig || {};
-                                                  const extractExprFields = (expr) => {
-                                                    if (!expr) return [];
-                                                    const matches = expr.match(/{([^}]+)}/g);
-                                                    return matches ? matches.map((m) => m.slice(1, -1)) : [];
-                                                  };
-                                                  let relevantKeys = [];
-                                                  switch (sr.type) {
-                                                    case "virtual":
-                                                      relevantKeys = [cfg.source, cfg.target].filter(Boolean);
-                                                      break;
-                                                    case "join":
-                                                      relevantKeys = [cfg.key, cfg.fk, cfg.col].filter(Boolean);
-                                                      break;
-                                                    case "formula":
-                                                      relevantKeys = sr.preview[0]?._formulaDetail ? Object.keys(sr.preview[0]._formulaDetail.substitutions || {}) : extractExprFields(cfg.expr);
-                                                      break;
-                                                    case "filter":
-                                                      relevantKeys = [cfg.column].filter(Boolean);
-                                                      break;
-                                                    case "aggregate":
-                                                      if (cfg.column === "__expr__" && cfg.expr) {
-                                                        relevantKeys = extractExprFields(cfg.expr);
-                                                      } else {
-                                                        relevantKeys = [cfg.column].filter(Boolean);
-                                                      }
-                                                      break;
-                                                    default:
-                                                      relevantKeys = Object.keys(sr.preview[0] || {}).filter((k) => !k.startsWith("_")).slice(0, 5);
-                                                      break;
-                                                  }
-                                                  if (relevantKeys.length === 0) {
-                                                    relevantKeys = Object.keys(sr.preview[0] || {}).filter((k) => !k.startsWith("_")).slice(0, 5);
-                                                  }
-                                                  const displayCount = Math.min(sr.preview.length, 100);
-                                                  return /*#__PURE__*/ React.createElement(
-                                                    React.Fragment,
-                                                    null,
-                                                    sr.preview.slice(0, displayCount).map((row, ri) => /*#__PURE__*/ React.createElement(
-                                                      "div",
-                                                      { key: ri, className: "debug-step-preview-row" },
-                                                      relevantKeys.map((k) => {
-                                                        const v = row[k];
-                                                        return /*#__PURE__*/ React.createElement(
-                                                          "span",
-                                                          { key: k, className: "debug-step-preview-cell" },
-                                                          /*#__PURE__*/ React.createElement(
-                                                            "span",
-                                                            { className: "debug-step-preview-key" },
-                                                            k,
-                                                          ),
-                                                          ": ",
-                                                          /*#__PURE__*/ React.createElement(
-                                                            "span",
-                                                            { className: "debug-step-preview-value" },
-                                                            typeof v === "number"
-                                                              ? v.toLocaleString("zh-CN", { maximumFractionDigits: 2 })
-                                                              : v != null
-                                                                ? String(v).slice(0, 30)
-                                                                : "-",
-                                                          ),
-                                                        );
-                                                      }),
-                                                    )),
-                                                    sr.preview.length > 100 && /*#__PURE__*/ React.createElement(
-                                                      "span",
-                                                      { className: "debug-step-preview-more" },
-                                                      `...(\u5171${sr.preview.length}\u6761\uff0c\u663e\u793a\u524d100\u6761)`,
-                                                    ),
-                                                  );
-                                                })(),
-                                              ),
-                                            ),
-                                          sr.value !== undefined && sr.value !== null && sr.value !== "" && /*#__PURE__*/ React.createElement(
-                                              "div",
-                                              { className: "debug-step-value-box" },
-                                              /*#__PURE__*/ React.createElement(
-                                                "div",
-                                                { className: "debug-step-value-icon" },
-                                                /*#__PURE__*/ React.createElement(Icons.Zap, null),
-                                              ),
-                                              /*#__PURE__*/ React.createElement(
-                                                "div",
-                                                { className: "debug-step-value-content-wrap" },
-                                                /*#__PURE__*/ React.createElement(
-                                                  "div",
-                                                  { className: "debug-step-value-label" },
-                                                  "\u8F93\u51FA\u503C",
-                                                ),
-                                                /*#__PURE__*/ React.createElement(
-                                                  "div",
-                                                  { className: "debug-step-value-content" },
-                                                  typeof sr.value === "number"
-                                                    ? sr.value.toLocaleString("zh-CN", { maximumFractionDigits: 2 })
-                                                    : typeof sr.value === "object"
-                                                      ? JSON.stringify(sr.value).slice(0, 80)
-                                                      : String(sr.value),
-                                                ),
-                                              ),
-                                            ),
-                                          ),
-                                    ),
-                                  );
-                                }),
-                              ),
-                            ),
-                        ),
-                  ),
+
                 currentRule?.steps?.length > 0 &&
                   /*#__PURE__*/ React.createElement(
                     "div",
@@ -8736,12 +8111,83 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   ),
                 ),
               ),
+            activeField &&
+              /*#__PURE__*/ React.createElement(
+                "div",
+                { className: "rules-field-info-card", style: { marginBottom: 16 } },
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "card-header", style: { padding: "12px 16px" } },
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "card-title", style: { display: "flex", alignItems: "center", gap: 8 } },
+                    /*#__PURE__*/ React.createElement(Icons.Info, { size: 14 }),
+                    "\u5B57\u6BB5\u8BE6\u60C5",
+                  ),
+                ),
+                /*#__PURE__*/ React.createElement(
+                  "div",
+                  { className: "card-body", style: { padding: "12px 16px" } },
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "info-card" },
+                    /*#__PURE__*/ React.createElement(
+                      "div",
+                      { className: "info-card-header" },
+                      /*#__PURE__*/ React.createElement("span", { className: `info-card-icon ${activeField.type === "text" ? "text" : "value"}` }, activeField.type === "text" ? "📝" : "💰"),
+                      /*#__PURE__*/ React.createElement("div", { className: "info-card-title" }, activeField.name),
+                      /*#__PURE__*/ React.createElement("span", { className: "info-card-cell" }, activeField.cell),
+                    ),
+                    (() => {
+                      const v = validateRule(currentRule, activeField);
+                      return /*#__PURE__*/ React.createElement(
+                        "div",
+                        { className: `info-card-status ${v.valid ? "ok" : "warn"}` },
+                        /*#__PURE__*/ React.createElement(v.valid ? Icons.CheckCircle : Icons.AlertCircle, { size: 14 }),
+                        v.valid ? "配置完整" : "配置不完整",
+                        /*#__PURE__*/ React.createElement("span", { className: "info-card-status-msg" }, v.msg),
+                      );
+                    })(),
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "info-section", style: { marginTop: 12 } },
+                    /*#__PURE__*/ React.createElement("div", { className: "info-section-title" }, /*#__PURE__*/ React.createElement(Icons.Tag, { size: 14 }), "\u5B57\u6BB5\u5C5E\u6027"),
+                    /*#__PURE__*/ React.createElement("div", { className: "info-properties" },
+                      /*#__PURE__*/ React.createElement("div", { className: "info-property" }, /*#__PURE__*/ React.createElement("span", { className: "info-property-label" }, "填充类型"), /*#__PURE__*/ React.createElement("span", { className: "info-property-value" }, activeField.type === "text" ? "文本填充" : "数值填充")),
+                      activeField.semanticType && /*#__PURE__*/ React.createElement("div", { className: "info-property" }, /*#__PURE__*/ React.createElement("span", { className: "info-property-label" }, "语义类型"), /*#__PURE__*/ React.createElement("span", { className: "info-property-value" },
+                        activeField.semanticType === "shop" && "🏪 店铺名",
+                        activeField.semanticType === "year" && "📅 年份",
+                        activeField.semanticType === "month" && "📅 月份",
+                        activeField.semanticType === "day" && "📅 日期",
+                        activeField.semanticType === "date" && "📅 日期",
+                        activeField.semanticType === "value" && "💰 数值",
+                        activeField.semanticType === "text" && "📝 文本",
+                        !["shop", "year", "month", "day", "date", "value", "text"].includes(activeField.semanticType) && "📦 占位符",
+                      )),
+                      (currentRule?.steps || []).length > 0 && /*#__PURE__*/ React.createElement("div", { className: "info-property" }, /*#__PURE__*/ React.createElement("span", { className: "info-property-label" }, "步骤数"), /*#__PURE__*/ React.createElement("span", { className: "info-property-value" }, currentRule.steps.length, "\u6B65")),
+                    ),
+                  ),
+                  /*#__PURE__*/ React.createElement(
+                    "div",
+                    { className: "info-section", style: { marginTop: 12 } },
+                    /*#__PURE__*/ React.createElement("div", { className: "info-section-title" }, /*#__PURE__*/ React.createElement(Icons.HelpCircle, { size: 14 }), "\u4F7F\u7528\u63D0\u793A"),
+                    /*#__PURE__*/ React.createElement("div", { className: "info-tip" },
+                      activeField.semanticType === "shop" && "该字段为店铺名占位符，系统会自动从上传的文件名中识别店铺名并填充，无需手动配置计算步骤。",
+                      (activeField.semanticType === "year" || activeField.semanticType === "month" || activeField.semanticType === "day" || activeField.semanticType === "date") && "该字段为日期占位符，系统会自动填充当前处理数据的对应日期部分，可根据需要调整日期格式。",
+                      activeField.semanticType === "value" && "该字段为数值占位符，需要通过计算步骤从数据源获取值。建议先添加「数据源」步骤选择数据表，再添加筛选、公式等处理步骤。",
+                      activeField.semanticType === "text" && "该字段为文本占位符，可从数据源字段中提取文本，或设置固定文本值。",
+                      !["shop", "year", "month", "day", "date", "value", "text"].includes(activeField.semanticType) && "该字段为通用占位符，可根据实际需要配置填充方式或计算规则。",
+                    ),
+                  ),
+                ),
+              ),
                     ),
                   ),
             /*#__PURE__*/ React.createElement(
               "aside",
-              { className: "rules-info-panel", style: { width: infoPanelOpen ? "280px" : "0" } },
-              infoPanelOpen && activeField && /*#__PURE__*/ React.createElement(
+              { className: "rules-info-panel", style: { width: infoPanelOpen ? "320px" : "0" } },
+              infoPanelOpen && /*#__PURE__*/ React.createElement(
                 "div",
                 { className: "info-panel-inner" },
                 /*#__PURE__*/ React.createElement(
@@ -8750,8 +8196,8 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                   /*#__PURE__*/ React.createElement(
                     "div",
                     { className: "info-panel-title" },
-                    /*#__PURE__*/ React.createElement(Icons.Info, { size: 16 }),
-                    "\u5B57\u6BB5\u8BE6\u60C5",
+                    /*#__PURE__*/ React.createElement(Icons.Eye, { size: 16 }),
+                    "\u5B9E\u65F6\u9884\u89C8",
                   ),
                   /*#__PURE__*/ React.createElement(
                     "button",
@@ -8762,86 +8208,224 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
                 /*#__PURE__*/ React.createElement(
                   "div",
                   { className: "info-panel-content" },
-                    /*#__PURE__*/ React.createElement(
-                      "div",
-                      { className: "info-card" },
-                      /*#__PURE__*/ React.createElement(
+                  !activeField
+                    ? /*#__PURE__*/ React.createElement(
                         "div",
-                        { className: "info-card-header" },
-                        /*#__PURE__*/ React.createElement("span", { className: `info-card-icon ${activeField.type === "text" ? "text" : "value"}` }, activeField.type === "text" ? "📝" : "💰"),
-                        /*#__PURE__*/ React.createElement("div", { className: "info-card-title" }, activeField.name),
-                        /*#__PURE__*/ React.createElement("span", { className: "info-card-cell" }, activeField.cell),
-                      ),
-                      (() => {
-                        const v = validateRule(currentRule, activeField);
-                        return /*#__PURE__*/ React.createElement(
+                        { className: "info-panel-empty" },
+                        /*#__PURE__*/ React.createElement(Icons.FileSpreadsheet, { size: 40, style: { color: "var(--color-text-tertiary)" } }),
+                        /*#__PURE__*/ React.createElement("div", { className: "info-panel-empty-title" }, "请选择字段"),
+                        /*#__PURE__*/ React.createElement("div", { className: "info-panel-empty-desc" }, "从左侧选择字段后，此处将显示实时计算预览"),
+                      )
+                    : !debugMode
+                      ? /*#__PURE__*/ React.createElement(
                           "div",
-                          { className: `info-card-status ${v.valid ? "ok" : "warn"}` },
-                          /*#__PURE__*/ React.createElement(v.valid ? Icons.CheckCircle : Icons.AlertCircle, { size: 14 }),
-                          v.valid ? "配置完整" : "配置不完整",
-                          /*#__PURE__*/ React.createElement("span", { className: "info-card-status-msg" }, v.msg),
-                        );
-                      })(),
-                    ),
-                    /*#__PURE__*/ React.createElement(
-                      "div",
-                      { className: "info-section" },
-                      /*#__PURE__*/ React.createElement("div", { className: "info-section-title" }, /*#__PURE__*/ React.createElement(Icons.Tag, { size: 14 }), "\u5B57\u6BB5\u5C5E\u6027"),
-                      /*#__PURE__*/ React.createElement("div", { className: "info-properties" },
-                        /*#__PURE__*/ React.createElement("div", { className: "info-property" }, /*#__PURE__*/ React.createElement("span", { className: "info-property-label" }, "填充类型"), /*#__PURE__*/ React.createElement("span", { className: "info-property-value" }, activeField.type === "text" ? "文本填充" : "数值填充")),
-                        activeField.semanticType && /*#__PURE__*/ React.createElement("div", { className: "info-property" }, /*#__PURE__*/ React.createElement("span", { className: "info-property-label" }, "语义类型"), /*#__PURE__*/ React.createElement("span", { className: "info-property-value" },
-                          activeField.semanticType === "shop" && "🏪 店铺名",
-                          activeField.semanticType === "year" && "📅 年份",
-                          activeField.semanticType === "month" && "📅 月份",
-                          activeField.semanticType === "day" && "📅 日期",
-                          activeField.semanticType === "date" && "📅 日期",
-                          activeField.semanticType === "value" && "💰 数值",
-                          activeField.semanticType === "text" && "📝 文本",
-                          !["shop", "year", "month", "day", "date", "value", "text"].includes(activeField.semanticType) && "📦 占位符",
-                        )),
-                        (currentRule?.steps || []).length > 0 && /*#__PURE__*/ React.createElement("div", { className: "info-property" }, /*#__PURE__*/ React.createElement("span", { className: "info-property-label" }, "步骤数"), /*#__PURE__*/ React.createElement("span", { className: "info-property-value" }, currentRule.steps.length, "\u6B65")),
-                      ),
-                    ),
-                    /*#__PURE__*/ React.createElement(
-                      "div",
-                      { className: "info-section" },
-                      /*#__PURE__*/ React.createElement("div", { className: "info-section-title" }, /*#__PURE__*/ React.createElement(Icons.HelpCircle, { size: 14 }), "\u4F7F\u7528\u63D0\u793A"),
-                      /*#__PURE__*/ React.createElement("div", { className: "info-tip" },
-                        activeField.semanticType === "shop" && "该字段为店铺名占位符，系统会自动从上传的文件名中识别店铺名并填充，无需手动配置计算步骤。",
-                        (activeField.semanticType === "year" || activeField.semanticType === "month" || activeField.semanticType === "day" || activeField.semanticType === "date") && "该字段为日期占位符，系统会自动填充当前处理数据的对应日期部分，可根据需要调整日期格式。",
-                        activeField.semanticType === "value" && "该字段为数值占位符，需要通过计算步骤从数据源获取值。建议先添加「数据源」步骤选择数据表，再添加筛选、公式等处理步骤。",
-                        activeField.semanticType === "text" && "该字段为文本占位符，可从数据源字段中提取文本，或设置固定文本值。",
-                        !["shop", "year", "month", "day", "date", "value", "text"].includes(activeField.semanticType) && "该字段为通用占位符，可根据实际需要配置填充方式或计算规则。",
-                      ),
-                    ),
-                    (() => {
-                      const currentCat = categorizeField(activeField);
-                      const related = fields
-                        .filter((f) => f.id !== activeField.id && categorizeField(f) === currentCat)
-                        .slice(0, 5);
-                      if (related.length === 0) return null;
-                      return /*#__PURE__*/ React.createElement(
-                        "div",
-                        { className: "info-section" },
-                        /*#__PURE__*/ React.createElement("div", { className: "info-section-title" }, /*#__PURE__*/ React.createElement(Icons.Link, { size: 14 }), "\u76F8\u5173\u5B57\u6BB5"),
-                        /*#__PURE__*/ React.createElement(
-                          "div",
-                          { className: "info-related" },
-                          related.map((f) => /*#__PURE__*/ React.createElement(
-                            "button",
-                            { key: f.id, className: "info-related-item", onClick: () => setActiveField(f) },
-                            /*#__PURE__*/ React.createElement("div", { className: "info-related-name" }, f.name),
-                            /*#__PURE__*/ React.createElement("div", { className: "info-related-cell" }, f.cell),
-                          )),
-                        ),
-                      );
-                    })(),
+                          { className: "info-panel-empty" },
+                          /*#__PURE__*/ React.createElement(Icons.Bug, { size: 40, style: { color: "var(--color-text-tertiary)" } }),
+                          /*#__PURE__*/ React.createElement("div", { className: "info-panel-empty-title" }, "调试模式未开启"),
+                          /*#__PURE__*/ React.createElement("div", { className: "info-panel-empty-desc" }, "开启调试模式后，此处将显示实时计算预览"),
+                        )
+                      : !previewResult
+                        ? /*#__PURE__*/ React.createElement(
+                            "div",
+                            { className: "info-panel-empty" },
+                            /*#__PURE__*/ React.createElement(Icons.Loader, { size: 40, style: { color: "var(--color-text-tertiary)", animation: "spin 1s linear infinite" } }),
+                            /*#__PURE__*/ React.createElement("div", { className: "info-panel-empty-title" }, "计算中..."),
+                            /*#__PURE__*/ React.createElement("div", { className: "info-panel-empty-desc" }, "正在计算当前字段的结果"),
+                          )
+                        : /*#__PURE__*/ React.createElement(
+                            React.Fragment,
+                            null,
+                            previewResult.error
+                              ? /*#__PURE__*/ React.createElement(
+                                  "div",
+                                  { className: "debug-error" },
+                                  /*#__PURE__*/ React.createElement(
+                                    "div",
+                                    { className: "debug-error-icon-wrap" },
+                                    /*#__PURE__*/ React.createElement(Icons.AlertCircle, null),
+                                  ),
+                                  /*#__PURE__*/ React.createElement(
+                                    "div",
+                                    { className: "debug-error-content" },
+                                    /*#__PURE__*/ React.createElement(
+                                      "div",
+                                      { className: "debug-error-title" },
+                                      "\u8BA1\u7B97\u51FA\u9519",
+                                    ),
+                                    /*#__PURE__*/ React.createElement(
+                                      "div",
+                                      { className: "debug-error-message" },
+                                      previewResult.error,
+                                    ),
+                                  ),
+                                )
+                              : /*#__PURE__*/ React.createElement(
+                                  React.Fragment,
+                                  null,
+                                  /*#__PURE__*/ React.createElement(
+                                    "div",
+                                    { className: "debug-final-result" },
+                                    /*#__PURE__*/ React.createElement(
+                                      "div",
+                                      { className: "debug-final-label" },
+                                      /*#__PURE__*/ React.createElement(Icons.Zap, null),
+                                      "\u6700\u7EC8\u7ED3\u679C",
+                                    ),
+                                    /*#__PURE__*/ React.createElement(
+                                      "div",
+                                      { className: "debug-final-value" },
+                                      typeof previewResult.value === "number"
+                                        ? previewResult.value.toLocaleString("zh-CN", {
+                                            maximumFractionDigits: 2,
+                                          })
+                                        : String(previewResult.value ?? "-"),
+                                    ),
+                                    previewResult.data &&
+                                      previewResult.data[0] &&
+                                      previewResult.data[0]._format &&
+                                      previewResult.data[0]._format !== "none" &&
+                                      typeof previewResult.data[0]._raw === "number" &&
+                                      /*#__PURE__*/ React.createElement(
+                                        "div",
+                                        {
+                                          className: "debug-final-meta",
+                                          style: { marginTop: 4, color: "var(--color-text-tertiary)" },
+                                        },
+                                        "\u539F\u59CB\u503C\uFF1A",
+                                        previewResult.data[0]._raw.toLocaleString("zh-CN", {
+                                          maximumFractionDigits: 4,
+                                        }),
+                                        " \u00B7 \u8F93\u51FA\u683C\u5F0F\uFF1A",
+                                        previewResult.data[0]._format,
+                                      ),
+                                    /*#__PURE__*/ React.createElement(
+                                      "div",
+                                      { className: "debug-final-meta" },
+                                      /*#__PURE__*/ React.createElement(
+                                        "span",
+                                        { className: "debug-final-meta-item" },
+                                        /*#__PURE__*/ React.createElement(Icons.Database, null),
+                                        "\u5171 ",
+                                        previewResult.data?.length || 0,
+                                        " \u6761\u6570\u636E",
+                                      ),
+                                      previewResult.stepResults?.length > 0 && /*#__PURE__*/ React.createElement(
+                                        "span",
+                                        { className: "debug-final-meta-item" },
+                                        /*#__PURE__*/ React.createElement(Icons.List, null),
+                                        previewResult.stepResults.length,
+                                        " \u4E2A\u6B65\u9AA4",
+                                      ),
+                                    ),
+                                  ),
+                                  previewResult.data &&
+                                    previewResult.data.length > 0 &&
+                                    /*#__PURE__*/ React.createElement(
+                                      "div",
+                                      { className: "debug-data-preview" },
+                                      /*#__PURE__*/ React.createElement(
+                                        "div",
+                                        { className: "debug-section-title" },
+                                        /*#__PURE__*/ React.createElement(
+                                          "div",
+                                          { className: "debug-section-title-icon" },
+                                          /*#__PURE__*/ React.createElement(Icons.Table, null),
+                                        ),
+                                        /*#__PURE__*/ React.createElement(
+                                          "span",
+                                          { className: "debug-section-title-text" },
+                                          "\u6570\u636E\u9884\u89C8",
+                                        ),
+                                        /*#__PURE__*/ React.createElement(
+                                          "span",
+                                          { className: "debug-section-badge" },
+                                          "\u524D5\u6761",
+                                        ),
+                                      ),
+                                      /*#__PURE__*/ React.createElement(
+                                        "div",
+                                        { className: "debug-table-wrap" },
+                                        /*#__PURE__*/ React.createElement(
+                                          "table",
+                                          { className: "debug-table" },
+                                          /*#__PURE__*/ React.createElement(
+                                            "thead",
+                                            null,
+                                            /*#__PURE__*/ React.createElement(
+                                              "tr",
+                                              null,
+                                              /*#__PURE__*/ React.createElement(
+                                                "th",
+                                                null,
+                                                "#",
+                                              ),
+                                              Object.keys(previewResult.data[0] || {})
+                                                .slice(0, 6)
+                                                .map((k) =>
+                                                  /*#__PURE__*/ React.createElement(
+                                                    "th",
+                                                    { key: k, className: k === "val" ? "debug-col-val" : "" },
+                                                    k === "val" ? "\u8BA1\u7B97\u503C" : k,
+                                                  ),
+                                                ),
+                                            ),
+                                          ),
+                                          /*#__PURE__*/ React.createElement(
+                                            "tbody",
+                                            null,
+                                            previewResult.data
+                                              .slice(0, 5)
+                                              .map((row, i) =>
+                                                /*#__PURE__*/ React.createElement(
+                                                  "tr",
+                                                  { key: i },
+                                                  /*#__PURE__*/ React.createElement(
+                                                    "td",
+                                                    null,
+                                                    i + 1,
+                                                  ),
+                                                  Object.entries(row)
+                                                    .slice(0, 6)
+                                                    .map(([k, v], j) =>
+                                                      /*#__PURE__*/ React.createElement(
+                                                        "td",
+                                                        { key: j, className: k === "val" ? "debug-col-val" : "" },
+                                                        typeof v === "number"
+                                                          ? v.toLocaleString("zh-CN", {
+                                                              maximumFractionDigits: 2,
+                                                            })
+                                                          : v != null
+                                                            ? String(v)
+                                                            : /*#__PURE__*/ React.createElement(
+                                                                "span",
+                                                                null,
+                                                                "-",
+                                                              ),
+                                                      ),
+                                                    ),
+                                                ),
+                                              ),
+                                          ),
+                                        ),
+                                      ),
+                                      previewResult.data.length > 5 &&
+                                        /*#__PURE__*/ React.createElement(
+                                          "div",
+                                          { className: "debug-table-footer" },
+                                          "\u4EC5\u663E\u793A\u524D 5 \u6761\uFF0C\u5171 ",
+                                          previewResult.data.length,
+                                          " \u6761\u6570\u636E",
+                                        ),
+                                    ),
+                                ),
+                          ),
+                ),
               ),
             ),
             /*#__PURE__*/ React.createElement(
               "button",
               { className: "info-panel-expand", onClick: () => setInfoPanelOpen(true) },
-              /*#__PURE__*/ React.createElement(Icons.Info, { size: 16 }),
+              /*#__PURE__*/ React.createElement(Icons.Eye, { size: 16 }),
             ),
           ),
         ),
