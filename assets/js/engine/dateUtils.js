@@ -1,4 +1,4 @@
-const DateUtils = {
+window.DateUtils = {
   extractDateFromFileName(fileName) {
     if (!fileName) return null;
     const name = fileName.toLowerCase();

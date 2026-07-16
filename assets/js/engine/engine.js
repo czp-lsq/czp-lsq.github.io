@@ -1,7 +1,7 @@
 // engine/engine.js - 计算引擎主入口 (CalcEngine)
 const CalcEngine = {
-  extractDateFromFileName: DateUtils.extractDateFromFileName.bind(DateUtils),
-  extractDateFromData: DateUtils.extractDateFromData.bind(DateUtils),
+  extractDateFromFileName: (fileName) => window.DateUtils.extractDateFromFileName(fileName),
+  extractDateFromData: (tables) => window.DateUtils.extractDateFromData(tables),
   exec(rule, tables, context = {}) {
     if (!rule || !rule.steps || rule.steps.length === 0) return null;
     let data = [];
@@ -312,3 +312,5 @@ const CalcEngine = {
     ];
   },
 };
+
+window.CalcEngine = CalcEngine;

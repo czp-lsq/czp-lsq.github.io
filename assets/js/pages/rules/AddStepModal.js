@@ -1,4 +1,4 @@
-Window.AddStepModal = ({
+window.AddStepModal = ({
   showAddStepModal,
   setShowAddStepModal,
   stepSearchKeyword,

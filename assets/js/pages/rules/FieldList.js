@@ -5,11 +5,17 @@ const FieldList = ({
   savedRules,
   fieldSearch,
   setFieldSearch,
+  fieldFilter,
+  setFieldFilter,
   leftCollapsed,
   setLeftCollapsed,
+  validateRule,
+  categorizeField,
+  getFieldCategoryInfo,
+  getSemanticIcon,
 }) => {
   const categorizedFields = fields.reduce((acc, field) => {
-    const cat = window.RulesUtils.categorizeField(field);
+    const cat = categorizeField(field);
     if (!acc[cat]) acc[cat] = [];
     acc[cat].push(field);
     return acc;
@@ -18,21 +24,30 @@ const FieldList = ({
   const categories = ["sales", "cost", "profit", "other"];
 
   const filteredFields = fields.filter((field) => {
-    if (!fieldSearch) return true;
-    const search = fieldSearch.toLowerCase();
-    return (field.name || "").toLowerCase().includes(search) ||
-           (field.semanticType || "").toLowerCase().includes(search);
+    const matchSearch = !fieldSearch ||
+      (field.name || "").toLowerCase().includes(fieldSearch.toLowerCase()) ||
+      (field.cell || "").toLowerCase().includes(fieldSearch.toLowerCase());
+    if (!matchSearch) return false;
+    const steps = savedRules[field.id]?.steps || [];
+    const hasConfig = steps.length > 0;
+    const validation = validateRule(savedRules[field.id], field);
+    switch (fieldFilter) {
+      case "done": return hasConfig && validation.valid;
+      case "pending": return !hasConfig;
+      case "warning": return hasConfig && !validation.valid;
+      default: return true;
+    }
   });
 
   const hasRules = (field) => savedRules[field.id]?.steps?.length > 0;
   const getFieldStatus = (field) => {
     if (!hasRules(field)) return "empty";
-    const validation = window.RulesUtils.validateRule(savedRules[field.id], field);
+    const validation = validateRule(savedRules[field.id], field);
     return validation.valid ? "valid" : "invalid";
   };
 
   const renderFieldItem = (field) => {
-    const categoryInfo = window.RulesUtils.getFieldCategoryInfo(window.RulesUtils.categorizeField(field));
+    const categoryInfo = getFieldCategoryInfo(categorizeField(field));
     const status = getFieldStatus(field);
     const isActive = activeField?.id === field.id;
 
@@ -82,7 +97,7 @@ const FieldList = ({
       React.createElement("div", { className: "field-category-collapsed" },
         categories.map((cat) => {
           const catFields = categorizedFields[cat] || [];
-          const catInfo = window.RulesUtils.getFieldCategoryInfo(cat);
+          const catInfo = getFieldCategoryInfo(cat);
           return React.createElement("div", { key: cat, className: "category-collapsed-item", title: `${catInfo.name}: ${catFields.length}个字段` },
             React.createElement("span", { className: "category-collapsed-icon", style: { backgroundColor: catInfo.bg, color: catInfo.color } },
               catInfo.icon
@@ -135,7 +150,7 @@ const FieldList = ({
       categories.map((cat) => {
         const catFields = categorizedFields[cat] || [];
         if (catFields.length === 0) return null;
-        const catInfo = window.RulesUtils.getFieldCategoryInfo(cat);
+        const catInfo = getFieldCategoryInfo(cat);
         const filteredCatFields = catFields.filter((f) => {
           if (!fieldSearch) return true;
           const search = fieldSearch.toLowerCase();

@@ -204,7 +204,7 @@ window.RulesPage = function({ state, currentPlatform, onNavigate }) {
   useEffect(() => {
     if (debugMode && activeField && currentRule && currentRule.steps.length > 0) {
       try {
-        const result = getPreviewData(currentRule, 0, activeField, state, currentPlatform);
+        const result = getPreviewData(null, 0, currentRule, activeField, state, currentPlatform);
         setPreviewResult(result);
       } catch (e) {
         setPreviewResult({ error: e.message });
@@ -959,7 +959,7 @@ window.RulesPage = function({ state, currentPlatform, onNavigate }) {
             /*#__PURE__*/ React.createElement(Icons.Database, { size: 12 }),
             "数据预览",
           ),
-          renderStepDebug(step, stepIdx, currentRule, activeField, state, currentPlatform, template, platform),
+          renderStepDebug(step, stepIdx, currentRule, activeField, state, currentPlatform),
         ),
       );
     })(),
