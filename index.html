@@ -254,7 +254,12 @@
     <script src="assets/js/hooks/useDebounce.js?v=czp-2.0.0" onload="updateProgress('加载防抖Hook...')"></script>
     <script src="assets/js/hooks/useNotification.js?v=czp-2.0.0" onload="updateProgress('加载通知Hook...')"></script>
 
-    <!-- 引擎与解析器 -->
+    <!-- 引擎与解析器 - 子模块 -->
+    <script src="assets/js/engine/parser/xMarker.js?v=czp-2.0.0" onload="updateProgress('加载X标记工具...')"></script>
+    <script src="assets/js/engine/parser/textMarker.js?v=czp-2.0.0" onload="updateProgress('加载文本标记识别...')"></script>
+    <script src="assets/js/engine/parser/numberMarker.js?v=czp-2.0.0" onload="updateProgress('加载数值标记识别...')"></script>
+    <script src="assets/js/engine/parser/mergedCell.js?v=czp-2.0.0" onload="updateProgress('加载合并单元格处理...')"></script>
+    <script src="assets/js/engine/parser/fieldFinder.js?v=czp-2.0.0" onload="updateProgress('加载字段查找器...')"></script>
     <script src="assets/js/engine/parser.js?v=czp-2.0.0" onload="updateProgress('加载解析器...')"></script>
     <script src="assets/js/engine/engine.js?v=czp-2.0.0" onload="updateProgress('加载计算引擎...')"></script>
 
@@ -269,6 +274,20 @@
     <script src="assets/js/rules/steps/advancedSteps.js?v=czp-2.0.0" onload="updateProgress('加载步骤组件(高级)...')"></script>
     <script src="assets/js/rules/steps/index.js?v=czp-2.0.0" onload="updateProgress('加载步骤组件入口...')"></script>
 
+    <!-- 模板页面子组件 -->
+    <script src="assets/js/pages/template/TemplatePreview.js?v=czp-2.0.0" onload="updateProgress('加载模板预览组件...')"></script>
+    <script src="assets/js/pages/template/FieldList.js?v=czp-2.0.0" onload="updateProgress('加载字段列表组件...')"></script>
+    <script src="assets/js/pages/template/FieldConfig.js?v=czp-2.0.0" onload="updateProgress('加载字段配置组件...')"></script>
+    
+    <!-- 批量计算子模块 -->
+    <script src="assets/js/pages/batch/batchUtils.js?v=czp-2.0.0" onload="updateProgress('加载批量工具...')"></script>
+    <script src="assets/js/pages/batch/BatchCalcView.js?v=czp-2.0.0" onload="updateProgress('加载批量计算视图...')"></script>
+    <script src="assets/js/pages/batch/BatchHistoryView.js?v=czp-2.0.0" onload="updateProgress('加载批量历史视图...')"></script>
+    
+    <!-- 数据管理子模块 -->
+    <script src="assets/js/pages/data/dataUtils.js?v=czp-2.0.0" onload="updateProgress('加载数据工具...')"></script>
+    <script src="assets/js/pages/data/SamplePreview.js?v=czp-2.0.0" onload="updateProgress('加载样表预览组件...')"></script>
+    
     <!-- 页面组件 -->
     <script src="assets/js/pages/dashboard.js?v=czp-2.0.0" onload="updateProgress('加载概览页面...')"></script>
     <script src="assets/js/pages/template.js?v=czp-2.0.0" onload="updateProgress('加载模板页面...')"></script>
@@ -276,7 +295,7 @@
     <script src="assets/js/pages/externals.js?v=czp-2.0.0" onload="updateProgress('加载数据表页面...')"></script>
     <script src="assets/js/pages/batch.js?v=czp-2.0.0" onload="updateProgress('加载批量页面...')"></script>
     <script src="assets/js/pages/history.js?v=czp-2.0.0" onload="updateProgress('加载记录页面...')"></script>
-    <script src="assets/js/pages/data.js?v=czp-2.0.0" onload="updateProgress('加载配置页面...')"></script>
+    <script src="assets/js/pages/data/data.js?v=czp-2.0.0" onload="updateProgress('加载配置页面...')"></script>
     <script src="assets/js/pages/storage.js?v=czp-2.0.0" onload="updateProgress('加载数据管理页面...')"></script>
     <script src="assets/js/pages/shops.js?v=czp-2.0.0" onload="updateProgress('加载店铺页面...')"></script>
     <script src="assets/js/pages/settings.js?v=czp-2.0.0" onload="updateProgress('加载设置页面...')"></script>
