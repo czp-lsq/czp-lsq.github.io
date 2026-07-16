@@ -13,10 +13,22 @@ const FieldFinder = {
   },
   extractLabelFromContext(aoa, rowIdx, colIdx, mergedCells) {
     const maxSearchRows = 5;
-    const maxSearchCols = 3;
+    const maxSearchCols = 5;
     let label = "";
     const xc = XMarker.getXCharClass();
     const xPattern = new RegExp("[" + xc + "]");
+    const numberPattern = /^\d+(\.\d+)?$/;
+
+    for (let c = colIdx - 1; c >= Math.max(0, colIdx - maxSearchCols); c--) {
+      const cell = MergedCell.getCellValue(aoa, rowIdx, c, mergedCells);
+      if (cell == null || String(cell).trim() === "") continue;
+      if (xPattern.test(String(cell))) continue;
+      label = String(cell).trim();
+      label = label.replace(/[：:，,。、；;！!？?\s]+$/g, "");
+      if (label.length > 0 && label.length <= 30 && !numberPattern.test(label)) {
+        return label;
+      }
+    }
 
     for (let r = rowIdx - 1; r >= Math.max(0, rowIdx - maxSearchRows); r--) {
       for (let c = Math.max(0, colIdx - maxSearchCols); c <= colIdx; c++) {
@@ -26,20 +38,9 @@ const FieldFinder = {
         if (xPattern.test(String(cell))) continue;
         label = String(cell).trim();
         label = label.replace(/[：:，,。、；;！!？?\s]+$/g, "");
-        if (label.length > 0 && label.length <= 20) {
+        if (label.length > 0 && label.length <= 30 && !numberPattern.test(label)) {
           return label;
         }
-      }
-    }
-
-    for (let c = colIdx - 1; c >= Math.max(0, colIdx - maxSearchCols); c--) {
-      const cell = MergedCell.getCellValue(aoa, rowIdx, c, mergedCells);
-      if (cell == null || String(cell).trim() === "") continue;
-      if (xPattern.test(String(cell))) continue;
-      label = String(cell).trim();
-      label = label.replace(/[：:，,。、；;！!？?\s]+$/g, "");
-      if (label.length > 0 && label.length <= 20) {
-        return label;
       }
     }
 
