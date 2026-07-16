@@ -406,6 +406,89 @@ const _Icons = {
     React.createElement("path", { d: "M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5a2 2 0 0 0 2 2h1" }),
     React.createElement("path", { d: "M16 3h1a2 2 0 0 1 2 2v5a2 2 0 0 0 2 2 2 2 0 0 0-2 2v5a2 2 0 0 1-2 2h-1" })
   ),
+  FileRule: () => React.createElement("svg", { width: "20", height: "20", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement("path", { d: "M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8z" }),
+    React.createElement("polyline", { points: "14 2 14 8 20 8" }),
+    React.createElement("line", { x1: "10", y1: "12", x2: "8", y2: "16" }),
+    React.createElement("line", { x1: "16", y1: "12", x2: "14", y2: "16" }),
+    React.createElement("line", { x1: "11", y1: "14", x2: "13", y2: "14" })
+  ),
+  Keyboard: () => React.createElement("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement("rect", { x: "2", y: "4", width: "20", height: "16", rx: "2", ry: "2" }),
+    React.createElement("path", { d: "M6 8h.001M10 8h.001M14 8h.001M18 8h.001M8 12h.001M12 12h.001M16 12h.001M6 16h12" })
+  ),
+  Library: () => React.createElement("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement("path", { d: "M4 19.5A2.5 2.5 0 0 1 6.5 17H20" }),
+    React.createElement("path", { d: "M6.5 2H20v20H6.5A2.5 2.5 0 0 1 4 19.5v-15A2.5 2.5 0 0 1 6.5 2z" }),
+    React.createElement("line", { x1: "8", y1: "7", x2: "16", y2: "7" }),
+    React.createElement("line", { x1: "8", y1: "11", x2: "16", y2: "11" }),
+    React.createElement("line", { x1: "8", y1: "15", x2: "12", y2: "15" })
+  ),
+  Lightbulb: () => React.createElement("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement("path", { d: "M9 18h6" }),
+    React.createElement("path", { d: "M10 22h4" }),
+    React.createElement("path", { d: "M15.09 14c.18-.98.65-1.74 1.41-2.5A4.65 4.65 0 0 0 18 8 6 6 0 0 0 6 8c0 1 .23 2.23 1.5 3.5A4.61 4.61 0 0 1 8.91 14" })
+  ),
+  Aggregate: () => React.createElement("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement("path", { d: "M12 2v20M2 12h20M4 4l4 4M16 4l-4 4M4 20l4-4M16 20l-4-4" })
+  ),
+  Column: () => React.createElement("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement("rect", { x: "3", y: "3", width: "18", height: "18", rx: "2", ry: "2" }),
+    React.createElement("line", { x1: "12", y1: "3", x2: "12", y2: "21" })
+  ),
+  Columns: () => React.createElement("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement("rect", { x: "3", y: "3", width: "18", height: "18", rx: "2", ry: "2" }),
+    React.createElement("line", { x1: "9", y1: "3", x2: "9", y2: "21" }),
+    React.createElement("line", { x1: "15", y1: "3", x2: "15", y2: "21" })
+  ),
+  Fill: () => React.createElement("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement("path", { d: "M19 11H5a2 2 0 0 0-2 2v6a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-6a2 2 0 0 0-2-2z" }),
+    React.createElement("path", { d: "M7 11V7a5 5 0 0 1 10 0v4" }),
+    React.createElement("line", { x1: "12", y1: "15", x2: "12", y2: "17" })
+  ),
+  Formula: () => React.createElement("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement("path", { d: "M4 4h16v16H4z" }),
+    React.createElement("path", { d: "M8 8h8M8 12h8M8 16h4" })
+  ),
+  Transform: () => React.createElement("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement("path", { d: "M12 3v18M3 12h18M7 7l2 2M15 7l-2 2M7 17l2-2M15 17l-2-2" })
+  ),
+  Sort: () => React.createElement("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement("line", { x1: "4", y1: "6", x2: "16", y2: "6" }),
+    React.createElement("line", { x1: "4", y1: "12", x2: "14", y2: "12" }),
+    React.createElement("line", { x1: "4", y1: "18", x2: "12", y2: "18" }),
+    React.createElement("polyline", { points: "20 14 17 17 14 14" }),
+    React.createElement("line", { x1: "17", y1: "17", x2: "17", y2: "11" })
+  ),
+  Join: () => React.createElement("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement("circle", { cx: "8", cy: "12", r: "5" }),
+    React.createElement("circle", { cx: "16", cy: "12", r: "5" }),
+    React.createElement("path", { d: "M10.5 12a2.5 2.5 0 0 0 3 0" })
+  ),
+  Condition: () => React.createElement("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement("path", { d: "M12 3v6l3 3-3 3v6" }),
+    React.createElement("path", { d: "M9 12h6" })
+  ),
+  Group: () => React.createElement("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement("rect", { x: "3", y: "3", width: "7", height: "7", rx: "1" }),
+    React.createElement("rect", { x: "14", y: "3", width: "7", height: "7", rx: "1" }),
+    React.createElement("rect", { x: "3", y: "14", width: "7", height: "7", rx: "1" }),
+    React.createElement("rect", { x: "14", y: "14", width: "7", height: "7", rx: "1" })
+  ),
+  Grid: () => React.createElement("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement("rect", { x: "3", y: "3", width: "18", height: "18", rx: "2", ry: "2" }),
+    React.createElement("line", { x1: "3", y1: "9", x2: "21", y2: "9" }),
+    React.createElement("line", { x1: "3", y1: "15", x2: "21", y2: "15" }),
+    React.createElement("line", { x1: "9", y1: "3", x2: "9", y2: "21" }),
+    React.createElement("line", { x1: "15", y1: "3", x2: "15", y2: "21" })
+  ),
+  Tag: () => React.createElement("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement("path", { d: "M20.59 13.41l-7.17 7.17a2 2 0 0 1-2.83 0L2 12V2h10l8.59 8.59a2 2 0 0 1 0 2.82z" }),
+    React.createElement("line", { x1: "7", y1: "7", x2: "7.01", y2: "7" })
+  ),
+  Droplet: () => React.createElement("svg", { width: "16", height: "16", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
+    React.createElement("path", { d: "M12 2.69l5.66 5.66a8 8 0 1 1-11.31 0z" })
+  ),
 };
 
 const Icons = new Proxy(_Icons, {
