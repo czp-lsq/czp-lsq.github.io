@@ -141,9 +141,14 @@ const FieldFinder = {
               const groupCount = XMarker.countXGroups(cell);
               if (groupCount > 1) {
                 const contexts = XMarker.extractXGroupContexts(cell);
+                const cellPos = `${this.colLetters(colIdx)}${rowIdx + 1}`;
                 contexts.forEach((ctx, gi) => {
-                  const suffix = ctx.semanticLabel || ctx.after || ctx.before || `第${gi + 1}处`;
-                  const fieldName = baseName + "_" + suffix.replace(/[：:]/g, "");
+                  let suffix = ctx.semanticLabel || ctx.after || ctx.before || `第${gi + 1}处`;
+                  suffix = suffix.replace(/[：:]/g, "");
+                  if (suffix === cellPos) {
+                    suffix = `第${gi + 1}处`;
+                  }
+                  const fieldName = baseName + "_" + suffix;
                   fields.push({
                     id: `f_${rowIdx}_${colIdx}_g${gi}`,
                     name: fieldName,

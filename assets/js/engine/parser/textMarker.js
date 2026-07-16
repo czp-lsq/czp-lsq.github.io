@@ -106,8 +106,8 @@ const TextMarker = {
     const xCount = XMarker.countXChars(cleaned);
     const xGroups = XMarker.countXGroups(cleaned);
     const hasCommonTerms = /(净利润|利润率|推广费|ROI|提现|充值|发货|收货|订单|退款|退货|数量|金额|费用|成本|收入|支出|利润|占比|比率|总额|合计|小计|平均|累计)/.test(s);
-    if (hasCommonTerms) {
-      if (debugInfo) debugInfo.reason = "包含财务术语，排除";
+    if (hasCommonTerms && xCount / cleaned.length < 0.2) {
+      if (debugInfo) debugInfo.reason = "包含财务术语且X占比低，排除";
       return false;
     }
     if (cleaned.length >= 3 && xCount >= 2 && xGroups >= 1 && xCount / cleaned.length >= 0.5) {
