@@ -293,10 +293,26 @@ const App = () => {
   const [loadingProgress, setLoadingProgress] = useState(0);
   const loadingRef = useRef(null);
 
-  const APP_VERSION = window.AppVersion || "czp-1.12.0";
+  const APP_VERSION = window.AppVersion || "czp-1.30.0";
   const VERSION_KEY = window.VersionKey || "app_version_seen";
   const VERSION_HISTORY_KEY = window.VersionHistoryKey || "app_version_history";
   const UPDATE_LOG = window.UpdateLog || [
+    { version: "czp-1.30.0", date: "2026-07-16 10:00:00",
+      summary: "计算规则页面优化与Bug修复",
+      changes: [
+        { type: "feature", text: "添加步骤卡片过渡动画优化，修复选择步骤时卡片闪动问题" },
+        { type: "feature", text: "进入计算规则页面时导航栏自动收起，优化三栏布局体验" },
+        { type: "feature", text: "字段列表图标按语义类型差异化显示（金额¥/比率%/数量#/日期📅/文本Aa）" },
+        { type: "feature", text: "字段列表排序优化，分类内按配置状态排序（有效>无效>未配置）" },
+        { type: "feature", text: "三栏标题高度统一，布局更加整齐协调" },
+        { type: "feature", text: "实时预览功能完善，分离输入/输出数据独立展示" },
+        { type: "optimize", text: "代码精简，删除未使用的冗余功能代码" },
+      ],
+      bugfixes: [
+        { text: "修复步骤卡片预览状态切换时无过渡动画导致的闪动" },
+        { text: "修复实时预览数据结构不匹配导致的显示异常" },
+      ],
+    },
     { version: "czp-1.29.0", date: "2026-07-15 10:00:00",
       summary: "计算规则重构与后台管理系统上线",
       changes: [
