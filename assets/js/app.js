@@ -1079,6 +1079,9 @@ const App = () => {
     if (group && group.type === "group" && expandedGroups[group.id] === false) {
       toggleGroup(group.id);
     }
+    if (pageId === "rules" && !sidebarCollapsed) {
+      setSidebarCollapsed(true);
+    }
   };
   const closeTab = (tabId, e) => {
     if (e) e.stopPropagation();

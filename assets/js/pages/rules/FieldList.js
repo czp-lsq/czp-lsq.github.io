@@ -58,7 +58,7 @@ const FieldList = ({
       title: field.name,
     },
       React.createElement("span", { className: "rules-page__field-item-icon", style: { backgroundColor: categoryInfo.bg, color: categoryInfo.color } },
-        categoryInfo.icon
+        getSemanticIcon(field.semanticType, field.type)
       ),
       React.createElement("div", { className: "rules-page__field-item-content" },
         React.createElement("span", { className: "rules-page__field-item-name" }, field.name),
@@ -153,7 +153,15 @@ const FieldList = ({
             React.createElement("span", { className: "rules-page__field-group-count" }, filteredCatFields.length)
           ),
           React.createElement("ul", { className: "rules-page__field-list" },
-            filteredCatFields.map(renderFieldItem)
+            filteredCatFields.sort((a, b) => {
+              const statusA = getFieldStatus(a);
+              const statusB = getFieldStatus(b);
+              const statusOrder = { valid: 0, invalid: 1, empty: 2 };
+              if (statusOrder[statusA] !== statusOrder[statusB]) {
+                return statusOrder[statusA] - statusOrder[statusB];
+              }
+              return (a.name || "").localeCompare(b.name || "", "zh-CN");
+            }).map(renderFieldItem)
           )
         );
       })

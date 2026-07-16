@@ -97,13 +97,12 @@ window.RulesPage = function({ state, currentPlatform, onNavigate }) {
     }
   }, [leftPanelCollapsed, currentPlatform]);
 
-  const platform = state.platforms.find((p) => p.id === currentPlatform);
   const template = state.templates[currentPlatform];
   const savedRules = state.rules[currentPlatform] || {};
   const fields = template?.parseResult?.fields || [];
   const currentRule = activeField ? savedRules[activeField.id] : null;
 
-  const { validateRule, categorizeField, getFieldCategoryInfo, inferFieldLevel } = window.RulesUtils;
+  const { validateRule, categorizeField, getFieldCategoryInfo } = window.RulesUtils;
   const { getStepTypeInfo, getStepTypePreview, getCategorySteps, getStepCategories } = window.StepTypes;
   const { createRenderStepConfig } = window.StepEditor;
   const { getPreviewData, renderDataTable, renderStepDebug } = window.DebugPreview;
@@ -713,7 +712,6 @@ window.RulesPage = function({ state, currentPlatform, onNavigate }) {
             validateRule: validateRule,
             categorizeField: categorizeField,
             getFieldCategoryInfo: getFieldCategoryInfo,
-            inferFieldLevel: inferFieldLevel,
             getSemanticIcon: getSemanticIcon,
           }),
         ),
@@ -829,12 +827,18 @@ window.RulesPage = function({ state, currentPlatform, onNavigate }) {
             /*#__PURE__*/ React.createElement("div", { className: "rules-page__preview-result" },
               /*#__PURE__*/ React.createElement("span", { className: "rules-page__preview-label" }, "计算结果"),
               /*#__PURE__*/ React.createElement("span", { className: "rules-page__preview-value" },
-                previewResult?.value !== undefined ? previewResult.value : "-",
+                previewResult?.outputData !== undefined ? (
+                  Array.isArray(previewResult.outputData) && previewResult.outputData.length > 0
+                    ? previewResult.outputData.length + " 条记录"
+                    : JSON.stringify(previewResult.outputData).length > 50
+                      ? JSON.stringify(previewResult.outputData).slice(0, 50) + "..."
+                      : JSON.stringify(previewResult.outputData)
+                ) : "-",
               ),
             ),
             /*#__PURE__*/ React.createElement("div", { className: "rules-page__preview-data" },
               /*#__PURE__*/ React.createElement("div", { className: "rules-page__preview-data-header" },
-                /*#__PURE__*/ React.createElement("span", null, "数据预览"),
+                /*#__PURE__*/ React.createElement("span", null, "输入数据"),
                 /*#__PURE__*/ React.createElement("button", {
                   className: "rules-page__preview-expand-btn",
                   onClick: () => setDebugExpanded(!debugExpanded),
@@ -842,8 +846,16 @@ window.RulesPage = function({ state, currentPlatform, onNavigate }) {
                   debugExpanded ? "收起" : "展开",
                 ),
               ),
-              debugExpanded && previewResult?.data && /*#__PURE__*/ React.createElement("div", { className: "rules-page__preview-table" },
-                renderDataTable(previewResult.data, 10),
+              debugExpanded && previewResult?.inputData && /*#__PURE__*/ React.createElement("div", { className: "rules-page__preview-table" },
+                renderDataTable(previewResult.inputData, 10),
+              ),
+            ),
+            /*#__PURE__*/ React.createElement("div", { className: "rules-page__preview-data" },
+              /*#__PURE__*/ React.createElement("div", { className: "rules-page__preview-data-header" },
+                /*#__PURE__*/ React.createElement("span", null, "输出数据"),
+              ),
+              previewResult?.outputData && /*#__PURE__*/ React.createElement("div", { className: "rules-page__preview-table" },
+                renderDataTable(previewResult.outputData, 10),
               ),
             ),
           ),

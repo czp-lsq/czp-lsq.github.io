@@ -56,14 +56,6 @@ window.RulesUtils = {
     return { valid: true, msg: "配置完整" };
   },
 
-  inferFieldLevel: (field, savedRules) => {
-    const steps = savedRules[field.id]?.steps || [];
-    if (steps.length === 0) return null;
-    if (steps.some((s) => s.type === "join" || s.type === "virtual")) return 2;
-    if (steps.some((s) => s.type === "filter")) return 1;
-    return 0;
-  },
-
   categorizeField: (field) => {
     const name = (field.name || "").toLowerCase();
     const semanticType = field.semanticType || "";
