@@ -961,7 +961,7 @@ window.RulesPage = function({ state, currentPlatform, onNavigate }) {
         ),
       ),
     ),
-    showPresets && window.Presets && /*#__PURE__*/ React.createElement(window.Presets, {
+    showPresets && window.Presets && window.Presets.PresetsComponent && /*#__PURE__*/ React.createElement(window.Presets.PresetsComponent, {
       show: showPresets,
       onClose: () => setShowPresets(false),
       onApply: applyPreset,
@@ -969,6 +969,7 @@ window.RulesPage = function({ state, currentPlatform, onNavigate }) {
       activeField: activeField,
       presetCategory: presetCategory,
       setPresetCategory: setPresetCategory,
+      currentPlatform: currentPlatform,
     }),
   );
 };

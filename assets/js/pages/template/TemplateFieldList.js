@@ -1,4 +1,4 @@
-const FieldList = ({ fields, selectedField, onSelectField }) => {
+const TemplateFieldList = ({ fields, selectedField, onSelectField }) => {
   return /*#__PURE__*/ React.createElement(
     "div",
     { className: "card" },
@@ -70,3 +70,5 @@ const FieldList = ({ fields, selectedField, onSelectField }) => {
     ),
   );
 };
+
+window.TemplateFieldList = TemplateFieldList;

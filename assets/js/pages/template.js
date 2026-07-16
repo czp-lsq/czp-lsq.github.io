@@ -403,7 +403,7 @@ const TemplatePage = ({ state, currentPlatform }) => {
           /*#__PURE__*/ React.createElement(
             "div",
             { className: "workspace-left" },
-            /*#__PURE__*/ React.createElement(FieldList, {
+            /*#__PURE__*/ React.createElement(TemplateFieldList, {
               fields: parseResult.fields,
               selectedField,
               onSelectField: setSelectedField,

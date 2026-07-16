@@ -22,5 +22,8 @@ const Tag = ({ type = "default", children }) =>
     "span",
     { className: `tag tag-${type}` },
     children,
-  ); // ========== Dashboard Page ==========
+  );
+
+window.Alert = Alert;
+window.Tag = Tag;
 

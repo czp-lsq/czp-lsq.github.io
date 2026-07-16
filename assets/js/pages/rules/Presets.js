@@ -234,5 +234,13 @@
     );
   };
 
+  Presets.PresetsComponent = function(props) {
+    const { show, onClose, onApply, recommendPreset, activeField, presetCategory, setPresetCategory, currentPlatform } = props;
+    if (!show) return null;
+    const addToast = window.__toast || (() => {});
+    const getCategoryInfo = (cat) => ({ name: cat, icon: "", color: "#64748b" });
+    return Presets.renderPresetGrid(activeField, presetCategory, setPresetCategory, currentPlatform, getCategoryInfo, addToast);
+  };
+
   window.Presets = Presets;
 })();
