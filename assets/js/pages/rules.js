@@ -8975,8 +8975,5 @@ const RulesPage = ({ state, currentPlatform, onNavigate }) => {
             );
           }),
         ),
-      ),
-        ),
-      ),
-  );
+      );
 }; // ========== External Data Page ==========
