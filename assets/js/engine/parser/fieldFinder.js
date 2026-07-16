@@ -11,11 +11,46 @@ const FieldFinder = {
   isMarker(val) {
     return TextMarker.isTextMarker(val) || NumberMarker.isNumberMarker(val);
   },
+  extractLabelFromContext(aoa, rowIdx, colIdx, mergedCells) {
+    const maxSearchRows = 5;
+    const maxSearchCols = 3;
+    let label = "";
+    const xc = XMarker.getXCharClass();
+    const xPattern = new RegExp("[" + xc + "]");
+
+    for (let r = rowIdx - 1; r >= Math.max(0, rowIdx - maxSearchRows); r--) {
+      for (let c = Math.max(0, colIdx - maxSearchCols); c <= colIdx; c++) {
+        if (r === rowIdx && c === colIdx) continue;
+        const cell = MergedCell.getCellValue(aoa, r, c, mergedCells);
+        if (cell == null || String(cell).trim() === "") continue;
+        if (xPattern.test(String(cell))) continue;
+        label = String(cell).trim();
+        label = label.replace(/[：:，,。、；;！!？?\s]+$/g, "");
+        if (label.length > 0 && label.length <= 20) {
+          return label;
+        }
+      }
+    }
+
+    for (let c = colIdx - 1; c >= Math.max(0, colIdx - maxSearchCols); c--) {
+      const cell = MergedCell.getCellValue(aoa, rowIdx, c, mergedCells);
+      if (cell == null || String(cell).trim() === "") continue;
+      if (xPattern.test(String(cell))) continue;
+      label = String(cell).trim();
+      label = label.replace(/[：:，,。、；;！!？?\s]+$/g, "");
+      if (label.length > 0 && label.length <= 20) {
+        return label;
+      }
+    }
+
+    return "";
+  },
   findFields(aoa, worksheet) {
     const fields = [];
     const usedCells = new Set();
     const mergedCells = MergedCell.findMergedCells(worksheet || {});
     const debugInfo = [];
+    const nameCountMap = new Map();
     if (!aoa || aoa.length === 0) return { fields, debugInfo, mergedCells };
     for (let rowIdx = 0; rowIdx < aoa.length; rowIdx++) {
       const row = aoa[rowIdx];
@@ -44,7 +79,8 @@ const FieldFinder = {
               }
             }
           }
-          const baseName = `字段_${this.colLetters(colIdx)}${rowIdx + 1}`;
+          let fieldName = "";
+          const cellPos = `${this.colLetters(colIdx)}${rowIdx + 1}`;
           if (type === "text") {
             const xc = XMarker.getXCharClass();
             const normalized = XMarker.normalizeText(cell);
@@ -76,10 +112,19 @@ const FieldFinder = {
               } else {
                 semanticType = "date";
               }
+              const semanticNames = {
+                date: "日期",
+                year: "年份",
+                month: "月份",
+                day: "日期",
+                quarter: "季度",
+                week: "周次",
+              };
+              fieldName = semanticNames[semanticType] || "日期";
               fields.push({
                 id: `f_${rowIdx}_${colIdx}`,
-                name: baseName,
-                cell: `${this.colLetters(colIdx)}${rowIdx + 1}`,
+                name: fieldName,
+                cell: cellPos,
                 row: rowIdx,
                 col: colIdx,
                 type,
@@ -99,18 +144,19 @@ const FieldFinder = {
               debugInfo.push({
                 row: rowIdx,
                 col: colIdx,
-                cell: `${this.colLetters(colIdx)}${rowIdx + 1}`,
+                cell: cellPos,
                 value: cell,
                 type,
                 match: "date_full",
-                fieldName: baseName,
+                fieldName,
                 isMerged: !!mergeInfo,
               });
             } else if (isPureX) {
+              fieldName = "店铺名";
               fields.push({
                 id: `f_${rowIdx}_${colIdx}`,
-                name: baseName,
-                cell: `${this.colLetters(colIdx)}${rowIdx + 1}`,
+                name: fieldName,
+                cell: cellPos,
                 row: rowIdx,
                 col: colIdx,
                 type,
@@ -130,29 +176,39 @@ const FieldFinder = {
               debugInfo.push({
                 row: rowIdx,
                 col: colIdx,
-                cell: `${this.colLetters(colIdx)}${rowIdx + 1}`,
+                cell: cellPos,
                 value: cell,
                 type,
                 match: "shop_name",
-                fieldName: baseName,
+                fieldName,
                 isMerged: !!mergeInfo,
               });
             } else {
               const groupCount = XMarker.countXGroups(cell);
               if (groupCount > 1) {
                 const contexts = XMarker.extractXGroupContexts(cell);
-                const cellPos = `${this.colLetters(colIdx)}${rowIdx + 1}`;
                 contexts.forEach((ctx, gi) => {
                   let suffix = ctx.semanticLabel || ctx.after || ctx.before || `第${gi + 1}处`;
                   suffix = suffix.replace(/[：:]/g, "");
                   if (suffix === cellPos) {
                     suffix = `第${gi + 1}处`;
                   }
-                  const fieldName = baseName + "_" + suffix;
+                  if (ctx.semanticType === "shop") {
+                    fieldName = `店铺名_${suffix}`;
+                  } else if (ctx.semanticType === "date") {
+                    fieldName = `日期_${suffix}`;
+                  } else {
+                    fieldName = suffix;
+                  }
+                  const existingCount = nameCountMap.get(fieldName) || 0;
+                  if (existingCount > 0) {
+                    fieldName = `${fieldName}_${existingCount + 1}`;
+                  }
+                  nameCountMap.set(fieldName, (nameCountMap.get(fieldName) || 0) + 1);
                   fields.push({
                     id: `f_${rowIdx}_${colIdx}_g${gi}`,
                     name: fieldName,
-                    cell: `${this.colLetters(colIdx)}${rowIdx + 1}`,
+                    cell: cellPos,
                     row: rowIdx,
                     col: colIdx,
                     type,
@@ -173,7 +229,7 @@ const FieldFinder = {
                   debugInfo.push({
                     row: rowIdx,
                     col: colIdx,
-                    cell: `${this.colLetters(colIdx)}${rowIdx + 1}`,
+                    cell: cellPos,
                     value: cell,
                     type,
                     match: markerMatch,
@@ -186,10 +242,32 @@ const FieldFinder = {
                 });
               } else {
                 const ctx = XMarker.extractXGroupContexts(cell)[0] || {};
+                if (ctx.semanticType === "shop") {
+                  fieldName = "店铺名";
+                } else if (ctx.semanticType === "date") {
+                  fieldName = "日期";
+                } else {
+                  const contextLabel = ctx.semanticLabel || ctx.after || ctx.before || "";
+                  if (contextLabel && contextLabel !== cellPos) {
+                    fieldName = contextLabel.replace(/[：:]/g, "");
+                  } else {
+                    const labelFromContext = this.extractLabelFromContext(aoa, rowIdx, colIdx, mergedCells);
+                    if (labelFromContext) {
+                      fieldName = labelFromContext;
+                    } else {
+                      fieldName = `字段_${cellPos}`;
+                    }
+                  }
+                }
+                const existingCount = nameCountMap.get(fieldName) || 0;
+                if (existingCount > 0) {
+                  fieldName = `${fieldName}_${existingCount + 1}`;
+                }
+                nameCountMap.set(fieldName, (nameCountMap.get(fieldName) || 0) + 1);
                 fields.push({
                   id: `f_${rowIdx}_${colIdx}`,
-                  name: baseName,
-                  cell: `${this.colLetters(colIdx)}${rowIdx + 1}`,
+                  name: fieldName,
+                  cell: cellPos,
                   row: rowIdx,
                   col: colIdx,
                   type,
@@ -209,20 +287,31 @@ const FieldFinder = {
                 debugInfo.push({
                   row: rowIdx,
                   col: colIdx,
-                  cell: `${this.colLetters(colIdx)}${rowIdx + 1}`,
+                  cell: cellPos,
                   value: cell,
                   type,
                   match: markerMatch,
-                  fieldName: baseName,
+                  fieldName,
                   isMerged: !!mergeInfo,
                 });
               }
             }
           } else {
+            const labelFromContext = this.extractLabelFromContext(aoa, rowIdx, colIdx, mergedCells);
+            if (labelFromContext) {
+              fieldName = labelFromContext;
+            } else {
+              fieldName = `数值_${cellPos}`;
+            }
+            const existingCount = nameCountMap.get(fieldName) || 0;
+            if (existingCount > 0) {
+              fieldName = `${fieldName}_${existingCount + 1}`;
+            }
+            nameCountMap.set(fieldName, (nameCountMap.get(fieldName) || 0) + 1);
             fields.push({
               id: `f_${rowIdx}_${colIdx}`,
-              name: baseName,
-              cell: `${this.colLetters(colIdx)}${rowIdx + 1}`,
+              name: fieldName,
+              cell: cellPos,
               row: rowIdx,
               col: colIdx,
               type,
@@ -239,11 +328,11 @@ const FieldFinder = {
             debugInfo.push({
               row: rowIdx,
               col: colIdx,
-              cell: `${this.colLetters(colIdx)}${rowIdx + 1}`,
+              cell: cellPos,
               value: cell,
               type,
               match: markerMatch,
-              fieldName: baseName,
+              fieldName,
               isMerged: !!mergeInfo,
             });
           }
