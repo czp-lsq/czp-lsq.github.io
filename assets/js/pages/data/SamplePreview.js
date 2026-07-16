@@ -1,5 +1,5 @@
 const SamplePreview = ({ previewSample, previewSheet, previewColumns, setPreviewSheet, setPreviewColumns, setPreviewSample, setColumnDropdownOpen, columnDropdownOpen, columnDropdownRef }) => {
-  const { Modal, Icons } = Window;
+  const { Modal, Icons } = window;
 
   if (!previewSample) return null;
 
