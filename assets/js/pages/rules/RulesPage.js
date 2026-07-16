@@ -85,14 +85,7 @@ window.RulesPage = function({ state, currentPlatform, onNavigate }) {
   const [previewTab, setPreviewTab] = useState("both");
   const [isPreviewPinned, setIsPreviewPinned] = useState(false);
   const [hoveredStepType, setHoveredStepType] = useState(null);
-  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(true);
-  const [infoPanelOpen, setInfoPanelOpen] = useState(() => {
-    try {
-      const saved = localStorage.getItem(`rules_page_info_open_${currentPlatform}`);
-      return saved === null ? true : saved === "true";
-    } catch (e) { return true; }
-  });
-  const [isSaved, setIsSaved] = useState(true);
+  const [leftPanelCollapsed, setLeftPanelCollapsed] = useState(false);
   const [showShortcuts, setShowShortcuts] = useState(false);
   const [fieldCategoryFilter, setFieldCategoryFilter] = useState("all");
 
@@ -103,10 +96,6 @@ window.RulesPage = function({ state, currentPlatform, onNavigate }) {
       } catch (e) {}
     }
   }, [leftPanelCollapsed, currentPlatform]);
-
-  useEffect(() => {
-    localStorage.setItem(`rules_page_info_open_${currentPlatform}`, infoPanelOpen);
-  }, [infoPanelOpen, currentPlatform]);
 
   const platform = state.platforms.find((p) => p.id === currentPlatform);
   const template = state.templates[currentPlatform];
