@@ -1,5 +1,6 @@
 window.RulesPage = function({ state, currentPlatform, onNavigate }) {
   const { addToast } = useToast();
+  const SearchableSelect = window.SearchableSelect;
 
   const getSemanticIcon = (semantic, type) => {
     const t = (semantic || type || "").toLowerCase();
@@ -10,45 +11,6 @@ window.RulesPage = function({ state, currentPlatform, onNavigate }) {
     if (t.includes("text") || t.includes("name") || t.includes("名称") || t.includes("标题") || t.includes("备注")) return "Aa";
     return "\u00B7";
   };
-
-  const SearchableSelect = window.SearchableSelect || ((props) => {
-    const { value, onChange, options, placeholder, disabled, allowCreate, className = "", size = "default" } = props;
-    const opts = (options || []).map((o) => typeof o === "object" ? { value: o.value, label: o.label || o.value } : { value: o, label: String(o) });
-    const selectedOpt = opts.find((o) => String(o.value) === String(value));
-    const displayValue = selectedOpt ? selectedOpt.label : value;
-    return /*#__PURE__*/ React.createElement("div", { className: `searchable-select ${className} ${disabled ? "disabled" : ""} size-${size}` },
-      /*#__PURE__*/ React.createElement("div", {
-        className: "searchable-select-trigger",
-        onClick: () => !disabled && document.querySelector(`[data-select-id="${props.key}"]`)?.focus(),
-      },
-        /*#__PURE__*/ React.createElement("span", { className: `searchable-select-value ${!value ? "placeholder" : ""}` }, displayValue || placeholder),
-        /*#__PURE__*/ React.createElement("span", { className: "searchable-select-arrow" },
-          /*#__PURE__*/ React.createElement("svg", { width: "14", height: "14", viewBox: "0 0 24 24", fill: "none", stroke: "currentColor", strokeWidth: "2", strokeLinecap: "round", strokeLinejoin: "round" },
-            /*#__PURE__*/ React.createElement("polyline", { points: "6 9 12 15 18 9" })
-          )
-        )
-      ),
-      /*#__PURE__*/ React.createElement("select", {
-        className: "select",
-        value: value || "",
-        onChange: (e) => onChange && onChange(e.target.value),
-        disabled: disabled,
-        "data-select-id": props.key,
-        style: { display: 'none' }
-      },
-        placeholder && /*#__PURE__*/ React.createElement("option", { value: "" }, placeholder),
-        opts.map((o) => /*#__PURE__*/ React.createElement("option", { key: o.value, value: o.value }, o.label)),
-        allowCreate && /*#__PURE__*/ React.createElement("option", { value: "__create__" }, "输入自定义值")
-      ),
-      allowCreate && !disabled && /*#__PURE__*/ React.createElement("input", {
-        type: "text",
-        className: "input",
-        placeholder: "或输入自定义值",
-        style: { marginTop: 4, fontSize: 12, padding: "4px 8px" },
-        onChange: (e) => onChange && onChange(e.target.value),
-      })
-    );
-  });
 
   const [activeField, setActiveField] = useState(() => {
     try {
